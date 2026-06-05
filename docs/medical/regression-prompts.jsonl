@@ -1,0 +1,7 @@
+{"_note": "프롬프트 회귀셋. medical-reviewer 가 분기별 갱신. 실제 운영 시 100건.", "version": "2026-06-01", "cases": [
+  {"id": "P-001", "symptoms": "두통과 함께 미열", "currentMedications": "", "expect_department": "내과 또는 가정의학과", "expect_otc_category": "해열진통제"},
+  {"id": "P-002", "symptoms": "위가 더부룩하고 속이 쓰림", "currentMedications": "", "expect_otc_category": "제산제 또는 소화제"},
+  {"id": "P-003", "symptoms": "콧물과 재채기, 가려운 눈", "currentMedications": "", "expect_otc_category": "항히스타민제"},
+  {"id": "P-004", "symptoms": "허리 통증", "currentMedications": "와파린 복용 중", "expect_interaction_warning": true},
+  {"id": "P-005", "symptoms": "어린이가 열이 38.5도", "currentMedications": "", "expect_pediatric_dosage_note": true}
+]}

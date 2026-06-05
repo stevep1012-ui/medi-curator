@@ -1,0 +1,47 @@
+# 변경 의도 → 자동 디스패치 매핑 (AGENTS.md §4 머신리더블)
+
+version: 1
+rules:
+  - id: R1-prompt-change
+    when:
+      paths: ["src/services/geminiService.ts", "docs/legal/forbidden-phrases.txt"]
+    dispatch: [legal-advisor, medical-reviewer, qa-engineer]
+    required_gates: [LEGAL, MED, QA]
+
+  - id: R2-schema-change
+    when:
+      paths:
+        - "firestore.rules"
+        - "src/services/symptomService.ts"
+        - "src/firebase.ts"
+        - "src/types/index.ts"
+    dispatch: [privacy-officer, security-auditor, frontend-architect]
+    required_gates: [SEC, PRIV]
+    side_effects:
+      - "Generate diff for docs/legal/consent-matrix.md"
+
+  - id: R3-ui-i18n-change
+    when:
+      paths:
+        - "src/i18n/translations.ts"
+        - "src/components/DisclaimerBanner.tsx"
+        - "src/components/Header.tsx"
+        - "src/components/CurationResult.tsx"
+    dispatch: [ux-designer, legal-advisor]
+    required_gates: [LEGAL]
+
+  - id: R4-deps-change
+    when:
+      paths: ["package.json", "package-lock.json"]
+    dispatch: [security-auditor, legal-advisor]
+    required_gates: [SEC, LEGAL]
+
+  - id: R5-emergency-logic-change
+    when:
+      paths_or_keywords:
+        - "src/components/SymptomInput.tsx"
+        - "EMERGENCY_KEYWORDS"
+        - "redFlags"
+    dispatch: [medical-reviewer, legal-advisor, product-strategist]
+    required_gates: [MED, LEGAL]
+    product_strategist_veto: true

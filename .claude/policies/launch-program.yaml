@@ -1,0 +1,177 @@
+# medi-curator production launch program
+version: 1
+owner_agent: program-manager
+orchestrator_agent: orchestrator
+workflow_agent: workflow-manager
+release_agent: release-manager
+
+launch_objective: "Firebase 기반 출시 가능 구조로 전환하고 Health-AI 규제 게이트를 통과한다."
+
+decision_policy:
+  launch_status_values: [GO, HOLD, BLOCKED]
+  default_status: HOLD
+  go_requires:
+    - all_blocking_gates_passed
+    - firebase_hosting_verified
+    - firebase_functions_verified
+    - firestore_rules_verified
+    - no_browser_llm_secret
+    - server_side_llm_proxy
+    - consent_before_sensitive_storage
+    - encrypted_sensitive_storage
+    - dsr_access_export_erase_verified
+    - rollback_plan_ready
+  blocked_if:
+    - browser_exposes_gemini_key
+    - sensitive_health_plaintext_storage_without_encryption
+    - no_firestore_rules_for_user_data
+    - emergency_self_harm_flow_missing_1393
+    - curation_output_without_runtime_schema_validation
+
+tracks:
+  - id: T0-PRODUCT
+    name: "Product scope"
+    owner: product-strategist
+    support: [ux-designer, legal-advisor]
+    deliverables:
+      - "Launch MVP scope"
+      - "User journeys: anonymous, logged-in, consented, emergency"
+      - "Risk-ranked backlog P0/P1/P2"
+    exit_criteria:
+      - "MVP scope excludes unsupported medical diagnosis or prescription"
+      - "User-facing claims match legal disclaimers"
+
+  - id: T1-SECURITY
+    name: "Security and auth"
+    owner: security-auditor
+    support: [api-engineer]
+    deliverables:
+      - "Firebase Auth flow verified"
+      - "Gemini API key server-only"
+      - "Rate limit and timeout policy"
+      - "Secret scan report"
+    exit_criteria:
+      - "No VITE_GEMINI_API_KEY in browser bundle"
+      - "All protected server endpoints verify Firebase ID token when user data is accessed"
+
+  - id: T2-PRIVACY
+    name: "Privacy and PIPA"
+    owner: privacy-officer
+    support: [legal-advisor, api-engineer]
+    deliverables:
+      - "Consent matrix"
+      - "Sensitive data encryption design"
+      - "DSR access/export/erase evidence"
+      - "Retention policy"
+    exit_criteria:
+      - "PIPA sensitive-health consent precedes storage"
+      - "Symptoms and medication text are encrypted before persistence"
+      - "User can access, export, and erase data"
+
+  - id: T3-LEGAL-MEDICAL
+    name: "Legal and medical safety"
+    owner: legal-launch-lead
+    support:
+      - legal-advisor
+      - medical-practice-law-auditor
+      - pharma-advertising-auditor
+      - samd-regulatory-auditor
+      - privacy-legal-auditor
+      - crisis-safety-legal-auditor
+      - terms-policy-counsel
+      - jurisdiction-watch-auditor
+      - medical-reviewer
+      - product-strategist
+    deliverables:
+      - "Diagnosis/prescription boundary review"
+      - "OTC and pharmacy coupling decision"
+      - "SaMD classification risk memo"
+      - "PIPA legal adequacy memo"
+      - "Emergency and self-harm escalation review"
+      - "Terms, privacy policy, and disclaimer alignment memo"
+      - "Jurisdiction watch memo for ko/en/zh/ja/es"
+      - "Forbidden phrase report"
+    exit_criteria:
+      - "No diagnosis or prescription claims"
+      - "Self-harm flow surfaces official crisis resources before generic health advice"
+      - "OTC recommendations are constrained to approved data source or disabled"
+      - "Terms and privacy policy match actual data processing"
+      - "External legal review items are explicitly listed"
+
+  - id: T4-ENGINEERING
+    name: "Implementation readiness"
+    owner: api-engineer
+    support: [frontend-architect, code-reviewer, security-auditor]
+    deliverables:
+      - "Server-side curation API"
+      - "Runtime Zod validation"
+      - "Firestore rules and audit logs"
+      - "Observability hooks"
+    exit_criteria:
+      - "Static gate passes"
+      - "Curation request and response schemas are enforced"
+      - "Audit logs are server-only"
+
+  - id: T5-QA-RELEASE
+    name: "QA and release"
+    owner: qa-engineer
+    support: [release-manager, medical-reviewer]
+    deliverables:
+      - "Unit and E2E test report"
+      - "Medical regression prompt report"
+      - "Release note"
+      - "Rollback plan"
+    exit_criteria:
+      - "Required coverage thresholds met"
+      - "Emergency and multilingual E2E cases pass"
+      - "Release manager returns GO"
+
+milestones:
+  - id: M0
+    name: "Launch audit baseline"
+    required_tracks: [T0-PRODUCT, T1-SECURITY, T2-PRIVACY, T3-LEGAL-MEDICAL]
+    output: "docs/reviews/LAUNCH-BASELINE-<YYYY-MM-DD>.md"
+  - id: M1
+    name: "P0 remediation complete"
+    required_tracks: [T1-SECURITY, T2-PRIVACY, T4-ENGINEERING]
+    output: "docs/reviews/LAUNCH-P0-<YYYY-MM-DD>.md"
+  - id: M2
+    name: "Gate validation"
+    required_tracks: [T3-LEGAL-MEDICAL, T5-QA-RELEASE]
+    output: "docs/reviews/LAUNCH-GATES-<YYYY-MM-DD>.md"
+  - id: M3
+    name: "Production release decision"
+    required_tracks: [T5-QA-RELEASE]
+    output: "docs/reviews/LAUNCH-DECISION-<YYYY-MM-DD>.md"
+
+initial_p0_backlog:
+  - id: P0-001
+    source: R-001
+    title: "Remove browser Gemini secret exposure"
+    owner: api-engineer
+    reviewers: [security-auditor]
+  - id: P0-002
+    source: R-002
+    title: "Keep sensitive health history on the user's device only"
+    owner: privacy-officer
+    reviewers: [security-auditor, legal-advisor]
+  - id: P0-003
+    source: R-003
+    title: "Resolve OTC recommendation and pharmacy coupling risk"
+    owner: legal-launch-lead
+    reviewers: [pharma-advertising-auditor, product-strategist, medical-reviewer]
+  - id: P0-004
+    source: R-005
+    title: "Add 1393-first self-harm escalation"
+    owner: medical-reviewer
+    reviewers: [legal-advisor, qa-engineer]
+  - id: P0-005
+    source: R-007
+    title: "Verify Firestore Security Rules deployment"
+    owner: security-auditor
+    reviewers: [privacy-officer]
+  - id: P0-006
+    source: R-008
+    title: "Enforce runtime Zod validation for LLM output"
+    owner: api-engineer
+    reviewers: [code-reviewer, qa-engineer]

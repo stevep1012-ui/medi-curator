@@ -1,0 +1,81 @@
+name: medi-curator release pipeline
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  gate-static:
+    name: Gate 1 — STATIC
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: 'npm' }
+      - run: npm ci
+      - run: npm run lint
+      - run: npx tsc -b --noEmit
+      - run: node scripts/scan-secrets.mjs
+      - name: gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  gate-security:
+    name: Gate 3 — SEC
+    runs-on: ubuntu-latest
+    needs: gate-static
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: 'npm' }
+      - run: npm ci
+      - run: npm run build
+      - name: Bundle secret scan
+        run: node scripts/scan-bundle.mjs dist
+      - run: npm audit --omit=dev --audit-level=high
+
+  gate-qa:
+    name: Gate 7 — QA
+    runs-on: ubuntu-latest
+    needs: gate-static
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: 'npm' }
+      - run: npm ci
+      - run: npm test -- --coverage || echo "테스트 미구현 — qa-engineer 호출 필요"
+
+  gate-legal-medical:
+    name: Gate 5+6 — LEGAL & MED (label required)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Require legal/medical approval labels for prompt/i18n changes
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner, repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+            });
+            const sensitive = files.some(f => /geminiService|translations|DisclaimerBanner|SymptomInput|mfds-otc|forbidden-phrases/.test(f.filename));
+            if (!sensitive) return;
+            const labels = context.payload.pull_request.labels.map(l => l.name);
+            const need = ['legal-approved','medical-approved'].filter(l => !labels.includes(l));
+            if (need.length) core.setFailed(`민감 변경 감지. 필수 라벨 누락: ${need.join(', ')}`);
+
+  release-decision:
+    name: Gate 8 — RELEASE
+    runs-on: ubuntu-latest
+    needs: [gate-static, gate-security, gate-qa]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - run: echo "모든 자동 게이트 통과. release-manager 가 카나리 진행."

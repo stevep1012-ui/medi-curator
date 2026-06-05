@@ -1,0 +1,90 @@
+# 게이트 정책 머신리더블 정의
+# AGENTS.md §3 의 표를 코드/CI에서 직접 읽도록 한 SoT.
+
+version: 1
+gates:
+  - id: STATIC
+    blocking: true
+    timeout_seconds: 60
+    checks:
+      - name: lint
+        command: "npm run lint"
+      - name: typecheck
+        command: "npx tsc -b --noEmit"
+      - name: secret_scan
+        command: "node scripts/scan-secrets.mjs"
+
+  - id: CODE
+    blocking: true
+    timeout_seconds: 300
+    agent: code-reviewer
+    require_zero:
+      - any_count
+      - console_log_count
+      - silent_catch_count
+
+  - id: SEC
+    blocking: true
+    veto: true
+    timeout_seconds: 600
+    agent: security-auditor
+    triggers_on_paths:
+      - "package.json"
+      - "src/firebase.ts"
+      - "src/services/**"
+      - "index.html"
+      - "firestore.rules"
+
+  - id: PRIV
+    blocking: true
+    veto: true
+    timeout_seconds: 600
+    agent: privacy-officer
+    triggers_on_paths:
+      - "src/services/symptomService.ts"
+      - "src/contexts/AuthContext.tsx"
+      - "src/firebase.ts"
+      - "firestore.rules"
+      - "docs/legal/consent-matrix.md"
+
+  - id: LEGAL
+    blocking: true
+    veto: true
+    async: true
+    sla_hours: 24
+    agent: legal-advisor
+    triggers_on_paths:
+      - "src/services/geminiService.ts"
+      - "src/i18n/translations.ts"
+      - "src/components/DisclaimerBanner.tsx"
+      - "src/components/SymptomInput.tsx"
+      - "docs/legal/**"
+
+  - id: MED
+    blocking: true
+    veto: true
+    async: true
+    sla_hours: 48
+    agent: medical-reviewer
+    triggers_on_paths:
+      - "src/services/geminiService.ts"
+      - "src/types/index.ts"
+      - "docs/medical/**"
+      - "src/assets/mfds-otc.json"
+    metrics:
+      regression_accuracy_min: 0.95
+      redflag_miss_rate_max: 0.01
+
+  - id: QA
+    blocking: true
+    timeout_seconds: 1200
+    agent: qa-engineer
+    coverage_min:
+      "src/services/": 0.80
+      "src/components/": 0.60
+
+  - id: RELEASE
+    blocking: true
+    agent: release-manager
+    requires_all_above: true
+    canary_steps: [10, 50, 100]

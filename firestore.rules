@@ -1,0 +1,42 @@
+// Firestore Security Rules — PIPA §15/§23/§28-8 + INV-2 강제
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // === 동의 기록 ===
+    // 사용자 본인만 자기 동의를 읽고 새로 생성할 수 있다. update/delete 는 클라 차단.
+    // 철회는 새 버전을 쓰거나, deleteDoc(자기 문서)만 허용 — DSR 서버 함수가 정공법.
+    match /users/{uid}/consents/{version} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.data.version == version
+        && request.resource.data.acceptedAt == request.time
+        && request.resource.data.isAdult == true
+        && request.resource.data.items.pii == true
+        && request.resource.data.items.sensitiveHealth == true
+        && request.resource.data.items.overseasTransfer == true
+        && request.resource.data.items.location == true;
+      allow update: if false;
+      // 동의 철회를 위한 자기 문서 삭제 허용. 검색 이력은 개인 디바이스 로컬 저장소에서 UI가 삭제.
+      allow delete: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // === 민감정보(증상·약물·검색이력) ===
+    // 출시 1차에서는 서버 저장 금지. 검색 이력은 사용자 디바이스 로컬 저장소에만 보관.
+    match /users/{uid}/symptomHistory/{docId} {
+      allow read, write: if false;
+    }
+
+    // === Audit 로그 ===
+    // 서버 (Admin SDK) 전용. 클라 직접 쓰기 금지.
+    match /auditLogs/{docId} {
+      allow read, write: if false;
+    }
+
+    // === 기본 deny ===
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
