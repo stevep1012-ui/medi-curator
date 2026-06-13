@@ -1,19 +1,12 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import './index.css';
-import App from './App';
-import { AuthProvider } from './contexts/AuthProvider';
-import { ThemeProvider } from './contexts/ThemeProvider';
-import { LanguageProvider } from './contexts/LanguageProvider';
+import './app/globals.css';
+import Home from './app/page';
 
+// Vite 진입점: react-handoff 셸(app/page.tsx)을 마운트한다.
+// 셸이 i18n·테마·인증을 자체 포함하므로 별도 Provider 래핑은 필요 없다.
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <AuthProvider>
-      <ThemeProvider>
-        <LanguageProvider>
-          <App />
-        </LanguageProvider>
-      </ThemeProvider>
-    </AuthProvider>
+    <Home />
   </StrictMode>,
 );

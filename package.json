@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "eslint .",
+    "lint": "eslint \"src/**/*.{ts,tsx}\" \"tests/**/*.{ts,tsx}\" \"functions/src/**/*.ts\" vite.config.ts",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -15,7 +15,9 @@
     "test:e2e:install": "playwright install --with-deps chromium",
     "scan:secrets": "node scripts/scan-secrets.mjs",
     "scan:bundle": "node scripts/scan-bundle.mjs dist",
-    "gate:static": "npm run lint && npm run build && npm run scan:secrets && npm run scan:bundle"
+    "gate:static": "npm run lint && npm run build && npm run scan:secrets && npm run scan:bundle",
+    "gate:release-readiness": "node scripts/check-release-readiness.mjs",
+    "gate:release": "npm run gate:static && npm --prefix functions run build && npm run test:coverage -- --pool=vmThreads --no-file-parallelism --maxWorkers=1 && npm run test:e2e && npm run gate:release-readiness"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -25,6 +27,7 @@
     "lucide-react": "^1.8.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "three": "^0.184.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -38,6 +41,7 @@
     "@types/node": "^24.12.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@types/three": "^0.184.1",
     "@vitejs/plugin-react": "^6.0.1",
     "@vitest/coverage-v8": "^4.1.8",
     "eslint": "^9.39.4",
