@@ -10,6 +10,13 @@ import {
   ShieldIcon,
 } from "./icons";
 import { useI18n } from "./i18n";
+import { getCurationFromGemini } from "../../services/geminiService";
+import type { CurationResult } from "../../types";
+
+// Emergency crisis surface (AGENTS.md R-005): self-harm/suicide must lead with
+// 1393/109, not just 119. The server returns these departments for crisis input.
+const MENTAL_DEPT = "정신건강의학과";
+const PHYSICAL_DEPT = "응급의학과";
 
 export default function SymptomAnalysis() {
   const { t } = useI18n();
@@ -17,12 +24,40 @@ export default function SymptomAnalysis() {
 
   const [symptoms, setSymptoms] = useState(s.symptomsVal);
   const [currentMedication, setCurrentMedication] = useState(s.medsVal);
-  const [showResult, setShowResult] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<CurationResult | null>(null);
 
   const isAnalyzeDisabled = useMemo(
-    () => !symptoms.trim() && !currentMedication.trim(),
-    [symptoms, currentMedication]
+    () => loading || (!symptoms.trim() && !currentMedication.trim()),
+    [loading, symptoms, currentMedication]
   );
+
+  async function runAnalysis() {
+    setError(null);
+    setResult(null);
+    setLoading(true);
+    try {
+      const data = await getCurationFromGemini(
+        symptoms.trim(),
+        currentMedication.trim(),
+        false,
+        "ko"
+      );
+      setResult(data);
+    } catch (e) {
+      // Service maps auth/transport/forbidden errors to friendly Korean messages.
+      setError(e instanceof Error ? e.message : "분석에 실패했습니다. 잠시 후 다시 시도해 주세요.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const isCrisis =
+    result != null &&
+    (result.recommendedDepartment === MENTAL_DEPT ||
+      result.recommendedDepartment === PHYSICAL_DEPT);
+  const isMentalCrisis = result?.recommendedDepartment === MENTAL_DEPT;
 
   return (
     <>
@@ -63,18 +98,60 @@ export default function SymptomAnalysis() {
 
           <button
             type="button"
-            onClick={() => setShowResult(true)}
+            onClick={runAnalysis}
             disabled={isAnalyzeDisabled}
+            aria-busy={loading}
             className="mt-1 inline-flex h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-brand text-[15px] font-bold text-white shadow-[0_14px_26px_-16px_rgba(11,110,97,0.85)] transition hover:bg-brand-2 hover:-translate-y-px active:translate-y-0 disabled:cursor-not-allowed disabled:bg-ink-4 disabled:shadow-none disabled:hover:translate-y-0"
           >
-            <SearchIcon className="h-[18px] w-[18px]" />
-            {s.analyze}
+            {loading ? (
+              <>
+                <span className="h-[18px] w-[18px] animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                분석 중…
+              </>
+            ) : (
+              <>
+                <SearchIcon className="h-[18px] w-[18px]" />
+                {s.analyze}
+              </>
+            )}
           </button>
+
+          {error && (
+            <div
+              role="alert"
+              className="flex items-start gap-2.5 rounded-xl border border-danger/30 bg-danger-tint px-4 py-3 text-[13.5px] font-medium leading-snug text-danger"
+            >
+              <AlertIcon className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
         </div>
       </div>
 
-      {showResult && (
+      {result && (
         <article className="mt-6 space-y-4 sm:mt-8" aria-live="polite">
+          {isCrisis && (
+            <section
+              role="alert"
+              className="rounded-[18px] border border-danger/40 bg-danger-tint p-5 shadow-sm"
+            >
+              <h3 className="mb-2 flex items-center gap-2.5 text-[15px] font-extrabold tracking-tight text-danger">
+                <ShieldIcon className="h-[17px] w-[17px]" />
+                지금은 즉시 도움을 받는 것이 우선입니다
+              </h3>
+              <p className="mb-3 text-[13.5px] leading-relaxed text-ink-2">{result.aiAdvice}</p>
+              <div className="flex flex-wrap gap-2">
+                {isMentalCrisis && (
+                  <>
+                    <CrisisCall tel="109" label="자살예방 상담 109" />
+                    <CrisisCall tel="1577-0199" label="정신건강 위기상담 1577-0199" />
+                  </>
+                )}
+                <CrisisCall tel="119" label="응급 119" />
+              </div>
+            </section>
+          )}
+
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-[17px] font-bold tracking-tight text-ink">{s.resultsOverview}</h2>
             <span className="inline-flex h-7 items-center gap-1.5 rounded-full bg-surface-soft px-3 text-[12px] font-bold text-ink-3 ring-1 ring-line">
@@ -82,51 +159,45 @@ export default function SymptomAnalysis() {
             </span>
           </div>
 
-          <ResultBlock title={s.otcTitle} tone="brand" icon={<PillIcon className="h-[15px] w-[15px]" />}>
-            <ul className="space-y-2.5 text-[13.5px] leading-snug text-ink-2">
-              {s.otc.map((item) => (
-                <li key={item} className="flex gap-2.5">
-                  <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-brand-bright" />
-                  {item}
-                </li>
-              ))}
-            </ul>
+          <ResultBlock title="권장 진료과" tone="brand" icon={<InfoIcon className="h-[15px] w-[15px]" />}>
+            <p className="text-[13.5px] leading-relaxed text-ink-2">{result.recommendedDepartment}</p>
           </ResultBlock>
 
-          <ResultBlock title={s.interactionTitle} tone="warn" icon={<AlertIcon className="h-[15px] w-[15px]" />}>
-            <p className="text-[13.5px] leading-relaxed text-ink-2">{s.interaction}</p>
-          </ResultBlock>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <ResultBlock title={s.exerciseTitle} tone="brand" icon={<InfoIcon className="h-[15px] w-[15px]" />}>
-              <p className="text-[13.5px] leading-relaxed text-ink-2">{s.exercise}</p>
+          {!isCrisis && (
+            <ResultBlock title="안내" tone="brand" icon={<PulseIcon className="h-[15px] w-[15px]" />}>
+              <p className="text-[13.5px] leading-relaxed text-ink-2">{result.aiAdvice}</p>
             </ResultBlock>
+          )}
 
-            <ResultBlock title={s.herbalTitle} tone="warn" icon={<AlertIcon className="h-[15px] w-[15px]" />}>
+          {result.redFlags.length > 0 && (
+            <ResultBlock title={s.redFlagTitle} tone="danger" icon={<ShieldIcon className="h-[15px] w-[15px]" />}>
               <ul className="space-y-2.5 text-[13.5px] leading-snug text-ink-2">
-                {s.herbal.map((tip) => (
-                  <li key={tip} className="flex gap-2.5">
-                    <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-warn" />
-                    {tip}
+                {result.redFlags.map((flag) => (
+                  <li key={flag} className="flex gap-2.5">
+                    <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-danger" />
+                    {flag}
                   </li>
                 ))}
               </ul>
             </ResultBlock>
-          </div>
+          )}
 
-          <ResultBlock title={s.redFlagTitle} tone="danger" icon={<ShieldIcon className="h-[15px] w-[15px]" />}>
-            <ul className="space-y-2.5 text-[13.5px] leading-snug text-ink-2">
-              {s.redFlags.map((flag) => (
-                <li key={flag} className="flex gap-2.5">
-                  <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-danger" />
-                  {flag}
-                </li>
-              ))}
-            </ul>
-          </ResultBlock>
+          <p className="px-1 text-[12px] leading-snug text-ink-3">{result.disclaimer}</p>
         </article>
       )}
     </>
+  );
+}
+
+function CrisisCall({ tel, label }: { tel: string; label: string }) {
+  return (
+    <a
+      href={`tel:${tel}`}
+      className="inline-flex h-9 items-center gap-1.5 rounded-full bg-danger px-4 text-[13px] font-bold text-white shadow-sm transition hover:opacity-90"
+    >
+      <AlertIcon className="h-3.5 w-3.5" />
+      {label}
+    </a>
   );
 }
 
