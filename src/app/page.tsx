@@ -34,7 +34,7 @@ function isNightNow() {
 
 function HomeInner() {
   const { t, lang } = useI18n();
-  const { provider, signIn, signOut } = useAuth();
+  const { provider, user, signIn, signOut } = useAuth();
   const [view, setView] = useState<ViewId>("home");
   const [mode, setMode] = useState<ThemeMode>("auto");
   const [isNight, setIsNight] = useState(false);
@@ -154,7 +154,7 @@ function HomeInner() {
                 {view === "vitamin" && <VitaminPairing />}
                 {view === "pharmacy" && <PharmacyFinder />}
                 {view === "history" && <SearchHistory />}
-                {view === "privacy" && <PrivacySettings />}
+                {view === "privacy" && <PrivacySettings uid={user?.uid} />}
                 <NextSteps active={view as MenuId} onGo={(id) => setView(id)} />
               </div>
             </div>

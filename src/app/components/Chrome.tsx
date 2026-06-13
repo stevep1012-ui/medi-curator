@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useI18n, type Lang } from "./i18n";
 import { LegalModal, type LegalKey } from "./Legal";
+import { watchAuth, signInWithGoogle, signOutUser } from "../../firebase";
+import type { User as FbUser } from "firebase/auth";
 
 /* ---------------- toast ---------------- */
 type ToastDetail = { msg: string };
@@ -239,25 +241,65 @@ const OAUTH = [
 function providerLabel(name: string, lang: Lang) {
   return lang === "ko" ? `${name}(으)로 계속` : lang === "ja" ? `${name}で続ける` : lang === "zh" ? `使用${name} 继续` : `Continue with ${name}`;
 }
+// Real Firebase auth. Google is fully wired; other providers (Apple/Kakao/Naver)
+// require Firebase OIDC provider setup and are surfaced as "준비 중" for now.
+// "guest" is a local browse-only mode (curation will return 401 until sign-in).
 export function useAuth() {
   const [provider, setProvider] = useState<string | null>(null);
+  const [user, setUser] = useState<FbUser | null>(null);
+
   useEffect(() => {
     try {
       const a = JSON.parse(localStorage.getItem("mc-auth") || "null");
-      if (a?.provider) setProvider(a.provider);
+      if (a?.provider === "guest") setProvider("guest");
     } catch {
       /* ignore */
     }
+    let unsub = () => {};
+    watchAuth((u) => {
+      setUser(u);
+      setProvider((prev) => (u ? "google" : prev === "guest" ? "guest" : null));
+    })
+      .then((fn) => {
+        unsub = fn;
+      })
+      .catch(() => {
+        /* firebase unavailable (e.g. no config) — stay signed out */
+      });
+    return () => unsub();
   }, []);
-  const signIn = (p: string) => {
-    localStorage.setItem("mc-auth", JSON.stringify({ provider: p, ts: Date.now() }));
-    setProvider(p);
+
+  const signIn = async (p: string) => {
+    if (p === "guest") {
+      localStorage.setItem("mc-auth", JSON.stringify({ provider: "guest", ts: Date.now() }));
+      setProvider("guest");
+      return;
+    }
+    if (p !== "google") {
+      toast("이 로그인 방식은 준비 중이에요. Google 로그인을 이용해 주세요.");
+      return;
+    }
+    try {
+      const u = await signInWithGoogle();
+      setUser(u);
+      setProvider("google");
+    } catch {
+      toast("로그인에 실패했어요. 잠시 후 다시 시도해 주세요.");
+    }
   };
-  const signOut = () => {
+
+  const signOut = async () => {
+    try {
+      await signOutUser();
+    } catch {
+      /* ignore */
+    }
     localStorage.removeItem("mc-auth");
+    setUser(null);
     setProvider(null);
   };
-  return { provider, signIn, signOut };
+
+  return { provider, user, signIn, signOut };
 }
 export function LoginGate({ onSignIn }: { onSignIn: (p: string) => void }) {
   const { lang } = useI18n();

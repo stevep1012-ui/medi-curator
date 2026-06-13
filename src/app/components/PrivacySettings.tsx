@@ -3,13 +3,47 @@
 import { useState } from "react";
 import { TrashIcon } from "./icons";
 import { PRIV_ON, useI18n } from "./i18n";
+import { toast } from "./Chrome";
+import { saveConsent } from "../../services/consentService";
 
-export default function PrivacySettings() {
+export default function PrivacySettings({ uid }: { uid?: string }) {
   const { t } = useI18n();
   const pv = t.privacy;
 
   const [on, setOn] = useState<boolean[]>(PRIV_ON);
   const toggle = (i: number) => setOn((cur) => cur.map((v, idx) => (idx === i ? !v : v)));
+
+  const [saving, setSaving] = useState(false);
+  // Persist the PIPA sensitive-info consent record (required by /api/curate).
+  // NOTE (legal gate): the consent items, copy, and adult verification (isAdult)
+  // require legal-advisor + medical-reviewer sign-off (AGENTS.md). isAdult is
+  // hard-set to true here pending a real birthdate/adult-verification step.
+  async function acceptConsent() {
+    if (!uid) {
+      toast("로그인 후 동의를 저장할 수 있어요.");
+      return;
+    }
+    setSaving(true);
+    try {
+      await saveConsent(
+        uid,
+        {
+          pii: true,
+          sensitiveHealth: true,
+          overseasTransfer: true,
+          location: true,
+          marketing: on[2] ?? false,
+          analytics: on[2] ?? false,
+        },
+        true,
+      );
+      toast("민감정보 처리 동의가 저장됐어요.");
+    } catch {
+      toast("동의 저장에 실패했어요. 잠시 후 다시 시도해 주세요.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div>
@@ -56,7 +90,15 @@ export default function PrivacySettings() {
         </a>
       </div>
 
-      <button className="mt-4 inline-flex h-11 items-center gap-2 rounded-[14px] border border-danger-line bg-danger-tint px-[18px] text-[13.5px] font-bold text-danger transition hover:bg-surface">
+      <button
+        onClick={acceptConsent}
+        disabled={saving || !uid}
+        className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-[14px] bg-brand px-[18px] text-[13.5px] font-bold text-white shadow-sm transition hover:bg-brand-2 disabled:cursor-not-allowed disabled:bg-ink-4 disabled:shadow-none"
+      >
+        {saving ? "저장 중…" : uid ? "민감정보 처리에 동의하고 저장" : "로그인 후 동의할 수 있어요"}
+      </button>
+
+      <button className="mt-3 inline-flex h-11 items-center gap-2 rounded-[14px] border border-danger-line bg-danger-tint px-[18px] text-[13.5px] font-bold text-danger transition hover:bg-surface">
         <TrashIcon className="h-[15px] w-[15px]" />
         {pv.deleteAll}
       </button>
