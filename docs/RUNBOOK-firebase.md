@@ -36,10 +36,42 @@ firebase functions:secrets:set GEMINI_API_KEY
 
 ⚠️ **클라이언트 코드 / dist 번들에 키가 절대 들어가면 안 된다.** `.env.local` 의 `VITE_GEMINI_API_KEY` 는 **제거**해도 됨 (서버 프록시가 대체). 남겨두면 SEC-gate 가 BLOCK.
 
+## 1.1 App Check 등록
+
+Firebase Console에서 Web App Check의 reCAPTCHA Enterprise provider를 등록한다.
+
+```bash
+export VITE_RECAPTCHA_ENTERPRISE_SITE_KEY="<public-site-key>"
+```
+
+site key는 공개 클라이언트 식별자이며 Gemini 비밀키가 아니다. 다만 production
+배포 전에 실제 Firebase 앱에 등록된 key가 반드시 필요하다.
+
+## 1.2 사업자 정보 확정
+
+`config/release-profile.json`의 다음 5개 항목을 실제 정보로 교체한다.
+
+- `businessName`
+- `representative`
+- `businessAddress`
+- `privacyOfficer`
+- `privacyEmail`
+
+`[출시 전 확정 필요]`가 하나라도 남으면 release gate는 실패한다.
+
 ## 2. Firestore Rules / Indexes 배포
 
 ```bash
 firebase deploy --only firestore:rules,firestore:indexes
+```
+
+중앙 요청 할당량 문서가 자동 삭제되도록 Firestore TTL 정책을 설정한다.
+
+```bash
+gcloud firestore fields ttls update expiresAt \
+  --collection-group=rateLimits \
+  --enable-ttl \
+  --project=mediq-kr-2026
 ```
 
 ## 3. Functions 빌드 + 배포
@@ -59,6 +91,7 @@ https://asia-northeast3-<project>.cloudfunctions.net/curate
 ## 4. 호스팅 (정적 SPA) 배포
 
 ```bash
+npm run gate:release-readiness
 npm run build           # vite build → dist/
 node scripts/scan-bundle.mjs dist   # SEC-gate: 비밀키 노출 검사
 firebase deploy --only hosting
@@ -141,7 +174,11 @@ npm run build && node scripts/scan-bundle.mjs dist
 cd functions && npm run build && cd ..
 
 # QA (현재 미구현 — qa-engineer 셋업 후)
-# npm test && npm run test:e2e
+npm run test:coverage -- --pool=vmThreads --no-file-parallelism --maxWorkers=1
+npm run test:e2e
+
+# 전체 release gate
+npm run gate:release
 ```
 
 ## 10. 비용 상한 (안전장치)

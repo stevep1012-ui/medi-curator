@@ -26,9 +26,11 @@ Health-AI 고규제 도메인에서 출시 가능한 제품 상태를 만든다.
    - T3-LEGAL-MEDICAL: 진단/처방 경계, OTC/약국 결합, redFlag
    - T4-ENGINEERING: API, 프론트, 타입, 스키마, 관측성
    - T5-QA-RELEASE: 테스트, 카나리, 롤백, 릴리스 노트
+   - T6-COMMERCIAL: 상업성, 메뉴 트리, UX, runtime, red-team
 3. 각 트랙의 산출물, 담당 에이전트, 완료 기준을 표로 만든다.
 4. 차단 항목은 `P0`, 출시 전 필수는 `P1`, 출시 후 개선은 `P2`로 나눈다.
 5. 담당 subagent를 Task tool로 호출한다.
+6. `monitor` 모드가 들어오면 T6-COMMERCIAL 기준으로 상업성/흐름/UX/runtime/red-team을 반복 점검하고, `WATCH`/`BLOCK`이 0건일 때만 종료한다.
 
 ## PM이 호출할 subagent
 | 목적 | 기본 담당 | 보조 담당 |
@@ -42,6 +44,7 @@ Health-AI 고규제 도메인에서 출시 가능한 제품 상태를 만든다.
 | 임상 정확성/redFlag | medical-reviewer | qa-engineer |
 | React/타입/UI 구조 | frontend-architect | code-reviewer |
 | 테스트/회귀/E2E | qa-engineer | medical-reviewer |
+| 상업성/흐름/UX/runtime/red-team | commercial-strategist | workflow-integrity-auditor |
 | 릴리스/롤백 | release-manager | security-auditor |
 
 ## 출력 형식
@@ -51,6 +54,7 @@ Health-AI 고규제 도메인에서 출시 가능한 제품 상태를 만든다.
 3. 트랙별 진행 상태
 4. 다음 실행 지시
 5. 필요한 승인 또는 의사결정
+6. `monitor` 모드일 경우 상업성 판정, red-team 판정, 재검증 필요 항목
 
 ## 차단 규칙
 - R-001, R-002, R-003, R-005, R-007, R-008 중 하나라도 미해결이면 출시 HOLD.

@@ -3,7 +3,6 @@
 // 감사: 모든 요청 auditLogs 컬렉션에 append (append-only, 5년 보존)
 
 import { onRequest } from 'firebase-functions/v2/https';
-import { setGlobalOptions } from 'firebase-functions/v2';
 import * as logger from 'firebase-functions/logger';
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
@@ -11,8 +10,6 @@ import { z } from 'zod';
 if (!admin.apps.length) admin.initializeApp();
 const db = admin.firestore();
 const auth = admin.auth();
-
-setGlobalOptions({ region: 'asia-northeast3', maxInstances: 5 });
 
 const DSRType = z.enum(['access', 'rectify', 'erase', 'export']);
 const Body = z.object({
@@ -57,7 +54,14 @@ async function deleteUserData(uid: string): Promise<number> {
 }
 
 export const dsr = onRequest(
-  { cors: false, timeoutSeconds: 60, memory: '256MiB', invoker: 'public' },
+  {
+    region: 'asia-northeast3',
+    maxInstances: 5,
+    cors: false,
+    timeoutSeconds: 60,
+    memory: '256MiB',
+    invoker: 'public',
+  },
   async (req, res) => {
     if (req.method !== 'POST') {
       res.status(405).json({ ok: false, code: 'METHOD', message: 'POST only' });

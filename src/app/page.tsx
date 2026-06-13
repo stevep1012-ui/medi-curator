@@ -149,7 +149,7 @@ function HomeInner() {
                 key={view}
                 className="p-5 pt-6 sm:p-7 motion-safe:animate-[pageflip_0.42s_cubic-bezier(0.2,0.7,0.2,1)] [transform-origin:left_center]"
               >
-                {view === "symptom" && <SymptomAnalysis onGoPharmacy={() => setView("pharmacy")} />}
+                {view === "symptom" && <SymptomAnalysis />}
                 {view === "interaction" && <InteractionCheck />}
                 {view === "vitamin" && <VitaminPairing />}
                 {view === "pharmacy" && <PharmacyFinder />}

@@ -6,7 +6,7 @@ describe('geminiService (서버 프록시 호출)', () => {
     const result = await getCurationFromGemini('두통이 있어요', '', false, 'ko');
     expect(result.recommendedDepartment).toBe('내과');
     expect(result.disclaimer).toBeTruthy(); // INV-1
-    expect(result.otcMedications.length).toBeGreaterThan(0);
+    expect(result.otcMedications).toHaveLength(0);
   });
 
   it('같은 입력은 캐시에서 즉시 반환된다 (fetch 1회)', async () => {
@@ -28,5 +28,23 @@ describe('geminiService (서버 프록시 호출)', () => {
     await expect(
       getCurationFromGemini('FORCE_500 panic', '', false, 'ko'),
     ).rejects.toThrow();
+  });
+
+  it('서버 401 응답을 로그인 안내로 변환한다', async () => {
+    await expect(
+      getCurationFromGemini('FORCE_401 auth', '', false, 'ko'),
+    ).rejects.toThrow('로그인이 필요합니다.');
+  });
+
+  it('서버 403 응답을 민감정보 동의 안내로 변환한다', async () => {
+    await expect(
+      getCurationFromGemini('FORCE_403 consent', '', false, 'ko'),
+    ).rejects.toThrow('민감정보 동의가 필요합니다.');
+  });
+
+  it('App Check 실패를 앱 무결성 안내로 변환한다', async () => {
+    await expect(
+      getCurationFromGemini('FORCE_APPCHECK token', '', false, 'ko'),
+    ).rejects.toThrow('앱 무결성 확인에 실패했습니다. 페이지를 새로고침해 주세요.');
   });
 });

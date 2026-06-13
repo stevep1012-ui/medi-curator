@@ -40,18 +40,18 @@ export const LEGAL: Record<Lang, LangLegal> = {
     about: {
       title: "서비스 소개",
       sections: [
-        ["메디큐레이터란", "메디큐레이터는 증상 분석, 복용 안전 검사, 비타민 궁합, 약국 찾기를 한곳에서 안내하는 AI 건강 가이드입니다. 약사 감수 정보를 바탕으로 누구나 쉽게 일상 건강을 챙길 수 있도록 돕습니다."],
+        ["메디큐레이터란", "메디큐레이터는 증상 정리, 상담 질문 준비, 일반 생활정보, 독립 약국 검색을 한곳에서 제공하는 건강 정보 도구입니다. 의료 판단이나 약품 추천이 아닌 참고용 정보 제공을 목표로 합니다."],
         ["우리가 지키는 원칙", "① 진단이 아닌 안내 — 전문가 상담을 대체하지 않습니다. ② 투명성 — 정보의 근거와 한계를 분명히 합니다. ③ 프라이버시 우선 — 검색 기록은 기기에 저장되며 서버로 전송하지 않습니다."],
-        ["이용 대상", "일반의약품·영양제 정보를 빠르게 확인하고 싶은 분, 복용 중인 약과의 상호작용이 궁금한 분, 가까운 약국을 찾는 분 모두에게 적합합니다."],
+        ["이용 대상", "증상을 정리해 전문가 상담을 준비하거나 가까운 약국 위치를 중립적으로 확인하려는 분에게 적합합니다."],
       ],
     },
     faq: {
       title: "자주 묻는 질문",
       sections: [
         ["진단을 받을 수 있나요?", "아니요. 메디큐레이터는 일반적인 건강·의약 정보를 안내할 뿐 의학적 진단을 제공하지 않습니다. 정확한 진단·처방은 의사·약사와 상담하세요."],
-        ["입력한 정보는 안전한가요?", "증상·복용 약물 정보와 검색 기록은 이용자의 기기(로컬 저장소)에 저장되며 회사 서버로 전송되지 않습니다. 개인정보처리방침에서 자세히 확인할 수 있습니다."],
-        ["복용 안전 검사는 어떻게 동작하나요?", "새로 먹으려는 약·영양제와 현재 복용 중인 약을 입력하면 중복 성분과 알려진 상호작용을 위험·주의·중복으로 분류해 안내합니다."],
-        ["처방전 사진 인식이 되나요?", "네. 복용 검사 화면에서 처방전·약봉투 사진을 올리면 기기 내 문자 인식(OCR)으로 약 이름을 읽어 입력칸을 채웁니다."],
+        ["입력한 정보는 안전한가요?", "증상·복용 정보는 분석 요청 시 서버를 거쳐 처리될 수 있으며, 검색 기록 저장은 이용자 설정에 따릅니다. 개인정보처리방침에서 처리 목적과 보관 범위를 확인할 수 있습니다."],
+        ["복용 안전 검사는 어떻게 동작하나요?", "복용 정보를 정리하고 전문가에게 확인할 항목을 보여주는 참고 기능입니다. 모든 상호작용을 판정하거나 복용 가능 여부를 보장하지 않습니다."],
+        ["처방전 사진 인식이 되나요?", "출시 전에는 처방전·약봉투 사진 인식을 의료 판단에 사용하지 않습니다. 약품명 확인은 반드시 약사·의사에게 직접 확인하세요."],
         ["무료인가요?", "핵심 안내 기능은 무료로 제공됩니다. 향후 추가되는 프리미엄 기능은 별도로 안내해 드립니다."],
       ],
     },
@@ -103,18 +103,18 @@ export const LEGAL: Record<Lang, LangLegal> = {
     about: {
       title: "About",
       sections: [
-        ["What is MediQ", "MediQ is an AI health guide that brings symptom analysis, drug-safety checks, vitamin pairing and pharmacy finder together in one place. Built on pharmacist-reviewed information, it helps anyone look after everyday health with ease."],
+        ["What is MediQ", "MediQ provides symptom organization, consultation preparation, general self-care information, and an independent pharmacy finder. It is for reference only and does not provide medical judgment or medicine recommendations."],
         ["Our principles", "(i) Guidance, not diagnosis — we never replace a professional consultation. (ii) Transparency — we make the basis and limits of information clear. (iii) Privacy first — search history is stored on your device, never sent to our servers."],
-        ["Who it’s for", "Anyone who wants to quickly check OTC and supplement information, understand interactions with current medication, or find a nearby pharmacy."],
+        ["Who it’s for", "People who want to organize symptoms before professional consultation or neutrally locate nearby pharmacies."],
       ],
     },
     faq: {
       title: "FAQ",
       sections: [
         ["Can I get a diagnosis?", "No. MediQ provides general health and medication information only and does not offer a medical diagnosis. For an accurate diagnosis or prescription, consult a physician or pharmacist."],
-        ["Is my information safe?", "Symptom and medication entries and search history are stored on your device (local storage) and are not sent to our servers. See the Privacy Policy for details."],
-        ["How does the safety check work?", "Enter a new medication/supplement and your current medications, and we classify duplicate ingredients and known interactions as risk, caution or duplicate."],
-        ["Does prescription photo scanning work?", "Yes. On the safety-check screen, upload a photo of your prescription or medication bag and on-device OCR reads the drug names into the field."],
+        ["Is my information safe?", "Symptom and medication entries may be processed through the server when you request analysis, and search-history storage depends on your settings. See the Privacy Policy for details."],
+        ["How does the safety check work?", "This feature helps organize medication information and items to verify with a professional. It does not determine every interaction or guarantee that a product is safe to take."],
+        ["Does prescription photo scanning work?", "Prescription or medication-bag photo recognition is not used for medical judgment before release. Always verify medicine names directly with a pharmacist or doctor."],
         ["Is it free?", "The core guidance features are free. Any premium features added in the future will be announced separately."],
       ],
     },
@@ -166,18 +166,18 @@ export const LEGAL: Record<Lang, LangLegal> = {
     about: {
       title: "サービス紹介",
       sections: [
-        ["メディキュレーターとは", "メディキュレーターは、症状分析・服用安全チェック・ビタミンの相性・薬局検索を一つにまとめたAI健康ガイドです。薬剤師監修の情報をもとに、誰でも手軽に毎日の健康を管理できます。"],
+        ["メディキュレーターとは", "メディキュレーターは、症状整理、相談準備、一般的なセルフケア情報、独立した薬局検索を提供する健康情報ツールです。医療判断や薬の推奨ではなく、参考情報の提供を目的とします。"],
         ["私たちの原則", "①診断ではなく案内 — 専門家への相談に代わるものではありません。②透明性 — 情報の根拠と限界を明確にします。③プライバシー優先 — 検索履歴は端末に保存し、サーバーには送信しません。"],
-        ["対象となる方", "市販薬・サプリ情報をすぐ確認したい方、服用中の薬との相互作用が気になる方、近くの薬局を探す方に適しています。"],
+        ["対象となる方", "専門職への相談前に症状を整理したい方、または近くの薬局を中立的に探したい方に適しています。"],
       ],
     },
     faq: {
       title: "よくある質問",
       sections: [
         ["診断は受けられますか？", "いいえ。メディキュレーターは一般的な健康・医薬情報を案内するのみで、医学的な診断は行いません。正確な診断・処方は医師・薬剤師にご相談ください。"],
-        ["入力した情報は安全ですか？", "症状・服用薬の情報と検索履歴は端末（ローカル保存）に保存され、サーバーには送信されません。詳細はプライバシーポリシーをご覧ください。"],
-        ["服用安全チェックの仕組みは？", "新しく飲む薬・サプリと服用中の薬を入力すると、重複成分や既知の相互作用を「リスク・注意・重複」に分類して案内します。"],
-        ["処方箋の写真認識はできますか？", "はい。服用チェック画面で処方箋・薬袋の写真をアップロードすると、端末内のOCRが薬名を読み取り入力欄に反映します。"],
+        ["入力した情報は安全ですか？", "症状・服用薬の情報は、分析を依頼する際にサーバーを通じて処理される場合があります。検索履歴の保存は設定によります。詳細はプライバシーポリシーをご覧ください。"],
+        ["服用安全チェックの仕組みは？", "服用情報を整理し、専門職に確認する項目を示す参考機能です。すべての相互作用を判定したり、服用可否を保証するものではありません。"],
+        ["処方箋の写真認識はできますか？", "リリース前は処方箋・薬袋の写真認識を医療判断に使用しません。薬品名は必ず薬剤師または医師に直接確認してください。"],
         ["無料ですか？", "主要な案内機能は無料です。今後追加されるプレミアム機能は別途ご案内します。"],
       ],
     },
@@ -229,18 +229,18 @@ export const LEGAL: Record<Lang, LangLegal> = {
     about: {
       title: "关于服务",
       sections: [
-        ["什么是MediQ", "MediQ是一款将症状分析、用药安全检查、维生素搭配与查找药房集于一体的AI健康向导。基于药师审核的信息，帮助每个人轻松管理日常健康。"],
+        ["什么是MediQ", "MediQ提供症状整理、咨询准备、一般自我护理信息和独立药房查找。它仅供参考，不提供医疗判断或药物推荐。"],
         ["我们的原则", "①向导而非诊断——不替代专业咨询。②透明——明确信息的依据与局限。③隐私优先——搜索记录保存在设备上，不发送至服务器。"],
-        ["适用人群", "适合想快速查看非处方药与营养补充信息、关心与在服药物相互作用、以及查找附近药房的所有人。"],
+        ["适用人群", "适合希望在专业咨询前整理症状，或中立查找附近药房的人。"],
       ],
     },
     faq: {
       title: "常见问题",
       sections: [
         ["可以获得诊断吗？", "不能。MediQ仅提供一般健康与用药信息，不提供医学诊断。准确的诊断与处方请咨询医生或药师。"],
-        ["我输入的信息安全吗？", "症状、用药信息及搜索记录保存在您的设备（本地存储），不会发送至服务器。详见隐私政策。"],
-        ["用药安全检查如何运作？", "输入将要服用的药物/补充剂与当前在服药物，系统会将重复成分和已知相互作用分类为风险、注意或重复。"],
-        ["支持拍照识别处方吗？", "支持。在用药检查界面上传处方或药袋照片，设备本地OCR会读取药名并填入输入框。"],
+        ["我输入的信息安全吗？", "症状和用药信息在请求分析时可能通过服务器处理，搜索记录保存取决于用户设置。详见隐私政策。"],
+        ["用药安全检查如何运作？", "此功能帮助整理用药信息和需要向专业人员确认的项目，并不判断所有相互作用或保证某产品可以安全服用。"],
+        ["支持拍照识别处方吗？", "发布前，处方或药袋照片识别不会用于医疗判断。药品名称请务必直接向药师或医生确认。"],
         ["是免费的吗？", "核心向导功能免费提供。未来新增的高级功能将另行通知。"],
       ],
     },

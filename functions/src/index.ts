@@ -7,10 +7,16 @@ import { onRequest } from 'firebase-functions/v2/https';
 import { defineSecret } from 'firebase-functions/params';
 import { setGlobalOptions } from 'firebase-functions/v2';
 import * as logger from 'firebase-functions/logger';
+import * as admin from 'firebase-admin';
 import { z } from 'zod';
+import { modelCandidates } from './modelSelection';
+import { enforceCentralRateLimit } from './rateLimit';
 
 // === 글로벌 옵션 (한국 사용자 지연 최소화) ===
 setGlobalOptions({ region: 'asia-northeast3', maxInstances: 10 });
+if (!admin.apps.length) admin.initializeApp();
+const auth = admin.auth();
+const db = admin.firestore();
 
 const GEMINI_API_KEY = defineSecret('GEMINI_API_KEY');
 
@@ -75,20 +81,75 @@ function violatesForbidden(text: string): string | null {
   return null;
 }
 
-// === 인메모리 레이트리밋 (인스턴스 단위, maxInstances=10 고려해 LIMIT 분배) ===
-const RATE = new Map<string, { count: number; resetAt: number }>();
-const LIMIT = 30;
-const WINDOW_MS = 60 * 60 * 1000;
-function allow(ip: string): boolean {
-  const now = Date.now();
-  const e = RATE.get(ip);
-  if (!e || e.resetAt < now) {
-    RATE.set(ip, { count: 1, resetAt: now + WINDOW_MS });
-    return true;
+const EMERGENCY_MENTAL = ['자살', '자해', '죽고 싶', '살고 싶지 않', '극단적 선택', 'suicide', 'self-harm', 'kill myself'];
+const EMERGENCY_PHYSICAL = ['흉통', '가슴통증', '호흡곤란', '숨을 못 쉬', '의식잃', '의식불명', '마비', '반신마비', '안면마비', '극심한 두통', '갑작스러운 두통', '토혈', '혈변', '대량출혈', 'chest pain', 'cannot breathe', 'unconscious', 'stroke', 'heart attack'];
+
+function detectEmergency(symptoms: string): 'mental' | 'physical' | null {
+  const lower = symptoms.toLowerCase();
+  if (EMERGENCY_MENTAL.some((kw) => lower.includes(kw.toLowerCase()))) return 'mental';
+  if (EMERGENCY_PHYSICAL.some((kw) => lower.includes(kw.toLowerCase()))) return 'physical';
+  return null;
+}
+
+function safeResult(recommendedDepartment: string, aiAdvice: string, redFlags: string[], disclaimer: string) {
+  return {
+    recommendedDepartment,
+    aiAdvice,
+    otcMedications: [],
+    folkRemedies: [],
+    lifestyleTips: [],
+    exercisePrescription: { recommended: [], avoid: [], duration: '' },
+    recoveryTimeline: [],
+    redFlags,
+    disclaimer,
+  };
+}
+
+function emergencyResult(kind: 'mental' | 'physical') {
+  if (kind === 'mental') {
+    return safeResult(
+      '정신건강의학과',
+      '자해·자살 위험이 의심됩니다. 지금은 온라인 분석보다 즉시 도움을 받는 것이 우선입니다. 한국에서는 109 자살예방상담전화와 1577-0199 정신건강위기상담전화에 바로 연락하세요. 즉각적인 위험이 있으면 119 또는 112에 연락하거나 응급실로 이동하세요.',
+      ['자해·자살 위험이 의심됨'],
+      '본 정보는 의료 진단 또는 처방을 대체하지 않습니다. 긴급 상황에서는 즉시 109, 119, 112 또는 응급실을 이용하세요.',
+    );
   }
-  if (e.count >= LIMIT) return false;
-  e.count++;
-  return true;
+  return safeResult(
+    '응급의학과',
+    '흉통, 호흡곤란, 의식저하, 대량출혈 등 응급 징후가 의심됩니다. 지금은 119 또는 112 연락과 응급실 방문이 우선입니다.',
+    ['응급 증상이 의심됨'],
+    '본 정보는 의료 진단 또는 처방을 대체하지 않습니다. 응급 상황에서는 즉시 119, 112 또는 응급실을 이용하세요.',
+  );
+}
+
+async function requireAuthenticatedConsent(req: { headers: Record<string, unknown> }) {
+  const authz = String(req.headers.authorization ?? '');
+  const m = /^Bearer (.+)$/.exec(authz);
+  if (!m) return { ok: false as const, status: 401, code: 'NO_TOKEN', message: '인증이 필요합니다' };
+  try {
+    const decoded = await auth.verifyIdToken(m[1]);
+    const snap = await db.collection('users').doc(decoded.uid).collection('consents').doc('2026-06-01').get();
+    const data = snap.data();
+    if (!snap.exists || !data?.items?.sensitiveHealth || data?.isAdult !== true) {
+      return { ok: false as const, status: 403, code: 'CONSENT_REQUIRED', message: '동의가 필요합니다' };
+    }
+    return { ok: true as const, uid: decoded.uid };
+  } catch {
+    return { ok: false as const, status: 401, code: 'BAD_TOKEN', message: '인증 확인에 실패했습니다' };
+  }
+}
+
+async function requireAppCheck(req: { headers: Record<string, unknown> }) {
+  const token = String(req.headers['x-firebase-appcheck'] ?? '');
+  if (!token) {
+    return { ok: false as const, status: 401, code: 'APP_CHECK_REQUIRED', message: '앱 무결성 확인이 필요합니다' };
+  }
+  try {
+    await admin.appCheck().verifyToken(token);
+    return { ok: true as const };
+  } catch {
+    return { ok: false as const, status: 401, code: 'APP_CHECK_REQUIRED', message: '앱 무결성 확인에 실패했습니다' };
+  }
 }
 
 const LANGUAGE_NAMES: Record<string, string> = {
@@ -99,9 +160,9 @@ function buildSystemPrompt(isProMode: boolean, language: string): string {
   return `당신은 '메디-큐레이터' AI 건강 정보 도우미입니다. 한국 식약처(MFDS) 공개 정보 기반.
 [절대 금지]
 1. 의료 진단·처방 단정 어휘 사용 금지 (예: "진단됩니다", "처방해드립니다").
-2. 처방의약품 추천 금지. OTC 일반의약품만.
+2. 처방의약품 추천 금지. 약품명, 용량, 상호작용, 민간요법, 운동처방, 회복기간은 출력하지 마십시오.
 3. disclaimer 필수 포함.
-4. 응급/자살 의심 시 119, 1393, 1577-0199 모두 안내.
+4. 응급/자살 의심 시 109, 1577-0199, 119, 112 안내.
 5. 개인 의료정보 수집하지 않음을 명시.
 
 [모드] ${isProMode ? '프로(EBM 심층)' : '일반(평이한 언어)'}
@@ -111,11 +172,11 @@ function buildSystemPrompt(isProMode: boolean, language: string): string {
 {
   "recommendedDepartment": "string",
   "aiAdvice": "string",
-  "otcMedications": [{"name":"","purpose":"","dosage":"","warnings":[],"interactions":[],"riskLevel":"low|medium|high"}],
+  "otcMedications": [],
   "folkRemedies": [],
   "lifestyleTips": [],
   "exercisePrescription": {"recommended":[],"avoid":[],"duration":""},
-  "recoveryTimeline": [{"ageGroup":"","expectedDays":"","notes":""}],
+  "recoveryTimeline": [],
   "redFlags": [],
   "disclaimer": "본 정보는 의료 진단 또는 처방을 대체하지 않습니다."
 }`;
@@ -136,15 +197,7 @@ export const curate = onRequest(
       return;
     }
 
-    // 2) Rate limit
-    const fwd = (req.headers['x-forwarded-for'] as string | undefined) ?? '';
-    const ip = fwd.split(',')[0]?.trim() || (req.ip ?? 'unknown');
-    if (!allow(ip)) {
-      res.status(429).json({ ok: false, code: 'RATE_LIMIT', message: '요청이 너무 많습니다' });
-      return;
-    }
-
-    // 3) Validate input
+    // 2) Validate input
     const parsed = CurateRequest.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ ok: false, code: 'BAD_INPUT', message: parsed.error.message });
@@ -152,31 +205,82 @@ export const curate = onRequest(
     }
     const q = parsed.data;
 
+    const appCheckResult = await requireAppCheck(req);
+    if (!appCheckResult.ok) {
+      res.status(appCheckResult.status).json({
+        ok: false,
+        code: appCheckResult.code,
+        message: appCheckResult.message,
+      });
+      return;
+    }
+
+    const caller = await requireAuthenticatedConsent(req);
+    if (!caller.ok) {
+      res.status(caller.status).json({ ok: false, code: caller.code, message: caller.message });
+      return;
+    }
+
+    // 3) Central rate limit
+    let rateAllowed: boolean;
+    try {
+      rateAllowed = await enforceCentralRateLimit(db, caller.uid);
+    } catch (error) {
+      logger.error('curate.rate_limit_error', { uid: caller.uid, err: (error as Error).message });
+      res.status(503).json({
+        ok: false,
+        code: 'RATE_LIMIT_UNAVAILABLE',
+        message: '요청 한도를 확인할 수 없습니다',
+      });
+      return;
+    }
+    if (!rateAllowed) {
+      res.status(429).json({ ok: false, code: 'RATE_LIMIT', message: '시간당 요청 한도를 초과했습니다' });
+      return;
+    }
+
+    const emergencyKind = detectEmergency(q.symptoms);
+    if (emergencyKind) {
+      res.status(200).json({ ok: true, data: emergencyResult(emergencyKind), cached: false });
+      return;
+    }
+
     // 4) Build prompt + call Gemini
     const sys = buildSystemPrompt(q.isProMode, q.language);
     const user = `[증상] ${q.symptoms}\n[복용약] ${q.currentMedications || '없음'}${
       q.age ? `\n[연령] ${q.age}` : ''
     }\n위 정보를 JSON 으로 제공.`;
-    const modelName = q.isProMode ? 'gemini-1.5-pro' : 'gemini-1.5-flash';
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${GEMINI_API_KEY.value()}`;
-
     const traceId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-    logger.info('curate.start', { traceId, ip, lang: q.language, pro: q.isProMode });
+    logger.info('curate.start', { traceId, uid: caller.uid, lang: q.language, pro: q.isProMode });
 
     try {
-      const ctl = new AbortController();
-      const to = setTimeout(() => ctl.abort(), 20_000);
+      const models = modelCandidates(q.isProMode);
+      let llm: Response | null = null;
 
-      const llm = await fetch(url, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: `${sys}\n\n${user}` }] }],
-          generationConfig: { temperature: 0.3, maxOutputTokens: 4096 },
-        }),
-        signal: ctl.signal,
-      });
-      clearTimeout(to);
+      for (const [index, modelName] of models.entries()) {
+        const ctl = new AbortController();
+        const to = setTimeout(() => ctl.abort(), 20_000);
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${GEMINI_API_KEY.value()}`;
+
+        try {
+          llm = await fetch(url, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ role: 'user', parts: [{ text: `${sys}\n\n${user}` }] }],
+              generationConfig: { temperature: 0.3, maxOutputTokens: 4096 },
+            }),
+            signal: ctl.signal,
+          });
+        } finally {
+          clearTimeout(to);
+        }
+
+        if (llm.status !== 429 || index === models.length - 1) break;
+        logger.warn('curate.model_fallback', { traceId, from: modelName, to: models[index + 1] });
+      }
+
+      if (!llm) throw new Error('Gemini request was not attempted');
 
       if (!llm.ok) {
         const txt = await llm.text().catch(() => '');
@@ -218,7 +322,16 @@ export const curate = onRequest(
       }
 
       logger.info('curate.ok', { traceId });
-      res.status(200).json({ ok: true, data: validated.data, cached: false });
+      res.status(200).json({
+        ok: true,
+        cached: false,
+        data: safeResult(
+          validated.data.recommendedDepartment,
+          validated.data.aiAdvice,
+          validated.data.redFlags,
+          validated.data.disclaimer,
+        ),
+      });
     } catch (e) {
       logger.error('curate.exception', { traceId, err: (e as Error).message });
       res.status(500).json({ ok: false, code: 'EXCEPTION', message: (e as Error).message });

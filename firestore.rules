@@ -16,7 +16,7 @@ service cloud.firestore {
         && request.resource.data.items.pii == true
         && request.resource.data.items.sensitiveHealth == true
         && request.resource.data.items.overseasTransfer == true
-        && request.resource.data.items.location == true;
+        && request.resource.data.items.location is bool;
       allow update: if false;
       // 동의 철회를 위한 자기 문서 삭제 허용. 검색 이력은 개인 디바이스 로컬 저장소에서 UI가 삭제.
       allow delete: if request.auth != null && request.auth.uid == uid;
@@ -31,6 +31,12 @@ service cloud.firestore {
     // === Audit 로그 ===
     // 서버 (Admin SDK) 전용. 클라 직접 쓰기 금지.
     match /auditLogs/{docId} {
+      allow read, write: if false;
+    }
+
+    // === 중앙 요청 할당량 ===
+    // Cloud Functions Admin SDK 전용. 클라이언트는 조회·변경할 수 없다.
+    match /rateLimits/{docId} {
       allow read, write: if false;
     }
 

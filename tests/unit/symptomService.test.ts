@@ -31,16 +31,17 @@ describe('symptomService local device storage', () => {
     const { records } = await getSearchHistory('user-1');
     expect(records).toHaveLength(1);
     expect(records[0].id).toBe(id);
-    expect(records[0].symptoms).toBe('두통');
-    expect(localStorage.getItem('medi-curator:searchHistory:user-1')).toContain('두통');
+    expect(records[0].symptoms).toBeUndefined();
+    expect(records[0].result).toBeUndefined();
+    expect(localStorage.getItem('medi-curator:searchHistory:user-1')).not.toContain('두통');
   });
 
   it('사용자별 이력을 분리한다', async () => {
     await saveSearchRecord('user-1', '두통', '', result, 'ko');
     await saveSearchRecord('user-2', '복통', '', result, 'ko');
 
-    expect((await getSearchHistory('user-1')).records[0].symptoms).toBe('두통');
-    expect((await getSearchHistory('user-2')).records[0].symptoms).toBe('복통');
+    expect((await getSearchHistory('user-1')).records[0].language).toBe('ko');
+    expect((await getSearchHistory('user-2')).records[0].language).toBe('ko');
   });
 
   it('삭제와 export를 지원한다', async () => {

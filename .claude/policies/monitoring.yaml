@@ -1,0 +1,65 @@
+# 상업성/UX/흐름/runtime/red-team 상시 모니터링 정책
+# release gate와 별개로, 제품 완성도와 안전성을 반복 점검한다.
+
+version: 1
+owner_agent: commercial-strategist
+co_owners:
+  - workflow-integrity-auditor
+  - ux-navigation-auditor
+  - runtime-reliability-auditor
+  - red-team-monitor
+
+cadence:
+  pre_release: every PR
+  production: daily
+
+monitors:
+  - id: commercial
+    agent: commercial-strategist
+    focus: [jtbd, conversion, trust, packaging, app_store_fit]
+  - id: flow
+    agent: workflow-integrity-auditor
+    focus: [menu_tree, task_path, dead_ends, state_transitions]
+  - id: ux
+    agent: ux-navigation-auditor
+    focus: [visibility, hierarchy, mobile_navigation, accessibility]
+  - id: runtime
+    agent: runtime-reliability-auditor
+    focus: [click_path, console_errors, network_errors, performance]
+  - id: redteam
+    agent: red-team-monitor
+    focus: [harmful_info, abuse, youth_risk, prompt_injection, emergency_priority]
+
+alert_conditions:
+  - broken menu tree
+  - dead-end user flow
+  - unclear primary CTA
+  - console or network failures
+  - misleading or harmful medical phrasing
+  - youth-sensitive or unsafe content
+  - emergency escalation delay
+  - commercial trust regression
+
+hardening_loop:
+  goal: "상품성 100%와 red-team PASS를 동시에 달성한다."
+  pass_criteria:
+    - "commercial-strategist verdict is PASS"
+    - "workflow-integrity-auditor verdict is PASS"
+    - "ux-navigation-auditor verdict is PASS"
+    - "runtime-reliability-auditor verdict is PASS"
+    - "red-team-monitor verdict is PASS"
+    - "no open WATCH or BLOCK finding remains"
+  loop:
+    - "run monitors"
+    - "collect findings"
+    - "convert findings into remediation backlog"
+    - "dispatch implementing agents"
+    - "re-run the same monitors"
+  stop_conditions:
+    - "all pass criteria met"
+    - "required remediation is blocked by an external dependency"
+    - "a legal, privacy, security, or medical veto is raised"
+
+outputs:
+  commercial_report: docs/reviews/COMMERCIAL-<YYYY-MM-DD>.md
+  redteam_report: docs/reviews/REDTEAM-<YYYY-MM-DD>.md

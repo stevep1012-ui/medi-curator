@@ -39,6 +39,7 @@ Workflow 에이전트는 `.claude/agents/workflow-manager.md`다.
 | T3-LEGAL-MEDICAL | 약사법, 의료법, SaMD, 약관, redFlag | legal-launch-lead |
 | T4-ENGINEERING | API, 타입, 스키마, 감사로그 | api-engineer |
 | T5-QA-RELEASE | 테스트, 배포, 롤백 | qa-engineer |
+| T6-COMMERCIAL | 상업성, 메뉴 트리, UX, runtime, red team | commercial-strategist |
 
 ## 초기 P0
 | ID | 내용 | 담당 |
@@ -72,12 +73,41 @@ Workflow 에이전트는 `.claude/agents/workflow-manager.md`다.
 5. 외부 변호사 또는 규제 전문가 확인 항목 분리
 6. `legal-advisor` 최종 LEGAL-gate 확인
 
+## 상업성 및 red-team 확인 체계
+`commercial-strategist`가 상업성·메뉴 트리·UX·런타임·red-team 확인을 총괄한다.
+
+| Subagent | 역할 | 출시 전 산출물 |
+|---|---|---|
+| workflow-integrity-auditor | 메뉴 트리, 탭 흐름, 상태 전이 | dead-end 및 혼선 목록 |
+| ux-navigation-auditor | 시인성, 탭 구조, 모바일 내비게이션 | UX gap report |
+| runtime-reliability-auditor | 실제 클릭 경로, 콘솔/네트워크 오류 | runtime smoke report |
+| red-team-monitor | 오남용, 청소년 유해정보, prompt injection | red-team finding log |
+
+상업성/monitoring 루프는 다음 기준으로 반복한다.
+
+1. 핵심 사용자 작업이 3탭 이내에 도달 가능한지 확인
+2. 주요 CTA와 다음 행동이 화면 상단에서 바로 식별되는지 확인
+3. 실제 실행 경로에서 콘솔 오류와 네트워크 실패가 없는지 확인
+4. 유해정보, 과장된 의료 표현, 청소년 리스크를 red-team으로 재검토
+5. 결과를 `docs/reviews/COMMERCIAL-<YYYY-MM-DD>.md` 와 `docs/reviews/REDTEAM-<YYYY-MM-DD>.md` 에 저장
+
+## 지속 개선 종료 기준
+
+개선 루프는 아래 조건을 모두 만족할 때 종료한다.
+
+1. `commercial-strategist`, `workflow-integrity-auditor`, `ux-navigation-auditor`, `runtime-reliability-auditor`, `red-team-monitor` 모두 `PASS`
+2. `WATCH` 또는 `BLOCK` finding이 0건
+3. 릴리스 필수 게이트 1~7 PASS
+4. 사용자 핵심 작업이 막힘 없이 완료됨
+5. 상업성/신뢰성/안전성에 대한 추가 수정 필요가 더 이상 없음
+
 ## 실행 명령
 ```text
 /launch-program baseline
 /launch-program p0
 /launch-program gates
 /launch-program decision
+/launch-program monitor
 ```
 
 ## 운영 원칙

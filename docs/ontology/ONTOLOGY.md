@@ -15,6 +15,7 @@
 | **Process** | Actor가 Artifact를 변환하는 동작 | `services/*.ts` |
 | **Regulation** | Process를 제약하는 외부 규범 | `docs/legal/` |
 | **Surface** | Artifact를 Actor에게 노출하는 UI | `components/*.tsx` |
+| **Commercialization** | 제품이 사용자의 목적 달성, 전환, 신뢰, 재방문을 지원하는 방식 | `App.tsx`, `components/*`, `docs/reviews/*` |
 
 ---
 
@@ -110,6 +111,24 @@ PharmacyFinder        ← Pharmacy[] 렌더 (별도 탭, OTC와 시각적 분리
 SearchHistory         ← AuthenticatedUser 전용
 ```
 
+### 2.6 Commercialization & Monitoring
+
+#### `CommercialReadinessReport`
+- 상업성, 전환, 신뢰, 메뉴 무결성, runtime 상태, red-team 요약 보고서.
+- 생성 주체: `commercial-strategist`, `workflow-integrity-auditor`, `ux-navigation-auditor`, `runtime-reliability-auditor`, `red-team-monitor`
+
+#### `MenuTree`
+- 사용자가 실제로 밟는 화면 전이 그래프.
+- 검증 포인트: 3탭 이내 목적 도달, dead-end 없음, 응급 우선, 상담/기록/약국의 역할 분리.
+
+#### `RedTeamFinding`
+- 유해정보, 오남용, 청소년 리스크, 의료 오판, 프롬프트 인젝션, 응급 누락에 대한 발견 사항.
+- 상태: `PASS | WATCH | BLOCK`
+
+#### `RuntimeSmoke`
+- 실제 클릭 경로에서 발생한 콘솔/네트워크/렌더 오류와 성능 이슈.
+- 목표: 사용자가 기능을 "설명"이 아니라 "실행"으로 체감할 수 있어야 함.
+
 ---
 
 ## 3. 불변식 (Invariants)
@@ -136,6 +155,7 @@ SearchHistory         ← AuthenticatedUser 전용
 | `package.json` 의존성 | security-auditor, legal-advisor(국외이전) |
 | `i18n/translations.ts` | ux-designer, legal-advisor |
 | 응급 키워드 | medical-reviewer, legal-advisor, product-strategist |
+| `App.tsx` / `components/*` / 메뉴 구조 | commercial-strategist, workflow-integrity-auditor, ux-navigation-auditor, red-team-monitor |
 
 ---
 

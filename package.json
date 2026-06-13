@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "eslint \"src/**/*.{ts,tsx}\" \"tests/**/*.{ts,tsx}\" \"functions/src/**/*.ts\" vite.config.ts",
+    "lint": "eslint --cache --cache-location node_modules/.cache/eslint/ \"src/**/*.{ts,tsx}\" \"tests/**/*.{ts,tsx}\" \"functions/src/**/*.ts\" vite.config.ts",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

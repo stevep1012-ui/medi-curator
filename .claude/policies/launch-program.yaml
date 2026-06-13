@@ -126,6 +126,28 @@ tracks:
       - "Emergency and multilingual E2E cases pass"
       - "Release manager returns GO"
 
+  - id: T6-COMMERCIAL
+    name: "Commercial readiness and continuous red team"
+    owner: commercial-strategist
+    support:
+      - product-strategist
+      - ux-designer
+      - workflow-integrity-auditor
+      - ux-navigation-auditor
+      - runtime-reliability-auditor
+      - red-team-monitor
+    deliverables:
+      - "Commercial readiness scorecard"
+      - "Menu tree and task-flow validation"
+      - "UX clarity and trust-surface review"
+      - "Runtime smoke and console-error log"
+      - "Red-team abuse / youth-risk report"
+    exit_criteria:
+      - "Core user task reachable without dead ends"
+      - "Primary CTA and next-step actions are obvious"
+      - "No critical runtime errors or broken navigation"
+      - "Red-team issues are either PASS or have explicit remediation"
+
 milestones:
   - id: M0
     name: "Launch audit baseline"
@@ -143,6 +165,11 @@ milestones:
     name: "Production release decision"
     required_tracks: [T5-QA-RELEASE]
     output: "docs/reviews/LAUNCH-DECISION-<YYYY-MM-DD>.md"
+
+  - id: M4
+    name: "Commercial monitoring loop"
+    required_tracks: [T6-COMMERCIAL]
+    output: "docs/reviews/COMMERCIAL-<YYYY-MM-DD>.md"
 
 initial_p0_backlog:
   - id: P0-001
@@ -175,3 +202,36 @@ initial_p0_backlog:
     title: "Enforce runtime Zod validation for LLM output"
     owner: api-engineer
     reviewers: [code-reviewer, qa-engineer]
+
+monitoring:
+  cadence:
+    pre_release: "every PR"
+    production: "daily"
+  report_paths:
+    - "docs/reviews/COMMERCIAL-<YYYY-MM-DD>.md"
+    - "docs/reviews/REDTEAM-<YYYY-MM-DD>.md"
+  default_agents:
+    - commercial-strategist
+    - workflow-integrity-auditor
+    - ux-navigation-auditor
+    - runtime-reliability-auditor
+    - red-team-monitor
+  alert_conditions:
+    - "broken menu tree"
+    - "dead-end user flow"
+    - "unclear CTA or task hierarchy"
+    - "console or network failures"
+    - "misleading, harmful, or youth-sensitive copy"
+    - "commercial trust regression"
+  hardening_loop:
+    enabled: true
+    stop_when:
+      - "all monitoring verdicts PASS"
+      - "AGENTS.md 상품성 100% 정의 충족"
+    rerun_when:
+      - "any WATCH finding exists"
+      - "any BLOCK finding exists"
+    remediation_policy:
+      - "create backlog item for each finding"
+      - "assign owner agent"
+      - "rerun the same monitor set"

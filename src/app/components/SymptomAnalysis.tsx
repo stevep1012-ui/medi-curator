@@ -3,18 +3,15 @@
 import { useMemo, useState } from "react";
 import {
   AlertIcon,
-  HeartIcon,
   InfoIcon,
-  LeafIcon,
   PillIcon,
-  PinIcon,
   PulseIcon,
   SearchIcon,
   ShieldIcon,
 } from "./icons";
 import { useI18n } from "./i18n";
 
-export default function SymptomAnalysis({ onGoPharmacy }: { onGoPharmacy?: () => void }) {
+export default function SymptomAnalysis() {
   const { t } = useI18n();
   const s = t.symptom;
 
@@ -77,7 +74,7 @@ export default function SymptomAnalysis({ onGoPharmacy }: { onGoPharmacy?: () =>
       </div>
 
       {showResult && (
-        <article className="mt-6 space-y-4 sm:mt-8">
+        <article className="mt-6 space-y-4 sm:mt-8" aria-live="polite">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-[17px] font-bold tracking-tight text-ink">{s.resultsOverview}</h2>
             <span className="inline-flex h-7 items-center gap-1.5 rounded-full bg-surface-soft px-3 text-[12px] font-bold text-ink-3 ring-1 ring-line">
@@ -101,15 +98,15 @@ export default function SymptomAnalysis({ onGoPharmacy }: { onGoPharmacy?: () =>
           </ResultBlock>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <ResultBlock title={s.exerciseTitle} tone="brand" icon={<HeartIcon className="h-[15px] w-[15px]" />}>
+            <ResultBlock title={s.exerciseTitle} tone="brand" icon={<InfoIcon className="h-[15px] w-[15px]" />}>
               <p className="text-[13.5px] leading-relaxed text-ink-2">{s.exercise}</p>
             </ResultBlock>
 
-            <ResultBlock title={s.herbalTitle} tone="brand" icon={<LeafIcon className="h-[15px] w-[15px]" />}>
+            <ResultBlock title={s.herbalTitle} tone="warn" icon={<AlertIcon className="h-[15px] w-[15px]" />}>
               <ul className="space-y-2.5 text-[13.5px] leading-snug text-ink-2">
                 {s.herbal.map((tip) => (
                   <li key={tip} className="flex gap-2.5">
-                    <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-brand-bright" />
+                    <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-warn" />
                     {tip}
                   </li>
                 ))}
@@ -127,16 +124,6 @@ export default function SymptomAnalysis({ onGoPharmacy }: { onGoPharmacy?: () =>
               ))}
             </ul>
           </ResultBlock>
-
-          <button
-            type="button"
-            onClick={onGoPharmacy}
-            className="mt-1 inline-flex h-[52px] w-full items-center justify-center gap-2 rounded-xl border border-brand-tint-2 bg-brand-tint text-[14.5px] font-bold text-brand transition hover:bg-brand hover:text-white"
-          >
-            <PinIcon className="h-[18px] w-[18px]" />
-            {s.findPharmacy}
-            <span className="text-[18px] leading-none">→</span>
-          </button>
         </article>
       )}
     </>

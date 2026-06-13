@@ -36,10 +36,10 @@ export const CARD: Record<MenuId, CardMeta> = {
     cshH: "rgba(59,130,246,0.5)",
     label: ml("증상 분석", "Symptom analysis", "症状分析", "症状分析"),
     desc: ml(
-      "증상을 입력하면 가능한 일반의약품과 주의사항을 안내합니다.",
-      "Enter symptoms for OTC suggestions and cautions.",
-      "症状を入力すると市販薬や注意点を案内します。",
-      "输入症状，获取非处方药建议与注意事项。",
+      "증상을 정리하고 상담 전 확인할 질문과 위험 신호를 안내합니다.",
+      "Enter symptoms to organize questions and red flags before consultation.",
+      "症状を整理し、相談前の質問と危険な兆候を確認します。",
+      "输入症状，整理咨询问题并查看危险信号。",
     ),
     svg: (
       <>
@@ -56,10 +56,10 @@ export const CARD: Record<MenuId, CardMeta> = {
     cshH: "rgba(217,119,6,0.5)",
     label: ml("복용 검사", "Safety check", "服用チェック", "服用检查"),
     desc: ml(
-      "새 약과 현재 복용 중인 약의 상호작용을 확인합니다.",
-      "Check interactions between new and current meds.",
-      "新しい薬と服用中の薬の相互作用を確認。",
-      "检查新药与在服药物的相互作用。",
+      "복용 정보를 정리하고 전문가에게 확인할 항목을 표시합니다.",
+      "Organize medication information and items to verify with a professional.",
+      "服用情報を整理し、専門職に確認する項目を表示します。",
+      "整理用药信息，并显示需要向专业人员确认的项目。",
     ),
     svg: (
       <>

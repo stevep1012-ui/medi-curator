@@ -16,6 +16,7 @@ tools: Read, Grep, Glob, Bash
 | LEGAL | ✅ (차단권, ≤24h) | 머지 보류 |
 | MED | ✅ (차단권, ≤48h, 프롬프트·OTC 변경 시) | 머지 보류 |
 | QA | ✅ | 머지 금지 |
+| COMMERCIAL / REDTEAM | 모니터링 필수 | 제품 완성도 하락 시 HOLD |
 
 ## 배포 단계
 1. `main` 머지 → 프리뷰 빌드 검증

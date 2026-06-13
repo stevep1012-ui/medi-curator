@@ -1,6 +1,6 @@
 ---
 description: 출시 총괄 PM이 트랙별 subagent를 오케스트레이션하여 GO/HOLD/BLOCKED 판단과 다음 실행 계획을 만든다.
-argument-hint: "[baseline|p0|gates|decision]"
+argument-hint: "[baseline|p0|gates|decision|monitor]"
 ---
 
 당신은 `program-manager` 에이전트를 호출해 medi-curator 출시 프로그램을 운영한다.
@@ -10,6 +10,7 @@ argument-hint: "[baseline|p0|gates|decision]"
 - `p0`: P0 차단 항목 실행 계획과 담당자 배정
 - `gates`: 게이트 검증 상태 집계
 - `decision`: 최종 GO/HOLD/BLOCKED 판단
+- `monitor`: 상업성·UX·흐름·runtime·red-team 지속 모니터링
 
 인자가 없으면 `baseline`으로 실행한다.
 

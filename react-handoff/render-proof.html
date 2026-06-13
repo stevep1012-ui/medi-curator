@@ -1,0 +1,1676 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>메디큐레이터 · MediQ — AI 건강 가이드</title>
+<meta name="description" content="증상 분석, 복용 안전 검사, 비타민 궁합, 약국 찾기까지 — 약사 감수 정보로 안내하는 AI 건강 가이드. 한국어·영어·일본어·중국어 지원." />
+<meta name="theme-color" content="#0a5d52" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#091211" media="(prefers-color-scheme: dark)" />
+<meta name="color-scheme" content="light dark" />
+<meta property="og:title" content="메디큐레이터 · MediQ — AI 건강 가이드" />
+<meta property="og:description" content="약사 감수 정보로 안내하는 AI 건강 가이드. 증상·복용 안전·비타민·약국 찾기." />
+<meta property="og:type" content="website" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230a5d52'/%3E%3Cpath d='M5 16h4l2.5-7 4 18 2.5-11h4.5' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<style>
+  :root{
+    --paper:#f4f6f6; --surface:#ffffff; --surface-soft:#f2f5f5; --fg:#0e1a19;
+    --ink:#0e1a19; --ink-2:#3a4746; --ink-3:#697674; --ink-4:#9ba6a4;
+    --line:#e8ecec; --line-2:#dadfdf;
+    --brand:#0a5d52; --brand-2:#0c7567; --brand-bright:#12a08b; --brand-tint:#eaf2f0; --brand-tint-2:#d7e8e4;
+    --danger:#cf3e33; --danger-tint:#fbebe9; --danger-line:#f4cfcb;
+    --warn:#b5781a; --warn-tint:#fbf1de; --ok:#1c9a63; --ok-tint:#e4f4ec;
+  }
+  .dark{
+    --paper:#091211; --surface:#0f1a18; --surface-soft:#142220; --fg:#e9efed;
+    --ink:#e9efed; --ink-2:#b1c2be; --ink-3:#85968f; --ink-4:#5c6d68;
+    --line:#1d302c; --line-2:#26403b;
+    --brand:#15ac95; --brand-2:#1ac3aa; --brand-bright:#33d4bb; --brand-tint:#11302b; --brand-tint-2:#194039;
+    --danger:#f0796f; --danger-tint:#3a201e; --danger-line:#5a2e2a;
+    --warn:#e0a955; --warn-tint:#382c16; --ok:#46c98a; --ok-tint:#16322a;
+  }
+  body{font-family:'Pretendard',system-ui,sans-serif;letter-spacing:-.011em;background:var(--paper);color:var(--fg);transition:background .25s}
+  ::selection{background:var(--brand-tint-2);color:var(--ink)}
+
+  /* paper-flip panel transition */
+  @keyframes pageflip{from{opacity:0;transform:perspective(1400px) rotateY(-7deg) translateX(14px)}to{opacity:1;transform:none}}
+  .fade{transform-origin:left center;animation:pageflip .42s cubic-bezier(.2,.7,.2,1)}
+
+  /* stepped home-menu reveal: badge → connector → label, one item after another */
+  @keyframes cardin{from{opacity:0;transform:translateY(12px) scale(.85)}to{opacity:1;transform:none}}
+  @keyframes growline{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+  @keyframes labelin{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion: no-preference){
+    .step-badge{opacity:0;animation:cardin .42s cubic-bezier(.2,.7,.2,1) forwards}
+    .step-line{transform-origin:top;transform:scaleY(0);animation:growline .26s ease-out forwards}
+    .step-label{opacity:0;animation:labelin .3s ease-out forwards}
+  }
+
+  /* folder side tabs - glass morphism */
+  .ftab{position:relative;transition:transform .22s cubic-bezier(.2,.7,.2,1), background .2s, color .2s, box-shadow .22s, backdrop-filter .2s;}
+  .ftab:hover{transform:translateX(-4px)}
+  .ftab.on{transform:translateX(0)}
+  .ftab.on:hover{transform:translateX(0)}
+  
+  #sideTabs{background:rgba(255,255,255,0.7);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:18px;padding:6px;border:1px solid rgba(255,255,255,0.3)}
+  .dark #sideTabs{background:rgba(17,32,30,0.6);border:1px solid rgba(255,255,255,0.1)}
+
+  /* hero — calm editorial surface: a soft multi-hue glow, no photo */
+  .hero{ isolation:isolate; }
+  .hero-bg{
+    position:absolute; inset:0; z-index:0; pointer-events:none;
+    background:
+      radial-gradient(120% 130% at 100% -12%, color-mix(in srgb, #5b6ad0 16%, transparent) 0%, transparent 50%),
+      radial-gradient(95% 110% at -12% 115%, color-mix(in srgb, #2f9e44 13%, transparent) 0%, transparent 55%),
+      radial-gradient(85% 95% at 55% -10%, var(--brand-tint) 0%, transparent 52%),
+      radial-gradient(70% 80% at 88% 80%, color-mix(in srgb, #b5781a 10%, transparent) 0%, transparent 56%),
+      linear-gradient(180deg, var(--surface) 0%, var(--paper) 100%);
+  }
+  .hero-veil{ display:none; }
+  .hero-pills{ display:none; }
+  .hero::after{ content:''; position:absolute; left:0; right:0; bottom:0; height:1px; background:var(--line); z-index:2; }
+
+  /* liquid-glass menu badges: translucent accent tint, blur, glossy highlight */
+  .mbadge{ position:relative; isolation:isolate; overflow:hidden;
+    background:color-mix(in srgb, var(--a) 16%, color-mix(in srgb, var(--surface) 60%, transparent));
+    -webkit-backdrop-filter:blur(10px) saturate(1.4); backdrop-filter:blur(10px) saturate(1.4);
+    color:var(--a); box-shadow:0 8px 22px -12px var(--a), inset 0 1px 0 rgba(255,255,255,.55), inset 0 0 0 1px color-mix(in srgb, var(--a) 24%, transparent);
+    transition:transform .35s cubic-bezier(.2,.7,.2,1), background .35s, color .35s, box-shadow .35s; }
+  .mbadge::before{ content:''; position:absolute; inset:0; z-index:-1; border-radius:inherit;
+    background:linear-gradient(150deg, rgba(255,255,255,.45) 0%, rgba(255,255,255,.08) 38%, transparent 60%); }
+  .dark .mbadge{ background:color-mix(in srgb, var(--a) 26%, color-mix(in srgb, var(--surface) 40%, transparent)); box-shadow:0 8px 22px -12px var(--a), inset 0 1px 0 rgba(255,255,255,.18), inset 0 0 0 1px color-mix(in srgb, var(--a) 34%, transparent); }
+  .dark .mbadge::before{ background:linear-gradient(150deg, rgba(255,255,255,.22) 0%, rgba(255,255,255,.04) 40%, transparent 62%); }
+  .group:hover .mbadge{ transform:scale(1.3); color:#fff;
+    background:color-mix(in srgb, var(--a) 78%, transparent);
+    box-shadow:0 18px 40px -14px var(--a), inset 0 1px 0 rgba(255,255,255,.6), inset 0 0 0 1px rgba(255,255,255,.35); }
+  .group:hover .mline{ background:var(--a); }
+  .group:hover .mlabel{ color:var(--a); transform:translateY(2px); }
+  .mlabel{ transition:color .3s, transform .3s; }
+
+  .lang-menu{display:none}
+  .lang-menu.show{display:block}
+
+  /* ---- commercial polish ---- */
+  /* keyboard focus ring (only on keyboard nav) */
+  *:focus{outline:none}
+  *:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:8px}
+  /* tactile press on any button */
+  button{transition:transform .12s cubic-bezier(.2,.7,.2,1)}
+  button:active{transform:translateY(.5px) scale(.985)}
+  /* toast */
+  #toastWrap{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:120;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+  .toast{display:flex;align-items:center;gap:9px;border:1px solid var(--line);background:var(--ink);color:var(--surface);padding:10px 15px;border-radius:13px;font-size:13px;font-weight:700;letter-spacing:-.01em;box-shadow:0 18px 44px -18px rgba(0,0,0,.6);opacity:0;transform:translateY(10px) scale(.97);animation:toastin .3s cubic-bezier(.2,.7,.2,1) forwards}
+  .toast.out{animation:toastout .3s ease forwards}
+  .toast svg{width:16px;height:16px;color:var(--brand-bright)}
+  @keyframes toastin{to{opacity:1;transform:none}}
+  @keyframes toastout{to{opacity:0;transform:translateY(8px) scale(.97)}}
+  /* trust strip marquee-free, subtle divider dots handled in markup */
+  .acct-menu{display:none}
+  .acct-menu.show{display:block}
+</style>
+<script>
+  tailwind.config = {
+    darkMode:'class',
+    theme:{extend:{
+      fontFamily:{sans:['Pretendard','system-ui','sans-serif']},
+      colors:{
+        paper:'var(--paper)', surface:'var(--surface)', 'surface-soft':'var(--surface-soft)',
+        ink:'var(--ink)','ink-2':'var(--ink-2)','ink-3':'var(--ink-3)','ink-4':'var(--ink-4)',
+        line:'var(--line)','line-2':'var(--line-2)',
+        brand:'var(--brand)','brand-2':'var(--brand-2)','brand-bright':'var(--brand-bright)',
+        'brand-tint':'var(--brand-tint)','brand-tint-2':'var(--brand-tint-2)',
+        danger:'var(--danger)','danger-tint':'var(--danger-tint)','danger-line':'var(--danger-line)',
+        warn:'var(--warn)','warn-tint':'var(--warn-tint)', ok:'var(--ok)','ok-tint':'var(--ok-tint)',
+      }
+    }}
+  }
+</script>
+</head>
+<body class="min-h-screen bg-paper px-4 pb-12 pt-6 sm:px-6 sm:pb-12 sm:pt-10">
+<section class="mx-auto w-full max-w-5xl">
+  <!-- HERO: calm editorial surface (refined, minimal) -->
+  <header class="hero relative mb-2 overflow-hidden rounded-[20px] px-5 pb-9 pt-5 sm:px-9 sm:pb-12 sm:pt-7">
+    <div class="hero-bg"></div>
+    <canvas id="heroCanvas" class="pointer-events-none absolute inset-0 z-[1]" aria-hidden="true"></canvas>
+
+    <div class="relative z-[3]">
+      <!-- Brand row -->
+      <div class="flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <span class="flex h-10 w-10 items-center justify-center rounded-[11px] bg-ink text-surface ring-1 ring-black/5">
+            <svg viewBox="0 0 24 24" class="h-[18px] w-[18px]" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2-6 4 14 2-8h6"/></svg>
+          </span>
+          <div class="leading-tight">
+            <p id="brandName" class="whitespace-nowrap text-[16px] font-bold tracking-[-0.02em] text-ink"></p>
+            <p id="brandTag" class="mt-0.5 whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.18em] text-ink-3"></p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <!-- Language switcher -->
+          <div class="relative">
+            <button id="langBtn" class="flex h-9 items-center gap-1.5 whitespace-nowrap rounded-[9px] border border-line bg-surface/80 px-2.5 text-[12px] font-semibold text-ink-2 backdrop-blur transition hover:bg-surface hover:text-ink" aria-haspopup="true"></button>
+            <div id="langMenu" class="lang-menu absolute right-0 z-50 mt-1.5 w-40 overflow-hidden rounded-xl border border-line bg-surface p-1 shadow-[0_18px_40px_-18px_rgba(0,0,0,0.4)]"></div>
+          </div>
+          <!-- Theme -->
+          <button id="themeBtn" class="flex h-9 items-center gap-2 whitespace-nowrap rounded-[9px] border border-line bg-surface/80 px-2.5 text-[11.5px] font-semibold text-ink-2 backdrop-blur transition hover:bg-surface hover:text-ink" aria-label="Theme"></button>
+          <!-- Account -->
+          <div class="relative">
+            <button id="acctBtn" class="hidden h-9 items-center gap-2 whitespace-nowrap rounded-[9px] border border-line bg-surface/80 pl-1.5 pr-2.5 text-[12px] font-semibold text-ink-2 backdrop-blur transition hover:bg-surface hover:text-ink" aria-haspopup="true"></button>
+            <div id="acctMenu" class="acct-menu absolute right-0 z-50 mt-1.5 w-52 overflow-hidden rounded-xl border border-line bg-surface p-1 shadow-[0_18px_40px_-18px_rgba(0,0,0,0.4)]"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-10 sm:mt-14">
+        <div id="eyebrow" class="mb-3.5 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-brand">
+          <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-brand"></span><span id="eyebrowText" class="whitespace-nowrap"></span>
+        </div>
+        <h1 id="h1" class="max-w-[20ch] text-[clamp(1.85rem,5vw,2.85rem)] font-bold leading-[1.08] tracking-[-0.035em] text-ink text-balance"></h1>
+        <p id="sub" class="mt-4 max-w-lg text-[14px] leading-relaxed text-ink-2 sm:text-[15.5px]"></p>
+      </div>
+    </div>
+  </header>
+  <!-- TRUST STRIP -->
+  <div id="trustStrip" class="mx-auto mt-4 flex max-w-5xl flex-wrap items-center justify-center gap-x-5 gap-y-2 px-2 text-[12px] font-semibold text-ink-3"></div>
+
+  <!-- HOME VIEW: tool menu grid (JS-rendered, localized) -->
+  <section id="homeView" class="mt-9 sm:mt-12">
+    <h2 id="homeH2" class="mb-7 text-center text-[13px] font-semibold tracking-tight text-ink-3"></h2>
+    <div id="cardGrid" class="flex flex-wrap justify-center gap-x-7 gap-y-8 sm:gap-x-12 sm:gap-y-9"></div>
+  </section>
+
+  <!-- TOOL VIEW: single-tool screen with home / prev / next nav -->
+  <div id="toolView" class="mt-6 hidden">
+    <div id="toolNav" class="mb-4 flex items-center justify-between gap-3"></div>
+    <div class="relative min-w-0 overflow-hidden rounded-[18px] border border-line bg-surface shadow-[0_1px_0_rgba(0,0,0,0.02),0_18px_50px_-34px_rgba(0,0,0,0.5)]">
+      <div class="absolute inset-x-0 top-0 h-1" style="background:var(--tool,var(--brand))"></div>
+      <div id="panel" class="fade p-5 pt-6 sm:p-7"></div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="mt-12 sm:mt-16">
+    <div id="footerDisc" class="mx-auto max-w-3xl rounded-2xl border border-line bg-surface px-5 py-4 text-center text-[12px] leading-relaxed text-ink-3 shadow-sm"></div>
+    <div class="mx-auto mt-6 flex max-w-5xl flex-col gap-6 border-t border-line pt-7 sm:flex-row sm:items-start sm:justify-between">
+      <div class="max-w-xs">
+        <div class="flex items-center gap-2.5">
+          <span class="flex h-8 w-8 items-center justify-center rounded-[9px] bg-ink text-surface"><svg viewBox="0 0 24 24" class="h-[15px] w-[15px]" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2-6 4 14 2-8h6"/></svg></span>
+          <span id="footBrand" class="whitespace-nowrap text-[15px] font-bold tracking-[-0.02em] text-ink"></span>
+        </div>
+        <p id="footTagline" class="mt-3 text-[12.5px] leading-relaxed text-ink-3"></p>
+      </div>
+      <nav id="footLinks" class="grid grid-cols-2 gap-x-10 gap-y-2.5 text-[13px] sm:grid-cols-2"></nav>
+    </div>
+    <div class="mx-auto mt-7 flex max-w-5xl flex-col gap-2 border-t border-line pt-5 text-[11px] text-ink-4 sm:flex-row sm:items-center sm:justify-between">
+      <p id="footBiz"></p>
+      <p id="footCopy"></p>
+    </div>
+  </footer>
+</section>
+
+<div id="toastWrap"></div>
+
+<!-- LEGAL DOC MODAL (terms / privacy) -->
+<div id="legalModal" class="fixed inset-0 z-[110] hidden items-end justify-center p-0 sm:items-center sm:p-4" style="background:rgba(8,18,17,.5);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)">
+  <div class="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-t-[24px] border border-line bg-surface shadow-[0_30px_90px_-24px_rgba(0,0,0,0.6)] sm:max-h-[86vh] sm:rounded-[24px]">
+    <div class="flex items-start justify-between gap-4 border-b border-line px-6 py-5">
+      <div class="min-w-0">
+        <h2 id="legalTitle" class="text-[19px] font-bold tracking-tight text-ink"></h2>
+        <p id="legalUpdated" class="mt-1 text-[12px] text-ink-4"></p>
+      </div>
+      <button id="legalClose" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-line bg-surface text-ink-3 transition hover:text-ink" aria-label="Close">
+        <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div id="legalBody" class="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-5 text-[13.5px] leading-relaxed text-ink-2"></div>
+  </div>
+</div>
+
+<!-- OAUTH LOGIN GATE -->
+<div id="authGate" class="fixed inset-0 z-[100] hidden items-center justify-center p-4" style="background:rgba(8,18,17,.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)">
+  <div class="w-full max-w-sm rounded-[24px] border border-line bg-surface p-7 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.55)]">
+    <div class="flex flex-col items-center text-center">
+      <span class="flex h-14 w-14 items-center justify-center rounded-2xl bg-ink text-surface ring-1 ring-black/5">
+        <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2-6 4 14 2-8h6"/></svg>
+      </span>
+      <h2 id="authTitle" class="mt-4 text-[20px] font-bold tracking-tight text-ink"></h2>
+      <p id="authSub" class="mt-1.5 max-w-[16rem] text-[13px] leading-snug text-ink-3"></p>
+    </div>
+    <div id="authProviders" class="mt-6 flex flex-col gap-2.5"></div>
+    <button id="authGuest" class="mt-3.5 w-full text-center text-[12.5px] font-semibold text-ink-4 underline-offset-2 transition hover:text-ink-2 hover:underline"></button>
+    <p id="authNote" class="mt-5 text-center text-[11px] leading-relaxed text-ink-4"></p>
+  </div>
+</div>
+
+<script>
+/* ---------------- icons ---------------- */
+const I = {
+  pulse:'<path d="M3 12h4l2-6 4 14 2-8h6"/>',
+  pin:'<path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11Z"/><circle cx="12" cy="10" r="2.6"/>',
+  history:'<path d="M3 12a9 9 0 1 0 2.6-6.3M3 5v4h4"/><path d="M12 8v4l3 2"/>',
+  shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/>',
+  pill:'<rect x="3" y="8" width="18" height="8" rx="4"/><path d="M12 8v8"/>',
+  alert:'<path d="M10.3 3.8 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.8a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/>',
+  heart:'<path d="M19 14c1.5-1.5 3-3.3 3-5.5A4.5 4.5 0 0 0 12 5.5 4.5 4.5 0 0 0 2 8.5c0 2.2 1.5 4 3 5.5l7 7 7-7Z"/>',
+  leaf:'<path d="M11 20A7 7 0 0 1 4 13c0-6 7-9 16-9 0 9-3 16-9 16Z"/><path d="M8 16C12 12 14 9 18 7"/>',
+  info:'<circle cx="12" cy="12" r="9.2"/><path d="M12 8h.01M11 12h1v4h1"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/>',
+  nav:'<path d="m3 11 19-9-9 19-2-8-8-2Z"/>',
+  trash:'<path d="M4 7h16M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"/>',
+  sun:'<circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.4M12 19.6V22M4.2 4.2l1.7 1.7M18.1 18.1l1.7 1.7M2 12h2.4M19.6 12H22M4.2 19.8l1.7-1.7M18.1 5.9l1.7-1.7"/>',
+  moon:'<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/>',
+  auto:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+  check:'<path d="m5 12 4.5 4.5L19 7"/>',
+  shieldcheck:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/>',
+  x:'<path d="M18 6 6 18M6 6l12 12"/>',
+};
+const ic = (k,cls)=>`<svg viewBox="0 0 24 24" class="${cls||''}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${I[k]}</svg>`;
+const star = (cls)=>`<svg viewBox="0 0 24 24" class="${cls||''}" fill="currentColor"><path d="m12 2 2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 20.4l1.4-6.8-5.1-4.6 6.9-.7L12 2Z"/></svg>`;
+
+/* ---------------- shared (language-independent) data ---------------- */
+const PH_META = [
+  { distance:'240m', rating:'4.8', open:true,  pin:{l:'60%',t:'60px'} },
+  { distance:'410m', rating:'4.6', open:true,  pin:{l:'74%',t:'150px'} },
+  { distance:'820m', rating:'4.9', open:false, pin:null },
+];
+const HIST_META = [
+  { date:'2026.06.10', time:'14:22' },
+  { date:'2026.06.07', time:'09:05' },
+  { date:'2026.06.02', time:'21:40' },
+];
+const PRIV_ON = [true, true, false];
+
+/* ---------------- translations ---------------- */
+const LANGS = [
+  { code:'ko', native:'한국어' },
+  { code:'en', native:'English' },
+  { code:'ja', native:'日本語' },
+  { code:'zh', native:'中文' },
+];
+
+const T = {
+  ko:{
+    brand:{name:'메디큐레이터', tag:'AI 건강 가이드'},
+    theme:{auto:'자동', day:'낮', night:'밤', light:'라이트', dark:'다크'},
+    tabs:{symptom:['증상 분석','증상'], interaction:['복용 검사','검사'], pharmacy:['약국 찾기','약국'], history:['검색 기록','기록'], privacy:['개인정보','내정보']},
+    head:{
+      symptom:['증상을 알려주세요 — 명확하고 신중한 다음 단계를 안내합니다.','일반의약품 안내, 상호작용 주의사항, 보조 케어 아이디어를 제공합니다. 진단이 아닌, 차분한 출발점입니다.'],
+      interaction:['복용 안전성을 먼저 확인하세요.','새로 복용할 약·비타민이 지금 드시는 것과 겹치거나 해가 되지 않는지 판단해 드립니다.'],
+      pharmacy:['가까운 약국을 찾아보세요.','영업시간과 거리를 한눈에 — 필요한 것을 헤매지 않고 받을 수 있습니다.'],
+      history:['지난 검색을 한곳에서.','이 기기에만 저장됩니다. 언제든 다시 보고, 검토하고, 삭제하세요.'],
+      privacy:['건강 데이터는 당신이 관리합니다.','민감정보는 동의가 있을 때만 처리됩니다. 모든 권한을 여기서 관리하세요.'],
+    },
+    footer:'본 정보는 교육용이며 의학적 진단이 아닙니다. 응급 상황에서는 지역 응급번호로 전화하거나 가까운 응급실을 방문하세요.',
+    symptom:{
+      disclaimer:'본 도구는 일반 건강 정보를 제공하며 전문 의료 상담을 대체하지 않습니다. 증상이 지속되거나 악화되면 의사나 약사와 상담하세요.',
+      symptomsLabel:'증상', symptomsPh:'예: 두통, 가벼운 기침, 인후통', symptomsVal:'두통, 가벼운 기침, 인후통',
+      medsLabel:'복용 중인 약', medsPh:'예: 세르트랄린 50mg 매일', medsVal:'세르트랄린 50mg 매일',
+      analyze:'증상 분석하기', resultsOverview:'결과 요약', educationalSummary:'교육용 요약', findPharmacy:'이 증상으로 약국 찾기',
+      otcTitle:'가능한 일반의약품 후보', interactionTitle:'약물 상호작용 주의', exerciseTitle:'운동 요법', herbalTitle:'허브 / 생활 팁', redFlagTitle:'위험 신호 — 의사 진료 필요',
+      otc:['구아이페네신 (가래 있는 기침 완화)','이부프로펜 (신장·위장 금기 없을 시)','아세트아미노펜 (경미한 통증·발열, 라벨 용량 준수)','식염수 비강 스프레이 (코막힘·부비동 완화)'],
+      interaction:'SSRI 상호작용 주의: 졸림이나 세로토닌 관련 효과를 높일 수 있는 여러 제품의 병용을 피하세요. 일반 감기약 추가 전 약사와 상담하세요.',
+      exercise:'목과 어깨 가동성 운동과 저조도 휴식이 두통 유발 요인을 줄일 수 있습니다.',
+      herbal:['꿀-레몬 따뜻한 물 (꿀 제한이 없을 경우)','소화·인후 완화를 위한 따뜻한 생강차 또는 페퍼민트차','수분 섭취와 규칙적인 수면 습관 유지'],
+      redFlags:['흉통, 심한 호흡곤란, 또는 실신','3일 이상 지속되는 고열','심한 알레르기 반응, 빠르게 번지는 발진, 또는 얼굴 부종','혼란, 지속적인 구토, 또는 탈수 징후'],
+    },
+    interaction:{
+      queryLabel:'문의한 약 · 비타민', queryPh:'예: 비타민 K, 오메가-3, 칼슘', queryVal:'비타민 K, 칼슘',
+      currentLabel:'현재 장기 복용 중인 약 · 비타민', currentPh:'예: 와파린, 종합비타민, 갑상선약', currentVal:'와파린(항응고제), 갑상선약, 종합비타민',
+      checkBtn:'중복 · 상호작용 검사', findingsTitle:'검사 결과', noInput:'위 두 칸을 채우고 검사를 눌러 주세요.',
+      verdict:{danger:'주의가 필요해요', caution:'확인이 필요해요', safe:'특이사항이 없어요'},
+      sev:{danger:'위험', caution:'주의', duplicate:'중복'},
+      safeTitle:'알려진 충돌 없음', safeDetail:'입력하신 조합에서 알려진 중복·상호작용은 확인되지 않았습니다. 모든 상호작용을 다루지는 않으니, 새 보충제는 약사와 상담 후 시작하세요.',
+      disclaimer:'이 검사는 일반 정보이며 전문 상담을 대체하지 않습니다. 복용 전 약사·의사와 확인하세요.',
+      rules:{
+        vitk_anticoag:['비타민 K × 항응고제','비타민 K가 와파린 등 항응고제 효과를 약화시켜 혈전 위험이 커질 수 있습니다. 복용 전 의사와 상담하세요.'],
+        sjw_ssri:['세인트존스워트 × 항우울제(SSRI)','세로토닌 증후군 위험으로 병용은 피해야 합니다. 반드시 의료진과 상담하세요.'],
+        potassium_ace:['칼륨 보충제 × ACE 억제제','리시노프릴 등과 함께 쓰면 고칼륨혈증 위험이 있습니다. 임의 복용을 피하세요.'],
+        vite_bleed:['고용량 비타민 E × 항응고제·아스피린','항혈소판·항응고 작용이 더해져 출혈 위험이 높아질 수 있습니다.'],
+        omega_anticoag:['고용량 오메가-3 × 항응고제','출혈 위험을 약간 높일 수 있어 항응고제 복용 시 주의가 필요합니다.'],
+        cal_thyroid:['칼슘 × 갑상선약','칼슘이 갑상선약(레보티록신) 흡수를 방해합니다. 4시간 이상 간격을 두세요.'],
+        iron_thyroid:['철분 × 갑상선약','철분이 갑상선약 흡수를 줄입니다. 4시간 이상 간격을 두세요.'],
+        iron_calcium:['철분 × 칼슘','동시에 먹으면 서로 흡수를 방해합니다. 시간을 나눠 복용하세요.'],
+        multivit_dup:['종합비타민과 성분 중복','종합비타민에 이미 든 성분을 더하면 과잉 섭취가 될 수 있습니다. 라벨 함량을 확인하세요.'],
+      },
+    },
+    pharmacy:{
+      useLocation:'내 위치로 찾기', enterAddress:'주소 직접 입력', within:'반경 1.5km · 2곳 영업 중', open:'영업 중', closed:'영업 종료', directions:'길찾기',
+      items:[
+        {name:'온누리약국', addr:'서울 강남구 역삼로 152 · 1층', note:'02-538-1004'},
+        {name:'역삼365약국', addr:'서울 강남구 테헤란로 211 · 지하 1층', note:'02-501-7942'},
+        {name:'강남센트럴약국', addr:'서울 강남구 강남대로 390 · 2층', note:'09:00 오픈'},
+      ],
+    },
+    history:{
+      title:'검색 기록', clearAll:'전체 삭제', empty:'저장된 검색이 없습니다. 기록은 이 기기에만 저장됩니다.',
+      items:[
+        {text:'3일간 인후통과 기침, 약 37.5°C 미열.', tag:'이비인후과'},
+        {text:'오른쪽 아랫배 콕콕 쑤심과 메스꺼움.', tag:'내과'},
+        {text:'손목을 접질려 붓고 움직일 때 통증.', tag:'정형외과'},
+      ],
+    },
+    privacy:{
+      items:[
+        {title:'건강정보 처리 동의', desc:'증상과 약물 분석에 필요합니다. 끄면 분석을 사용할 수 없습니다.'},
+        {title:'검색 기록 로컬 저장', desc:'기록을 이 기기에만 보관하며 서버로 전송하지 않습니다.'},
+        {title:'익명 사용 통계 제공', desc:'안내 품질 개선에 도움이 됩니다. 언제든 끌 수 있습니다.'},
+      ],
+      policy:'개인정보처리방침', terms:'이용약관', deleteAll:'모든 데이터 삭제',
+    },
+  },
+
+  en:{
+    brand:{name:'Medical Curator', tag:'AI WELLNESS GUIDANCE'},
+    theme:{auto:'Auto', day:'day', night:'night', light:'Light', dark:'Dark'},
+    tabs:{symptom:['Symptom analysis','Symptoms'], interaction:['Safety check','Check'], pharmacy:['Find pharmacy','Pharmacy'], history:['Search history','History'], privacy:['Privacy','Privacy']},
+    head:{
+      symptom:['Tell us your symptoms — get clear, careful next steps.','Educational over-the-counter guidance, interaction notes, and supportive care ideas. Not a diagnosis — a calm starting point.'],
+      interaction:['Check your combination is safe first.','We flag whether a new medicine or vitamin duplicates or interferes with what you already take.'],
+      pharmacy:['Find a pharmacy near you.','Open hours and distance at a glance, so you can pick up what you need without the guesswork.'],
+      history:['Your past searches, in one place.','Saved locally on this device. Revisit, review, or clear them anytime.'],
+      privacy:['You control your health data.','Sensitive information is processed only with your consent. Manage every permission here.'],
+    },
+    footer:'This is educational information only and not a medical diagnosis. In an emergency, call your local emergency number or visit the nearest emergency department.',
+    symptom:{
+      disclaimer:'This tool offers general health information and does not replace professional medical advice. If symptoms persist or worsen, consult a doctor or pharmacist.',
+      symptomsLabel:'Symptoms', symptomsPh:'e.g., headache, mild cough, sore throat', symptomsVal:'headache, mild cough, sore throat',
+      medsLabel:'Current Medications', medsPh:'e.g., sertraline 50mg daily', medsVal:'sertraline 50mg daily',
+      analyze:'Analyze symptoms', resultsOverview:'Results overview', educationalSummary:'Educational summary', findPharmacy:'Find a pharmacy for these symptoms',
+      otcTitle:'Possible OTC medicine candidates', interactionTitle:'Drug interaction warning', exerciseTitle:'Exercise therapy', herbalTitle:'Herbal / lifestyle tips', redFlagTitle:'Red flag symptoms — see a doctor',
+      otc:['Guaifenesin (expectoration support for wet cough)','Ibuprofen (if no kidney/stomach contraindications)','Acetaminophen (for mild pain/fever, follow label dosing)','Saline nasal spray (for congestion and sinus comfort)'],
+      interaction:'SSRI interaction caution: avoid combining multiple products that may increase drowsiness or serotonin-related effects. Consult a pharmacist before adding OTC cold medicine.',
+      exercise:'Neck and shoulder mobility drills with low-light rest may reduce headache triggers.',
+      herbal:['Honey-lemon warm water (if no honey restrictions)','Warm ginger or peppermint tea for digestive and throat comfort','Prioritize hydration and consistent sleep routine'],
+      redFlags:['Chest pain, severe shortness of breath, or fainting','High fever lasting more than 3 days','Severe allergic reaction, rash spreading quickly, or facial swelling','Confusion, persistent vomiting, or signs of dehydration'],
+    },
+    interaction:{
+      queryLabel:'Medicine / vitamin in question', queryPh:'e.g., vitamin K, omega-3, calcium', queryVal:'vitamin K, calcium',
+      currentLabel:'Currently taken long-term', currentPh:'e.g., warfarin, multivitamin, thyroid medication', currentVal:'warfarin (anticoagulant), thyroid medication, multivitamin',
+      checkBtn:'Check duplicates & interactions', findingsTitle:'Findings', noInput:'Fill in both fields above, then run the check.',
+      verdict:{danger:'Needs caution', caution:'Worth checking', safe:'Nothing notable'},
+      sev:{danger:'RISK', caution:'CAUTION', duplicate:'DUPLICATE'},
+      safeTitle:'No known conflicts', safeDetail:'No known duplicates or interactions were found for the combination you entered. This does not cover every interaction — start any new supplement after checking with a pharmacist.',
+      disclaimer:'This check is general information and does not replace professional advice. Confirm with a pharmacist or doctor before taking.',
+      rules:{
+        vitk_anticoag:['Vitamin K × anticoagulant','Vitamin K can weaken anticoagulants like warfarin, raising clot risk. Consult your doctor before taking.'],
+        sjw_ssri:["St. John's Wort × antidepressant (SSRI)",'Risk of serotonin syndrome — avoid combining. Always consult your clinician.'],
+        potassium_ace:['Potassium supplement × ACE inhibitor','Combined with lisinopril and similar, raises the risk of high blood potassium. Avoid taking on your own.'],
+        vite_bleed:['High-dose vitamin E × anticoagulant / aspirin','Antiplatelet and anticoagulant effects can add up, increasing bleeding risk.'],
+        omega_anticoag:['High-dose omega-3 × anticoagulant','May slightly raise bleeding risk, so use caution with anticoagulants.'],
+        cal_thyroid:['Calcium × thyroid medication','Calcium blocks absorption of thyroid medication (levothyroxine). Separate by at least 4 hours.'],
+        iron_thyroid:['Iron × thyroid medication','Iron reduces thyroid medication absorption. Separate by at least 4 hours.'],
+        iron_calcium:['Iron × calcium','Taken together they block each other’s absorption. Space the doses apart.'],
+        multivit_dup:['Overlaps with your multivitamin','Adding a nutrient already in your multivitamin can lead to excess intake. Check the label amounts.'],
+      },
+    },
+    pharmacy:{
+      useLocation:'Use my location', enterAddress:'Enter address manually', within:'Within 1.5km · 2 open now', open:'OPEN', closed:'CLOSED', directions:'Directions',
+      items:[
+        {name:'Onnuri Pharmacy', addr:'152 Yeoksam-ro, Gangnam-gu · 1F', note:'02-538-1004'},
+        {name:'Yeoksam 365 Pharmacy', addr:'211 Teheran-ro, Gangnam-gu · B1', note:'02-501-7942'},
+        {name:'Gangnam Central Pharmacy', addr:'390 Gangnam-daero, Gangnam-gu · 2F', note:'Opens 09:00'},
+      ],
+    },
+    history:{
+      title:'Search history', clearAll:'Clear all', empty:'No saved searches. Your history stays on this device only.',
+      items:[
+        {text:'Sore throat and cough for 3 days, mild fever around 37.5°C.', tag:'ENT'},
+        {text:'Sharp pain in the lower-right abdomen with nausea.', tag:'Internal Medicine'},
+        {text:'Twisted wrist, swollen and painful when moving.', tag:'Orthopedics'},
+      ],
+    },
+    privacy:{
+      items:[
+        {title:'Health data processing consent', desc:'Required to analyze symptoms and medications. Turning this off disables analysis.'},
+        {title:'Store search history locally', desc:'History is kept only on this device and never sent to a server.'},
+        {title:'Share anonymous usage statistics', desc:'Helps improve guidance quality. You can turn this off at any time.'},
+      ],
+      policy:'Privacy Policy', terms:'Terms of Service', deleteAll:'Delete all data',
+    },
+  },
+
+  ja:{
+    brand:{name:'メディキュレーター', tag:'AIウェルネスガイド'},
+    theme:{auto:'自動', day:'昼', night:'夜', light:'ライト', dark:'ダーク'},
+    tabs:{symptom:['症状分析','症状'], interaction:['服用チェック','確認'], pharmacy:['薬局検索','薬局'], history:['検索履歴','履歴'], privacy:['プライバシー','設定']},
+    head:{
+      symptom:['症状を入力してください — 明確で慎重な次のステップをご案内します。','市販薬のガイド、相互作用の注意、補助的なケアのヒントを提供します。診断ではなく、落ち着いた出発点です。'],
+      interaction:['まず組み合わせの安全性を確認。','新しく飲む薬・ビタミンが、今飲んでいるものと重複したり害にならないかを判定します。'],
+      pharmacy:['近くの薬局を探す。','営業時間と距離をひと目で。必要なものを迷わず受け取れます。'],
+      history:['これまでの検索を一か所に。','この端末にのみ保存されます。いつでも確認・見直し・削除できます。'],
+      privacy:['健康データはあなたが管理します。','機微情報は同意がある場合にのみ処理されます。すべての権限をここで管理できます。'],
+    },
+    footer:'これは教育目的の情報であり、医学的診断ではありません。緊急時は地域の緊急番号に電話するか、最寄りの救急外来を受診してください。',
+    symptom:{
+      disclaimer:'本ツールは一般的な健康情報を提供するもので、専門的な医療アドバイスに代わるものではありません。症状が続く・悪化する場合は医師または薬剤師に相談してください。',
+      symptomsLabel:'症状', symptomsPh:'例：頭痛、軽い咳、のどの痛み', symptomsVal:'頭痛、軽い咳、のどの痛み',
+      medsLabel:'服用中の薬', medsPh:'例：セルトラリン50mg 毎日', medsVal:'セルトラリン50mg 毎日',
+      analyze:'症状を分析', resultsOverview:'結果の概要', educationalSummary:'教育用の要約', findPharmacy:'この症状に合う薬局を探す',
+      otcTitle:'市販薬の候補', interactionTitle:'薬物相互作用の注意', exerciseTitle:'運動療法', herbalTitle:'ハーブ / ライフスタイルのヒント', redFlagTitle:'危険な兆候 — 受診が必要',
+      otc:['グアイフェネシン（痰のある咳の緩和）','イブプロフェン（腎臓・胃の禁忌がない場合）','アセトアミノフェン（軽い痛み・発熱、用量を守る）','生理食塩水点鼻スプレー（鼻づまり・副鼻腔の緩和）'],
+      interaction:'SSRIの相互作用に注意：眠気やセロトニン関連の作用を強める複数の製品の併用は避けてください。市販の風邪薬を追加する前に薬剤師に相談してください。',
+      exercise:'首と肩のモビリティ運動と暗めの環境での休息が、頭痛の誘因を減らすことがあります。',
+      herbal:['はちみつレモンの温かい飲み物（はちみつ制限がない場合）','消化とのどの緩和に温かい生姜茶またはペパーミントティー','水分補給と規則正しい睡眠習慣を保つ'],
+      redFlags:['胸の痛み、激しい息切れ、または失神','3日以上続く高熱','重いアレルギー反応、急速に広がる発疹、または顔の腫れ','混乱、続く嘔吐、または脱水の兆候'],
+    },
+    interaction:{
+      queryLabel:'お問い合わせの薬・ビタミン', queryPh:'例：ビタミンK、オメガ3、カルシウム', queryVal:'ビタミンK、カルシウム',
+      currentLabel:'現在、長期服用中の薬・ビタミン', currentPh:'例：ワルファリン、総合ビタミン、甲状腺薬', currentVal:'ワルファリン（抗凝固薬）、甲状腺薬、総合ビタミン',
+      checkBtn:'重複・相互作用をチェック', findingsTitle:'チェック結果', noInput:'上の2つを入力してチェックを押してください。',
+      verdict:{danger:'注意が必要です', caution:'確認が必要です', safe:'特記事項はありません'},
+      sev:{danger:'危険', caution:'注意', duplicate:'重複'},
+      safeTitle:'既知の衝突なし', safeDetail:'入力された組み合わせで、既知の重複・相互作用は確認されませんでした。すべての相互作用を網羅するものではありません。新しいサプリは薬剤師に相談してから始めてください。',
+      disclaimer:'このチェックは一般情報であり、専門的な助言に代わるものではありません。服用前に薬剤師・医師にご確認ください。',
+      rules:{
+        vitk_anticoag:['ビタミンK × 抗凝固薬','ビタミンKがワルファリンなどの抗凝固薬の効果を弱め、血栓リスクが高まる可能性があります。服用前に医師に相談してください。'],
+        sjw_ssri:['セントジョーンズワート × 抗うつ薬（SSRI）','セロトニン症候群のリスクがあり併用は避けてください。必ず医療者に相談を。'],
+        potassium_ace:['カリウム補充 × ACE阻害薬','リシノプリルなどと併用すると高カリウム血症のリスクがあります。自己判断での服用は避けてください。'],
+        vite_bleed:['高用量ビタミンE × 抗凝固薬・アスピリン','抗血小板・抗凝固作用が加わり、出血リスクが高まる可能性があります。'],
+        omega_anticoag:['高用量オメガ3 × 抗凝固薬','出血リスクをやや高める可能性があり、抗凝固薬との併用は注意が必要です。'],
+        cal_thyroid:['カルシウム × 甲状腺薬','カルシウムが甲状腺薬（レボチロキシン）の吸収を妨げます。4時間以上あけてください。'],
+        iron_thyroid:['鉄分 × 甲状腺薬','鉄分が甲状腺薬の吸収を低下させます。4時間以上あけてください。'],
+        iron_calcium:['鉄分 × カルシウム','同時に摂ると互いの吸収を妨げます。時間をずらして服用してください。'],
+        multivit_dup:['総合ビタミンと成分が重複','総合ビタミンに既に含まれる成分を足すと過剰摂取になることがあります。ラベルの含有量を確認してください。'],
+      },
+    },
+    pharmacy:{
+      useLocation:'現在地で探す', enterAddress:'住所を入力', within:'半径1.5km・2軒営業中', open:'営業中', closed:'営業終了', directions:'経路',
+      items:[
+        {name:'オンヌリ薬局', addr:'ソウル江南区 駅三路152・1F', note:'02-538-1004'},
+        {name:'駅三365薬局', addr:'ソウル江南区 テヘラン路211・B1', note:'02-501-7942'},
+        {name:'江南セントラル薬局', addr:'ソウル江南区 江南大路390・2F', note:'09:00 開店'},
+      ],
+    },
+    history:{
+      title:'検索履歴', clearAll:'すべて削除', empty:'保存された検索はありません。履歴はこの端末にのみ保存されます。',
+      items:[
+        {text:'3日間のどの痛みと咳、約37.5℃の微熱。', tag:'耳鼻咽喉科'},
+        {text:'右下腹部のチクチクする痛みと吐き気。', tag:'内科'},
+        {text:'手首をひねって腫れ、動かすと痛い。', tag:'整形外科'},
+      ],
+    },
+    privacy:{
+      items:[
+        {title:'健康情報の処理に同意', desc:'症状と薬の分析に必要です。オフにすると分析を利用できません。'},
+        {title:'検索履歴をローカルに保存', desc:'履歴はこの端末にのみ保管し、サーバーには送信しません。'},
+        {title:'匿名の利用統計を提供', desc:'ガイドの品質向上に役立ちます。いつでもオフにできます。'},
+      ],
+      policy:'プライバシーポリシー', terms:'利用規約', deleteAll:'すべてのデータを削除',
+    },
+  },
+
+  zh:{
+    brand:{name:'医疗管家', tag:'AI健康指南'},
+    theme:{auto:'自动', day:'白天', night:'夜间', light:'浅色', dark:'深色'},
+    tabs:{symptom:['症状分析','症状'], interaction:['用药检查','检查'], pharmacy:['查找药房','药房'], history:['搜索记录','记录'], privacy:['隐私','隐私']},
+    head:{
+      symptom:['告诉我们您的症状 — 获取清晰、谨慎的后续建议。','提供非处方药指引、相互作用提示和辅助护理建议。这不是诊断，而是一个冷静的起点。'],
+      interaction:['先确认您的搭配是否安全。','判断新服用的药物或维生素是否与您正在服用的重复或产生危害。'],
+      pharmacy:['查找您附近的药房。','一眼掌握营业时间与距离，省去猜测，轻松取药。'],
+      history:['您的历史搜索，集中一处。','仅保存在本设备。随时回看、查阅或清除。'],
+      privacy:['您的健康数据由您掌控。','敏感信息仅在您同意后处理。在此管理所有权限。'],
+    },
+    footer:'本信息仅供教育用途，并非医学诊断。如遇紧急情况，请拨打当地急救电话或前往最近的急诊科。',
+    symptom:{
+      disclaimer:'本工具提供一般健康信息，不能替代专业医疗建议。若症状持续或加重，请咨询医生或药剂师。',
+      symptomsLabel:'症状', symptomsPh:'例如：头痛、轻微咳嗽、咽喉痛', symptomsVal:'头痛、轻微咳嗽、咽喉痛',
+      medsLabel:'正在服用的药物', medsPh:'例如：舍曲林50mg每日', medsVal:'舍曲林50mg每日',
+      analyze:'分析症状', resultsOverview:'结果概览', educationalSummary:'教育性摘要', findPharmacy:'根据这些症状查找药房',
+      otcTitle:'可能的非处方药候选', interactionTitle:'药物相互作用警告', exerciseTitle:'运动疗法', herbalTitle:'草本 / 生活方式建议', redFlagTitle:'危险信号 — 请就医',
+      otc:['愈创甘油醚（缓解有痰的咳嗽）','布洛芬（无肾脏/胃部禁忌时）','对乙酰氨基酚（用于轻度疼痛/发热，遵循说明用量）','生理盐水鼻喷雾（缓解鼻塞和鼻窦不适）'],
+      interaction:'SSRI相互作用提示：避免同时使用多种可能增加困倦或血清素相关作用的产品。添加非处方感冒药前请咨询药剂师。',
+      exercise:'颈部和肩部的活动度练习配合低光休息，有助于减少头痛诱因。',
+      herbal:['蜂蜜柠檬温水（如无蜂蜜禁忌）','温热的姜茶或薄荷茶，舒缓消化与咽喉','保持充足水分和规律的睡眠习惯'],
+      redFlags:['胸痛、严重呼吸困难或晕厥','持续超过3天的高热','严重过敏反应、迅速扩散的皮疹或面部肿胀','意识混乱、持续呕吐或脱水迹象'],
+    },
+    interaction:{
+      queryLabel:'咨询的药物 · 维生素', queryPh:'例如：维生素K、欧米伽-3、钙', queryVal:'维生素K、钙',
+      currentLabel:'目前长期服用的药物 · 维生素', currentPh:'例如：华法林、复合维生素、甲状腺药', currentVal:'华法林（抗凝药）、甲状腺药、复合维生素',
+      checkBtn:'检查重复与相互作用', findingsTitle:'检查结果', noInput:'请填写以上两栏后点击检查。',
+      verdict:{danger:'需要注意', caution:'值得确认', safe:'无特别事项'},
+      sev:{danger:'风险', caution:'注意', duplicate:'重复'},
+      safeTitle:'未发现已知冲突', safeDetail:'未发现您所输入组合的已知重复或相互作用。这并不涵盖所有相互作用——开始任何新补充剂前请咨询药剂师。',
+      disclaimer:'本检查为一般信息，不能替代专业建议。服用前请向药剂师或医生确认。',
+      rules:{
+        vitk_anticoag:['维生素K × 抗凝药','维生素K会削弱华法林等抗凝药的作用，增加血栓风险。服用前请咨询医生。'],
+        sjw_ssri:['圣约翰草 × 抗抑郁药（SSRI）','存在血清素综合征风险，应避免合用。请务必咨询医务人员。'],
+        potassium_ace:['钾补充剂 × ACE抑制剂','与赖诺普利等合用会增加高血钾风险。请勿自行服用。'],
+        vite_bleed:['高剂量维生素E × 抗凝药·阿司匹林','抗血小板与抗凝作用叠加，可能增加出血风险。'],
+        omega_anticoag:['高剂量欧米伽-3 × 抗凝药','可能略微增加出血风险，与抗凝药同用需谨慎。'],
+        cal_thyroid:['钙 × 甲状腺药','钙会阻碍甲状腺药（左甲状腺素）的吸收。请间隔至少4小时。'],
+        iron_thyroid:['铁 × 甲状腺药','铁会降低甲状腺药的吸收。请间隔至少4小时。'],
+        iron_calcium:['铁 × 钙','同时服用会相互阻碍吸收。请分开时间服用。'],
+        multivit_dup:['与复合维生素成分重复','补充复合维生素已含的成分可能造成摄入过量。请核对标签含量。'],
+      },
+    },
+    pharmacy:{
+      useLocation:'使用我的位置', enterAddress:'手动输入地址', within:'1.5公里内 · 2家营业中', open:'营业中', closed:'已打烊', directions:'导航',
+      items:[
+        {name:'温暖药房', addr:'首尔江南区 驿三路152 · 1层', note:'02-538-1004'},
+        {name:'驿三365药房', addr:'首尔江南区 德黑兰路211 · 地下1层', note:'02-501-7942'},
+        {name:'江南中央药房', addr:'首尔江南区 江南大路390 · 2层', note:'09:00 营业'},
+      ],
+    },
+    history:{
+      title:'搜索记录', clearAll:'全部清除', empty:'暂无保存的搜索。记录仅保存在本设备。',
+      items:[
+        {text:'咽喉痛和咳嗽3天，低烧约37.5°C。', tag:'耳鼻喉科'},
+        {text:'右下腹刺痛伴恶心。', tag:'内科'},
+        {text:'手腕扭伤，肿胀且活动时疼痛。', tag:'骨科'},
+      ],
+    },
+    privacy:{
+      items:[
+        {title:'同意处理健康信息', desc:'用于分析症状和药物。关闭后将无法使用分析功能。'},
+        {title:'在本地保存搜索记录', desc:'记录仅保存在本设备，不会发送至服务器。'},
+        {title:'提供匿名使用统计', desc:'有助于改进指引质量。可随时关闭。'},
+      ],
+      policy:'隐私政策', terms:'服务条款', deleteAll:'删除所有数据',
+    },
+  },
+};
+
+/* ---------------- state ---------------- */
+const TABS = [
+  {id:'symptom', icon:'pulse'},
+  {id:'interaction', icon:'shieldcheck'},
+  {id:'vitamin', icon:'leaf'},
+  {id:'pharmacy', icon:'pin'},
+  {id:'history', icon:'history'},
+  {id:'privacy', icon:'shield'},
+];
+function detectLang(){
+  const stored = localStorage.getItem('mc-lang');
+  if(stored && T[stored]) return stored;
+  const cands = (navigator.languages && navigator.languages.length) ? navigator.languages : [navigator.language||''];
+  for(const raw of cands){
+    const c = (raw||'').toLowerCase();
+    if(c.startsWith('ko')) return 'ko';
+    if(c.startsWith('ja')) return 'ja';
+    if(c.startsWith('zh')) return 'zh';
+    if(c.startsWith('en')) return 'en';
+  }
+  return 'ko';
+}
+let lang = detectLang();
+if(!T[lang]) lang = 'ko';
+let active = 'home';
+
+/* ---------------- panels ---------------- */
+const card='rounded-[18px] border border-line bg-surface p-5 shadow-sm';
+const blockHead=(tone,icon,title)=>{
+  const t={brand:'bg-brand-tint text-brand',warn:'bg-warn-tint text-warn',danger:'bg-danger-tint text-danger'}[tone];
+  return `<h3 class="mb-3.5 flex items-center gap-2.5 text-[14px] font-bold tracking-tight text-ink"><span class="flex h-7 w-7 items-center justify-center rounded-lg ${t}">${ic(icon,'h-[15px] w-[15px]')}</span>${title}</h3>`;
+};
+const bullet=(c)=>`<span class="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full ${c}"></span>`;
+const li=(txt,c)=>`<li class="flex gap-2.5">${bullet(c)}${txt}</li>`;
+
+/* ---------------- interaction rule engine (language-independent) ---------------- */
+// Each token lists multilingual aliases (lowercased substrings).
+const TOKENS = {
+  vitK:['vitamin k','비타민 k','비타민k','ビタミンk','ビタミンｋ','维生素k','維生素k','vit k'],
+  vitE:['vitamin e','비타민 e','비타민e','ビタミンe','维生素e','vit e'],
+  omega3:['omega-3','omega 3','omega3','오메가-3','오메가3','오메가 3','オメガ3','オメガ-3','欧米伽-3','欧米伽3','鱼油','fish oil'],
+  calcium:['calcium','칼슘','カルシウム','钙','鈣'],
+  iron:['iron','철분','철','鉄分','鉄','铁','鐵','ferrous'],
+  zinc:['zinc','아연','亜鉛','锌','鋅'],
+  copper:['copper','구리','銅','铜'],
+  potassium:['potassium','칼륨','カリウム','钾','鉀'],
+  stJohns:["st. john","st john","세인트존스워트","세인트 존스","セントジョーンズ","セントジョンズ","贯叶连翘","圣约翰草","聖約翰草"],
+  multivit:['multivitamin','multi-vitamin','종합비타민','멀티비타민','総合ビタミン','マルチビタミン','复合维生素','綜合維他命','multivit'],
+  anticoag:['warfarin','와파린','항응고','ワルファリン','ワーファリン','抗凝','华法林','華法林','apixaban','rivaroxaban','아픽사반','리바록사반'],
+  aspirin:['aspirin','아스피린','アスピリン','阿司匹林','阿斯匹靈'],
+  ssri:['ssri','항우울','sertraline','세르트랄린','fluoxetine','플루옥세틴','抗うつ','抗抑郁','抗抑鬱','セルトラリン','舍曲林'],
+  ace:['ace inhibitor','ace 억제','lisinopril','리시노프릴',' enalapril','에날라프릴','リシノプリル','ace阻害','ACE抑制','赖诺普利','賴諾普利','-pril'],
+  thyroid:['thyroid','갑상선','levothyroxine','레보티록신','甲状腺','甲狀腺','レボチロキシン','左甲状腺素','synthroid'],
+};
+const hasTok = (text, tok) => TOKENS[tok].some(a => text.includes(a));
+
+// Rules: a = token(s) from the queried item, b = token(s) already taken.
+// match returns the severity if triggered. q = query text, c = current text, all = q+' '+c (both lowercased)
+const RULES = [
+  { id:'vitk_anticoag',  sev:'danger',    test:(q,c)=> hasTok(q,'vitK') && hasTok(c,'anticoag') },
+  { id:'sjw_ssri',       sev:'danger',    test:(q,c)=> hasTok(q,'stJohns') && hasTok(c,'ssri') },
+  { id:'potassium_ace',  sev:'danger',    test:(q,c)=> hasTok(q,'potassium') && hasTok(c,'ace') },
+  { id:'vite_bleed',     sev:'caution',   test:(q,c)=> hasTok(q,'vitE') && (hasTok(c,'anticoag')||hasTok(c,'aspirin')) },
+  { id:'omega_anticoag', sev:'caution',   test:(q,c)=> hasTok(q,'omega3') && hasTok(c,'anticoag') },
+  { id:'cal_thyroid',    sev:'caution',   test:(q,c)=> hasTok(q,'calcium') && hasTok(c,'thyroid') },
+  { id:'iron_thyroid',   sev:'caution',   test:(q,c)=> hasTok(q,'iron') && hasTok(c,'thyroid') },
+  { id:'iron_calcium',   sev:'caution',   test:(q,c)=> hasTok(q,'iron') && hasTok(c,'calcium') },
+  { id:'multivit_dup',   sev:'duplicate', test:(q,c)=> hasTok(c,'multivit') && (hasTok(q,'vitK')||hasTok(q,'vitE')||hasTok(q,'iron')||hasTok(q,'calcium')||hasTok(q,'zinc')) },
+];
+const SEV_ORDER = { danger:0, duplicate:1, caution:2 };
+
+function runInteractionCheck(queryText, currentText){
+  const q = (queryText||'').toLowerCase();
+  const c = (currentText||'').toLowerCase();
+  const findings = RULES.filter(r => r.test(q,c)).map(r => ({ id:r.id, sev:r.sev }));
+  findings.sort((a,b)=> SEV_ORDER[a.sev]-SEV_ORDER[b.sev]);
+  let verdict = 'safe';
+  if(findings.some(f=>f.sev==='danger')) verdict='danger';
+  else if(findings.length) verdict='caution';
+  return { findings, verdict };
+}
+// Persisted check result for the interaction panel
+let ixResult = null, ixQuery = '', ixCurrent = '';
+
+/* ---------------- multilingual helpers + home cards + vitamin data ---------------- */
+const ML = (ko,en,ja,zh)=>({ko,en,ja,zh});
+
+// Home menu cards (localized labels/descriptions + per-tool visuals). Order follows TABS.
+const CARD = {
+  symptom:{ grad:'from-blue-500 to-cyan-500', sh:'rgba(37,99,235,0.6)', bg:'from-blue-400/20 to-cyan-300/10', csh:'rgba(59,130,246,0.3)', cshH:'rgba(59,130,246,0.5)',
+    label:ML('증상 분석','Symptom analysis','症状分析','症状分析'),
+    desc:ML('증상을 입력하면 가능한 일반의약품과 주의사항을 안내합니다.','Enter symptoms for OTC suggestions and cautions.','症状を入力すると市販薬や注意点を案内します。','输入症状，获取非处方药建议与注意事项。'),
+    svg:'<path d="M9.5 3.5a4.5 4.5 0 0 1 6.4 6.3l-6.1 6.1a4.5 4.5 0 0 1-6.4-6.3l6.1-6.1Zm-1 7.6 4.6-4.6a2.5 2.5 0 0 0-3.5-.05L5.4 10.2a2.5 2.5 0 0 0 .05 3.5l3.05-2.6Z"/><path d="M17 13a4 4 0 1 1 0 8 4 4 0 0 1 0-8Zm-2 4h4v-1.4h-4V17Z"/>' },
+  interaction:{ grad:'from-amber-500 to-orange-500', sh:'rgba(217,119,6,0.6)', bg:'from-amber-400/20 to-orange-300/10', csh:'rgba(217,119,6,0.3)', cshH:'rgba(217,119,6,0.5)',
+    label:ML('복용 검사','Safety check','服用チェック','服用检查'),
+    desc:ML('새 약과 현재 복용 중인 약의 상호작용을 확인합니다.','Check interactions between new and current meds.','新しい薬と服用中の薬の相互作用を確認。','检查新药与在服药物的相互作用。'),
+    svg:'<path d="M10.4 3.6a4.5 4.5 0 0 1 6.4 6.3l-6.9 6.9a4.5 4.5 0 0 1-6.4-6.3l6.9-6.9Zm-.7 8 3.6-3.6a2.5 2.5 0 0 0-3.5-3.5L6.2 8.1l3.5 3.5Z"/><circle cx="17.5" cy="17.5" r="3.7"/><path d="M15.4 17.5h4.2" stroke="white" stroke-width="1.3"/>' },
+  vitamin:{ grad:'from-teal-500 to-lime-500', sh:'rgba(20,184,166,0.6)', bg:'from-teal-400/20 to-lime-300/10', csh:'rgba(20,184,166,0.3)', cshH:'rgba(20,184,166,0.5)',
+    label:ML('비타민 궁합','Vitamin pairing','ビタミンの相性','维生素搭配'),
+    desc:ML('목표를 고르면 함께 먹으면 좋은 영양제 조합을 추천합니다.','Pick a goal for a recommended supplement combo.','目標を選ぶと相性の良いサプリの組み合わせを提案。','选择目标，推荐适合搭配的营养组合。'),
+    svg:'<path d="M12 2l1.8 4.2L18 8l-4.2 1.8L12 14l-1.8-4.2L6 8l4.2-1.8L12 2Z"/><path d="M18 13l.9 2.1 2.1.9-2.1.9L18 19l-.9-2.1L15 16l2.1-.9L18 13Z"/><path d="M6 13l.9 2.1L9 16l-2.1.9L6 19l-.9-2.1L3 16l2.1-.9L6 13Z"/>' },
+  pharmacy:{ grad:'from-rose-500 to-red-500', sh:'rgba(239,68,68,0.6)', bg:'from-red-400/20 to-rose-300/10', csh:'rgba(239,68,68,0.3)', cshH:'rgba(239,68,68,0.5)',
+    label:ML('약국 찾기','Find pharmacy','薬局を探す','查找药房'),
+    desc:ML('근처 약국의 영업시간과 거리를 확인합니다.','See nearby pharmacy hours and distance.','近くの薬局の営業時間と距離を確認。','查看附近药房的营业时间与距离。'),
+    svg:'<path d="M12 2c-3.9 0-7 3-7 6.9 0 4.3 4.6 9.5 6.3 11.3.4.4 1 .4 1.4 0C14.4 18.4 19 13.2 19 8.9 19 5 15.9 2 12 2Zm0 4.2h1.4v2h2v1.4h-2v2H12v-2h-2V8.2h2v-2Z"/>' },
+  history:{ grad:'from-violet-500 to-purple-500', sh:'rgba(168,85,247,0.6)', bg:'from-purple-400/20 to-violet-300/10', csh:'rgba(168,85,247,0.3)', cshH:'rgba(168,85,247,0.5)',
+    label:ML('검색 기록','Search history','検索履歴','搜索记录'),
+    desc:ML('지난 검색 내역을 다시 확인하고 관리합니다.','Revisit and manage past searches.','過去の検索を再確認・管理。','回顾并管理过往搜索。'),
+    svg:'<path d="M12 3a9 9 0 1 0 8.5 6 1 1 0 0 0-1.9.6A7 7 0 1 1 12 5v2.2c0 .5.6.8 1 .4l3.4-2.8a.5.5 0 0 0 0-.8L13 1.3c-.4-.3-1 0-1 .5V3Z"/><path d="M11 8v4.5l3 1.8 1-1.6-2.5-1.5V8H11Z"/>' },
+  privacy:{ grad:'from-slate-600 to-slate-500', sh:'rgba(71,85,105,0.6)', bg:'from-slate-400/20 to-slate-300/10', csh:'rgba(71,85,105,0.3)', cshH:'rgba(71,85,105,0.5)',
+    label:ML('개인정보','Privacy','プライバシー','隐私'),
+    desc:ML('건강 데이터 권한과 저장을 직접 관리합니다.','Manage health-data permissions and storage.','健康データの権限と保存を管理。','管理健康数据权限与存储。'),
+    svg:'<path d="M12 2 4 5v6c0 5 3.4 8.7 8 11 4.6-2.3 8-6 8-11V5l-8-3Zm3.6 6.7-4.3 4.3a1 1 0 0 1-1.4 0L7.7 11l1.4-1.4 1.5 1.5 3.6-3.6 1.4 1.2Z"/>' },
+};
+
+// Home hero head [title, sub] + grid section label, per language
+const HOME_HEAD = {
+  ko:['무엇을 도와드릴까요?','필요한 도구를 선택하세요. 증상 분석부터 비타민 궁합까지 차분하게 안내합니다.','어떤 도움이 필요하신가요?'],
+  en:['How can we help?','Pick a tool below — from symptom analysis to vitamin pairing, a calm starting point.','What do you need help with?'],
+  ja:['何をお手伝いしますか？','下のツールを選んでください。症状分析からビタミンの相性まで、落ち着いて案内します。','どんなサポートが必要ですか？'],
+  zh:['需要什么帮助？','请选择下方工具，从症状分析到维生素搭配，从容开始。','您需要哪方面的帮助？'],
+};
+// Tool-screen nav labels
+const NAVL = { ko:{home:'홈'}, en:{home:'Home'}, ja:{home:'ホーム'}, zh:{home:'首页'} };
+
+// Per-tool accent colours — muted, editorial (adds colour without the rainbow)
+const ACCENT = {
+  symptom:'#0a7d6e', interaction:'#b5781a', vitamin:'#2f9e44',
+  pharmacy:'#c2452f', history:'#5b6ad0', privacy:'#5f7079',
+};
+
+// ---- Connected service flow: contextual "next steps" appended to every tool ----
+const NEXT = {
+  title: ML('이어서 하면 좋아요','Helpful next steps','次におすすめ','建议的下一步'),
+  toPharmacy: ML('약국 찾기','Find a pharmacy','薬局を探す','查找药房'),
+  consult: ML('약사와 상담하기','Consult a pharmacist','薬剤師に相談','咨询药师'),
+  toInteraction: ML('복용 안전 검사','Check drug safety','服用の安全を確認','用药安全检查'),
+  toVitamin: ML('비타민 궁합 보기','See vitamin pairing','ビタミンの相性を見る','查看维生素搭配'),
+  toSymptom: ML('증상 분석하기','Analyze symptoms','症状を分析','分析症状'),
+  ai: ML('AI에게 더 물어보기','Ask AI for more detail','AIに詳しく聞く','向AI了解更多'),
+};
+// each: [stepKey, targetToolId | 'ai' | 'consult']
+const FLOW = {
+  symptom:   [['toPharmacy','pharmacy'],['toInteraction','interaction'],['ai','ai']],
+  interaction:[['consult','pharmacy'],['toPharmacy','pharmacy'],['ai','ai']],
+  vitamin:   [['toInteraction','interaction'],['toPharmacy','pharmacy'],['ai','ai']],
+  pharmacy:  [['consult','pharmacy'],['toSymptom','symptom'],['ai','ai']],
+  history:   [['toSymptom','symptom'],['toVitamin','vitamin']],
+  privacy:   [],
+};
+const AICOPY = {
+  ko:{ ph:'예: 이 약을 빈속에 먹어도 되나요?', ask:'질문하기', thinking:'답변을 작성하고 있어요…', sys:'당신은 친절한 한국어 건강 안내 도우미입니다. 일반의약품·영양제·생활 정보를 쉽고 간결하게 설명하되, 진단·처방은 하지 말고 필요하면 약사·의사 상담을 권하세요. 3~5문장으로 답하세요.', noai:'지금은 AI 응답을 사용할 수 없어요. 약사와 상담을 권해드려요.', err:'답변을 가져오지 못했어요. 잠시 후 다시 시도해 주세요.', disc:'AI 안내는 참고용이며 의학적 진단이 아닙니다.' },
+  en:{ ph:'e.g., Can I take this on an empty stomach?', ask:'Ask', thinking:'Writing an answer…', sys:'You are a friendly health guide. Explain OTC meds, supplements and lifestyle tips simply and briefly. Do not diagnose or prescribe; suggest seeing a pharmacist or doctor when relevant. Answer in 3–5 sentences.', noai:'AI answers aren’t available right now. Please consult a pharmacist.', err:'Couldn’t get an answer. Please try again shortly.', disc:'AI guidance is for reference only, not a medical diagnosis.' },
+  ja:{ ph:'例：空腹で飲んでも大丈夫ですか？', ask:'質問する', thinking:'回答を作成中…', sys:'あなたは親切な健康ガイドです。市販薬・サプリ・生活情報を簡潔に説明し、診断や処方はせず、必要なら薬剤師や医師への相談を勧めてください。3〜5文で答えてください。', noai:'現在AI回答は利用できません。薬剤師にご相談ください。', err:'回答を取得できませんでした。しばらくして再試行してください。', disc:'AI案内は参考用であり医療診断ではありません。' },
+  zh:{ ph:'例如：可以空腹服用吗？', ask:'提问', thinking:'正在生成回答…', sys:'你是友好的健康向导。简洁解释非处方药、营养补充与生活建议；不要诊断或开处方，必要时建议咨询药师或医生。用3-5句话回答。', noai:'当前无法使用AI回答，请咨询药师。', err:'未能获取回答，请稍后重试。', disc:'AI指引仅供参考，并非医疗诊断。' },
+};
+let aiOpen = false;
+
+// ---- Trust strip + product footer + account (commercial polish) ----
+const TRUST = {
+  ko:['약사 감수 정보','개인정보 안전 보호','4개 언어 지원'],
+  en:['Pharmacist-reviewed','Privacy protected','4 languages'],
+  ja:['薬剤師監修の情報','プライバシー保護','4言語対応'],
+  zh:['药师审核信息','隐私安全保护','支持4种语言'],
+};
+const FOOTER = {
+  ko:{ tagline:'증상 분석부터 약국 찾기까지, 일상 건강을 돕는 AI 가이드입니다.',
+       links:['서비스 소개','이용약관','개인정보처리방침','자주 묻는 질문','고객센터','공지사항'],
+       biz:'메디큐레이터 · 고객센터 1577-0000 · help@mediq.health', copy:'© 2026 MediQ. All rights reserved.' },
+  en:{ tagline:'From symptom analysis to finding a pharmacy — an AI guide for everyday health.',
+       links:['About','Terms of Service','Privacy Policy','FAQ','Support','Notices'],
+       biz:'MediQ · Support 1577-0000 · help@mediq.health', copy:'© 2026 MediQ. All rights reserved.' },
+  ja:{ tagline:'症状分析から薬局探しまで、毎日の健康を支えるAIガイド。',
+       links:['サービス紹介','利用規約','プライバシー','よくある質問','サポート','お知らせ'],
+       biz:'MediQ · サポート 1577-0000 · help@mediq.health', copy:'© 2026 MediQ. All rights reserved.' },
+  zh:{ tagline:'从症状分析到查找药房——助力日常健康的AI向导。',
+       links:['关于服务','使用条款','隐私政策','常见问题','客户支持','公告'],
+       biz:'MediQ · 客服 1577-0000 · help@mediq.health', copy:'© 2026 MediQ 版权所有。' },
+};
+const ACCT = {
+  ko:{ account:'내 계정', signedInWith:'로 로그인됨', guest:'게스트', settings:'환경설정', help:'고객센터', signout:'로그아웃', welcome:'환영합니다', bye:'로그아웃되었습니다', langChanged:'언어가 변경되었습니다' },
+  en:{ account:'Account', signedInWith:'Signed in with', guest:'Guest', settings:'Preferences', help:'Support', signout:'Sign out', welcome:'Welcome', bye:'Signed out', langChanged:'Language changed' },
+  ja:{ account:'アカウント', signedInWith:'でログイン中', guest:'ゲスト', settings:'環境設定', help:'サポート', signout:'ログアウト', welcome:'ようこそ', bye:'ログアウトしました', langChanged:'言語を変更しました' },
+  zh:{ account:'我的账户', signedInWith:'登录方式', guest:'访客', settings:'偏好设置', help:'客户支持', signout:'退出登录', welcome:'欢迎', bye:'已退出登录', langChanged:'已切换语言' },
+};
+// Footer link index → doc key (all footer links open the modal)
+const LEGAL_LINK = { 0:'about', 1:'terms', 2:'privacy', 3:'faq', 4:'support', 5:'notices' };
+const LEGAL = {
+  ko:{
+    updated:'시행일: 2026년 1월 1일',
+    terms:{ title:'이용약관', sections:[
+      ['제1조 (목적)','이 약관은 메디큐레이터(이하 "회사")가 제공하는 건강 정보 안내 서비스(이하 "서비스")의 이용과 관련하여 회사와 이용자 간의 권리·의무 및 책임사항, 이용 조건 및 절차를 규정함을 목적으로 합니다.'],
+      ['제2조 (정의)','① "서비스"란 증상 분석, 복용 안전 검사, 비타민 궁합 안내, 약국 찾기 등 회사가 제공하는 일체의 건강 정보 기능을 의미합니다.\n② "이용자"란 이 약관에 따라 회사가 제공하는 서비스를 이용하는 회원 및 비회원을 말합니다.\n③ "콘텐츠"란 서비스에서 제공되는 모든 텍스트, 이미지, 정보 및 자료를 의미합니다.'],
+      ['제3조 (의료 행위가 아님)','서비스가 제공하는 모든 정보는 일반적인 건강·의약 정보로서 참고용이며, 의학적 진단·처방·치료를 대체하지 않습니다. 질병의 진단 및 치료가 필요한 경우 반드시 의사·약사 등 전문가와 상담하시기 바랍니다. 응급 상황에서는 즉시 119 또는 가까운 의료기관에 연락하십시오.'],
+      ['제4조 (약관의 효력 및 변경)','① 이 약관은 서비스 화면에 게시하거나 기타의 방법으로 이용자에게 공지함으로써 효력이 발생합니다.\n② 회사는 관련 법령을 위반하지 않는 범위에서 약관을 개정할 수 있으며, 변경 시 적용일자 및 개정 사유를 명시하여 최소 7일 전부터 공지합니다.'],
+      ['제5조 (서비스의 제공 및 변경)','① 회사는 연중무휴, 1일 24시간 서비스를 제공함을 원칙으로 합니다.\n② 시스템 점검, 증설, 고장, 통신 두절 등 운영상 필요한 경우 서비스의 전부 또는 일부를 제한하거나 중지할 수 있으며, 사전 또는 사후에 이를 공지합니다.'],
+      ['제6조 (이용자의 의무)','이용자는 서비스 이용 시 관계 법령과 이 약관을 준수해야 하며, 타인의 정보를 도용하거나 서비스의 운영을 고의로 방해하는 행위, 회사 또는 제3자의 권리를 침해하는 행위를 하여서는 안 됩니다.'],
+      ['제7조 (책임의 제한)','① 회사는 천재지변 또는 이에 준하는 불가항력으로 서비스를 제공할 수 없는 경우 책임이 면제됩니다.\n② 회사는 이용자가 서비스의 정보에 기초하여 행한 판단 및 결과에 대하여 법령이 허용하는 범위 내에서 책임을 지지 않습니다.'],
+      ['제8조 (준거법 및 관할)','이 약관은 대한민국 법령에 따라 해석되며, 서비스 이용과 관련하여 분쟁이 발생할 경우 민사소송법상의 관할 법원을 제1심 관할 법원으로 합니다.'],
+    ]},
+    privacy:{ title:'개인정보처리방침', sections:[
+      ['1. 총칙','회사는 이용자의 개인정보를 중요시하며, 「개인정보 보호법」 등 관련 법령을 준수합니다. 본 방침은 회사가 어떤 정보를 수집·이용하며, 이를 어떻게 보호하는지를 안내합니다.'],
+      ['2. 수집하는 개인정보 항목','① 회원가입·로그인: 소셜 로그인 제공자가 전달하는 식별자, 닉네임(선택).\n② 서비스 이용 과정에서 이용자가 직접 입력하는 증상·복용 약물 정보(건강 관련 정보).\n③ 자동 수집: 서비스 이용 기록, 접속 로그, 기기·브라우저 정보.\n검색 기록 및 환경설정은 이용자의 기기(로컬 저장소)에 저장되며 회사 서버로 전송되지 않습니다.'],
+      ['3. 개인정보의 이용 목적','수집한 정보는 ① 서비스 제공 및 맞춤 안내, ② 본인 확인 및 회원 관리, ③ 서비스 개선과 통계 분석, ④ 법령상 의무 이행의 목적으로만 이용합니다.'],
+      ['4. 민감정보의 처리','이용자가 입력하는 증상·복용 약물 등 건강 관련 정보는 민감정보로 분류되며, 이용자가 동의한 범위 내에서 안내 기능 제공에만 사용됩니다. 별도 동의 없이 제3자에게 제공하지 않습니다.'],
+      ['5. 보유 및 이용 기간','개인정보는 수집·이용 목적이 달성되면 지체 없이 파기합니다. 다만 관계 법령에 따라 보존할 필요가 있는 경우 해당 기간 동안 보관합니다.'],
+      ['6. 제3자 제공','회사는 이용자의 개인정보를 본 방침에서 고지한 범위를 초과하여 이용하거나 제3자에게 제공하지 않습니다. 다만 법령에 근거가 있거나 수사기관의 적법한 요청이 있는 경우는 예외로 합니다.'],
+      ['7. 이용자의 권리','이용자는 언제든지 자신의 개인정보에 대한 열람·정정·삭제·처리정지를 요청할 수 있으며, 기기에 저장된 검색 기록은 서비스 내에서 직접 삭제할 수 있습니다.'],
+      ['8. 개인정보 보호책임자','성명: 개인정보 보호책임자 · 연락처: privacy@mediq.health · 고객센터 1577-0000. 개인정보와 관련한 문의·불만·피해구제는 위 연락처로 접수하실 수 있습니다.'],
+    ]},
+    about:{ title:'서비스 소개', sections:[
+      ['메디큐레이터란','메디큐레이터는 증상 분석, 복용 안전 검사, 비타민 궁합, 약국 찾기를 한곳에서 안내하는 AI 건강 가이드입니다. 약사 감수 정보를 바탕으로 누구나 쉽게 일상 건강을 챙길 수 있도록 돕습니다.'],
+      ['우리가 지키는 원칙','① 진단이 아닌 안내 — 전문가 상담을 대체하지 않습니다. ② 투명성 — 정보의 근거와 한계를 분명히 합니다. ③ 프라이버시 우선 — 검색 기록은 기기에 저장되며 서버로 전송하지 않습니다.'],
+      ['이용 대상','일반의약품·영양제 정보를 빠르게 확인하고 싶은 분, 복용 중인 약과의 상호작용이 궁금한 분, 가까운 약국을 찾는 분 모두에게 적합합니다.'],
+    ]},
+    faq:{ title:'자주 묻는 질문', sections:[
+      ['진단을 받을 수 있나요?','아니요. 메디큐레이터는 일반적인 건강·의약 정보를 안내할 뿐 의학적 진단을 제공하지 않습니다. 정확한 진단·처방은 의사·약사와 상담하세요.'],
+      ['입력한 정보는 안전한가요?','증상·복용 약물 정보와 검색 기록은 이용자의 기기(로컬 저장소)에 저장되며 회사 서버로 전송되지 않습니다. 개인정보처리방침에서 자세히 확인할 수 있습니다.'],
+      ['복용 안전 검사는 어떻게 동작하나요?','새로 먹으려는 약·영양제와 현재 복용 중인 약을 입력하면 중복 성분과 알려진 상호작용을 위험·주의·중복으로 분류해 안내합니다.'],
+      ['처방전 사진 인식이 되나요?','네. 복용 검사 화면에서 처방전·약봉투 사진을 올리면 기기 내 문자 인식(OCR)으로 약 이름을 읽어 입력칸을 채웁니다.'],
+      ['무료인가요?','핵심 안내 기능은 무료로 제공됩니다. 향후 추가되는 프리미엄 기능은 별도로 안내해 드립니다.'],
+    ]},
+    support:{ title:'고객센터', sections:[
+      ['문의 방법','이메일 help@mediq.health 또는 고객센터 1577-0000(평일 09:00–18:00, 공휴일 휴무)으로 문의해 주세요.'],
+      ['자주 묻는 질문 먼저 확인','문의 전 자주 묻는 질문(FAQ)을 확인하시면 더 빠르게 답을 찾으실 수 있습니다.'],
+      ['응급 상황','메디큐레이터는 응급 의료를 제공하지 않습니다. 응급 상황에서는 즉시 119 또는 가까운 응급실로 연락하세요.'],
+    ]},
+    notices:{ title:'공지사항', sections:[
+      ['[업데이트] 비타민 궁합 기능 추가 — 2026.01.05','목표(피로 회복·수면·면역 등)를 고르면 함께 먹으면 좋은 영양제 조합을 안내하는 기능이 추가되었습니다.'],
+      ['[업데이트] 4개 언어 지원 — 2026.01.03','한국어·영어·일본어·중국어를 지원합니다. 헤더의 지구본 아이콘에서 언어를 바꿀 수 있습니다.'],
+      ['[안내] 서비스 점검 안내 — 2026.01.01','보다 안정적인 서비스 제공을 위해 정기 점검을 진행합니다. 점검 중 일부 기능 이용이 제한될 수 있습니다.'],
+    ]},
+  },
+  en:{
+    updated:'Effective: January 1, 2026',
+    terms:{ title:'Terms of Service', sections:[
+      ['1. Purpose','These Terms govern the rights, obligations and responsibilities between MediQ ("Company") and users regarding the use of the health-information guidance service ("Service").'],
+      ['2. Definitions','"Service" means all health-information features the Company provides, including symptom analysis, drug-safety checks, vitamin pairing and pharmacy finder. "User" means any member or non-member who uses the Service under these Terms.'],
+      ['3. Not Medical Care','All information provided is general health and medication information for reference only and does not replace medical diagnosis, prescription or treatment. Always consult a physician or pharmacist when diagnosis or treatment is needed. In an emergency, contact local emergency services or the nearest medical facility immediately.'],
+      ['4. Effect and Amendment','These Terms take effect when posted within the Service. The Company may amend these Terms within the limits of applicable law, giving notice of the effective date and reasons at least 7 days in advance.'],
+      ['5. Provision and Changes','The Service is in principle available 24 hours a day, year-round. The Company may restrict or suspend all or part of the Service for maintenance, upgrades, failures or interruptions, with prior or subsequent notice.'],
+      ['6. User Obligations','Users must comply with applicable laws and these Terms, and must not misappropriate others\u2019 information, intentionally disrupt the Service, or infringe the rights of the Company or third parties.'],
+      ['7. Limitation of Liability','The Company is exempt from liability where the Service cannot be provided due to force majeure. To the extent permitted by law, the Company is not liable for decisions or outcomes based on information from the Service.'],
+      ['8. Governing Law','These Terms are interpreted under the laws of the Republic of Korea, and any dispute shall be subject to the competent court under the Civil Procedure Act as the court of first instance.'],
+    ]},
+    privacy:{ title:'Privacy Policy', sections:[
+      ['1. General','The Company values your privacy and complies with applicable data-protection laws. This policy explains what information we collect and use, and how we protect it.'],
+      ['2. Information We Collect','(i) Sign-up/login: identifier from your social login provider and optional nickname. (ii) Health information you enter (symptoms, medications). (iii) Automatically: usage records, access logs, device/browser information. Search history and preferences are stored on your device (local storage) and are not sent to our servers.'],
+      ['3. Purpose of Use','We use collected information only to (i) provide and personalize the Service, (ii) verify identity and manage accounts, (iii) improve the Service and run statistical analysis, and (iv) meet legal obligations.'],
+      ['4. Sensitive Information','Health-related information you enter is treated as sensitive data and used solely to provide guidance features within the scope of your consent. It is not provided to third parties without separate consent.'],
+      ['5. Retention','Personal information is destroyed without delay once its purpose is achieved, except where retention is required by law for the relevant period.'],
+      ['6. Third-Party Disclosure','We do not use or disclose your personal information beyond the scope stated here, except where required by law or upon a lawful request by an investigative authority.'],
+      ['7. Your Rights','You may request access, correction, deletion or suspension of processing of your personal information at any time, and you can delete locally stored search history directly within the Service.'],
+      ['8. Privacy Officer','Privacy Officer · privacy@mediq.health · Support 1577-0000. Please direct privacy inquiries, complaints and remedies to the contact above.'],
+    ]},
+    about:{ title:'About', sections:[
+      ['What is MediQ','MediQ is an AI health guide that brings symptom analysis, drug-safety checks, vitamin pairing and pharmacy finder together in one place. Built on pharmacist-reviewed information, it helps anyone look after everyday health with ease.'],
+      ['Our principles','(i) Guidance, not diagnosis — we never replace a professional consultation. (ii) Transparency — we make the basis and limits of information clear. (iii) Privacy first — search history is stored on your device, never sent to our servers.'],
+      ['Who it’s for','Anyone who wants to quickly check OTC and supplement information, understand interactions with current medication, or find a nearby pharmacy.'],
+    ]},
+    faq:{ title:'FAQ', sections:[
+      ['Can I get a diagnosis?','No. MediQ provides general health and medication information only and does not offer a medical diagnosis. For an accurate diagnosis or prescription, consult a physician or pharmacist.'],
+      ['Is my information safe?','Symptom and medication entries and search history are stored on your device (local storage) and are not sent to our servers. See the Privacy Policy for details.'],
+      ['How does the safety check work?','Enter a new medication/supplement and your current medications, and we classify duplicate ingredients and known interactions as risk, caution or duplicate.'],
+      ['Does prescription photo scanning work?','Yes. On the safety-check screen, upload a photo of your prescription or medication bag and on-device OCR reads the drug names into the field.'],
+      ['Is it free?','The core guidance features are free. Any premium features added in the future will be announced separately.'],
+    ]},
+    support:{ title:'Support', sections:[
+      ['How to reach us','Email help@mediq.health or call 1577-0000 (weekdays 09:00–18:00, closed on public holidays).'],
+      ['Check the FAQ first','Checking the FAQ before contacting us is often the fastest way to find an answer.'],
+      ['Emergencies','MediQ does not provide emergency care. In an emergency, contact local emergency services or the nearest ER immediately.'],
+    ]},
+    notices:{ title:'Notices', sections:[
+      ['[Update] Vitamin pairing added — Jan 5, 2026','Pick a goal (fatigue recovery, sleep, immunity, etc.) and get a recommended supplement combo.'],
+      ['[Update] Four languages — Jan 3, 2026','Korean, English, Japanese and Chinese are supported. Switch languages from the globe icon in the header.'],
+      ['[Notice] Scheduled maintenance — Jan 1, 2026','We perform regular maintenance for a more stable service. Some features may be limited during maintenance.'],
+    ]},
+  },
+  ja:{
+    updated:'施行日：2026年1月1日',
+    terms:{ title:'利用規約', sections:[
+      ['第1条（目的）','本規約は、MediQ（以下「当社」）が提供する健康情報案内サービス（以下「本サービス」）の利用に関し、当社と利用者の権利・義務および責任事項を定めることを目的とします。'],
+      ['第2条（定義）','「本サービス」とは、症状分析、服用安全チェック、ビタミンの相性案内、薬局検索など当社が提供する健康情報機能をいいます。「利用者」とは本規約に従い本サービスを利用する会員・非会員をいいます。'],
+      ['第3条（医療行為ではないこと）','本サービスが提供する情報は一般的な健康・医薬情報であり参考用です。医学的な診断・処方・治療に代わるものではありません。診断や治療が必要な場合は必ず医師・薬剤師にご相談ください。緊急時は直ちに救急機関または最寄りの医療機関へご連絡ください。'],
+      ['第4条（規約の効力および変更）','本規約は本サービス上に掲示することで効力を生じます。当社は関係法令の範囲内で規約を改定でき、変更時は適用日と理由を明示し7日前から告知します。'],
+      ['第5条（提供および変更）','本サービスは原則年中無休・24時間提供します。点検、増設、故障、通信障害などの場合は、事前または事後の告知をもって全部または一部を制限・中止できます。'],
+      ['第6条（利用者の義務）','利用者は関係法令および本規約を遵守し、他人の情報の盗用、本サービスの運営妨害、当社または第三者の権利侵害を行ってはなりません。'],
+      ['第7条（責任の制限）','天災等の不可抗力により提供できない場合、当社は責任を免れます。法令が許容する範囲で、本サービスの情報に基づく判断や結果について当社は責任を負いません。'],
+      ['第8条（準拠法）','本規約は大韓民国の法令に従って解釈され、紛争が生じた場合は民事訴訟法上の管轄裁判所を第一審の管轄とします。'],
+    ]},
+    privacy:{ title:'プライバシーポリシー', sections:[
+      ['1. 総則','当社は利用者の個人情報を重視し、関連する個人情報保護法令を遵守します。本方針は当社が収集・利用する情報とその保護方法を説明します。'],
+      ['2. 収集する個人情報','①登録・ログイン：ソーシャルログイン提供者の識別子、ニックネーム（任意）。②利用者が入力する症状・服用薬情報（健康関連情報）。③自動収集：利用記録、アクセスログ、端末・ブラウザ情報。検索履歴と設定は端末（ローカル保存）に保存され、当社サーバーには送信されません。'],
+      ['3. 利用目的','収集情報は①サービス提供と案内、②本人確認と会員管理、③サービス改善と統計分析、④法令上の義務履行のためにのみ利用します。'],
+      ['4. 機微情報の取扱い','入力される症状・服用薬などの健康関連情報は機微情報として扱い、同意の範囲内で案内機能の提供にのみ使用します。別途同意なく第三者へ提供しません。'],
+      ['5. 保有期間','個人情報は目的達成後、遅滞なく破棄します。ただし法令により保存が必要な場合は当該期間保管します。'],
+      ['6. 第三者提供','本方針で告知した範囲を超えて利用・提供しません。ただし法令に根拠がある場合や捜査機関の適法な要請がある場合を除きます。'],
+      ['7. 利用者の権利','利用者はいつでも個人情報の閲覧・訂正・削除・処理停止を請求でき、端末に保存された検索履歴はサービス内で直接削除できます。'],
+      ['8. 個人情報保護責任者','個人情報保護責任者 · privacy@mediq.health · サポート 1577-0000。個人情報に関するお問い合わせは上記までご連絡ください。'],
+    ]},
+    about:{ title:'サービス紹介', sections:[
+      ['メディキュレーターとは','メディキュレーターは、症状分析・服用安全チェック・ビタミンの相性・薬局検索を一つにまとめたAI健康ガイドです。薬剤師監修の情報をもとに、誰でも手軽に毎日の健康を管理できます。'],
+      ['私たちの原則','①診断ではなく案内 — 専門家への相談に代わるものではありません。②透明性 — 情報の根拠と限界を明確にします。③プライバシー優先 — 検索履歴は端末に保存し、サーバーには送信しません。'],
+      ['対象となる方','市販薬・サプリ情報をすぐ確認したい方、服用中の薬との相互作用が気になる方、近くの薬局を探す方に適しています。'],
+    ]},
+    faq:{ title:'よくある質問', sections:[
+      ['診断は受けられますか？','いいえ。メディキュレーターは一般的な健康・医薬情報を案内するのみで、医学的な診断は行いません。正確な診断・処方は医師・薬剤師にご相談ください。'],
+      ['入力した情報は安全ですか？','症状・服用薬の情報と検索履歴は端末（ローカル保存）に保存され、サーバーには送信されません。詳細はプライバシーポリシーをご覧ください。'],
+      ['服用安全チェックの仕組みは？','新しく飲む薬・サプリと服用中の薬を入力すると、重複成分や既知の相互作用を「リスク・注意・重複」に分類して案内します。'],
+      ['処方箋の写真認識はできますか？','はい。服用チェック画面で処方箋・薬袋の写真をアップロードすると、端末内のOCRが薬名を読み取り入力欄に反映します。'],
+      ['無料ですか？','主要な案内機能は無料です。今後追加されるプレミアム機能は別途ご案内します。'],
+    ]},
+    support:{ title:'サポート', sections:[
+      ['お問い合わせ方法','メール help@mediq.health またはサポート 1577-0000（平日 09:00–18:00、祝日休み）までご連絡ください。'],
+      ['まずFAQをご確認ください','お問い合わせの前によくある質問をご確認いただくと、より早く解決できます。'],
+      ['緊急時','メディキュレーターは救急医療を提供しません。緊急時は直ちに救急機関または最寄りの救急外来へご連絡ください。'],
+    ]},
+    notices:{ title:'お知らせ', sections:[
+      ['[更新] ビタミンの相性機能を追加 — 2026.01.05','目標（疲労回復・睡眠・免疫など）を選ぶと、一緒に摂ると良いサプリの組み合わせを案内します。'],
+      ['[更新] 4言語対応 — 2026.01.03','日本語・韓国語・英語・中国語に対応。ヘッダーの地球アイコンから言語を切り替えられます。'],
+      ['[お知らせ] メンテナンス — 2026.01.01','より安定したサービス提供のため定期メンテナンスを実施します。メンテナンス中は一部機能の利用が制限される場合があります。'],
+    ]},
+  },
+  zh:{
+    updated:'生效日期：2026年1月1日',
+    terms:{ title:'使用条款', sections:[
+      ['第一条（目的）','本条款旨在规定MediQ（以下称"公司"）所提供的健康信息向导服务（以下称"本服务"）使用过程中，公司与用户之间的权利、义务与责任。'],
+      ['第二条（定义）','"本服务"指公司提供的症状分析、用药安全检查、维生素搭配、查找药房等全部健康信息功能。"用户"指依据本条款使用本服务的会员及非会员。'],
+      ['第三条（非医疗行为）','本服务提供的信息为一般健康与用药信息，仅供参考，不能替代医学诊断、处方或治疗。如需诊断或治疗，请务必咨询医生或药师。紧急情况下请立即联系急救机构或就近医疗机构。'],
+      ['第四条（条款效力与变更）','本条款经在服务内公示即生效。公司可在不违反相关法律的范围内修订条款，变更时将提前7日公告生效日期与理由。'],
+      ['第五条（提供与变更）','本服务原则上全年无休、每日24小时提供。因检修、扩容、故障或通信中断等情况，可在事先或事后公告后限制或中止全部或部分服务。'],
+      ['第六条（用户义务）','用户应遵守相关法律及本条款，不得盗用他人信息、故意妨碍服务运营或侵害公司及第三方的权利。'],
+      ['第七条（责任限制）','因不可抗力导致无法提供服务时，公司免除责任。在法律允许的范围内，公司对用户基于本服务信息所作判断及结果不承担责任。'],
+      ['第八条（准据法）','本条款依据大韩民国法律解释，如发生争议，以《民事诉讼法》规定的管辖法院为第一审管辖法院。'],
+    ]},
+    privacy:{ title:'隐私政策', sections:[
+      ['1. 总则','公司重视用户的个人信息，并遵守相关个人信息保护法律。本政策说明公司收集、使用哪些信息以及如何保护。'],
+      ['2. 收集的个人信息','①注册/登录：社交登录提供方的标识符、昵称（可选）。②用户输入的症状、在服药物信息（健康相关信息）。③自动收集：使用记录、访问日志、设备/浏览器信息。搜索记录与偏好设置保存在用户设备（本地存储），不会发送至公司服务器。'],
+      ['3. 使用目的','所收集信息仅用于①提供与个性化服务，②身份验证与会员管理，③服务改进与统计分析，④履行法定义务。'],
+      ['4. 敏感信息处理','用户输入的症状、用药等健康相关信息按敏感信息处理，仅在用户同意范围内用于提供向导功能，未经单独同意不向第三方提供。'],
+      ['5. 保存期限','个人信息在达成目的后将立即销毁。但依法律需保存的，按相应期限保管。'],
+      ['6. 第三方提供','公司不会超出本政策告知范围使用或向第三方提供您的个人信息，但法律有依据或侦查机关合法要求的情形除外。'],
+      ['7. 用户权利','用户可随时要求查阅、更正、删除或停止处理其个人信息，并可在服务内直接删除设备上保存的搜索记录。'],
+      ['8. 个人信息保护负责人','个人信息保护负责人 · privacy@mediq.health · 客服 1577-0000。与个人信息相关的咨询与投诉可通过上述方式提交。'],
+    ]},
+    about:{ title:'关于服务', sections:[
+      ['什么是MediQ','MediQ是一款将症状分析、用药安全检查、维生素搭配与查找药房集于一体的AI健康向导。基于药师审核的信息，帮助每个人轻松管理日常健康。'],
+      ['我们的原则','①向导而非诊断——不替代专业咨询。②透明——明确信息的依据与局限。③隐私优先——搜索记录保存在设备上，不发送至服务器。'],
+      ['适用人群','适合想快速查看非处方药与营养补充信息、关心与在服药物相互作用、以及查找附近药房的所有人。'],
+    ]},
+    faq:{ title:'常见问题', sections:[
+      ['可以获得诊断吗？','不能。MediQ仅提供一般健康与用药信息，不提供医学诊断。准确的诊断与处方请咨询医生或药师。'],
+      ['我输入的信息安全吗？','症状、用药信息及搜索记录保存在您的设备（本地存储），不会发送至服务器。详见隐私政策。'],
+      ['用药安全检查如何运作？','输入将要服用的药物/补充剂与当前在服药物，系统会将重复成分和已知相互作用分类为风险、注意或重复。'],
+      ['支持拍照识别处方吗？','支持。在用药检查界面上传处方或药袋照片，设备本地OCR会读取药名并填入输入框。'],
+      ['是免费的吗？','核心向导功能免费提供。未来新增的高级功能将另行通知。'],
+    ]},
+    support:{ title:'客户支持', sections:[
+      ['联系方式','请发送邮件至 help@mediq.health 或致电客服 1577-0000（工作日 09:00–18:00，节假日休息）。'],
+      ['请先查看常见问题','联系我们之前查看常见问题，往往能更快找到答案。'],
+      ['紧急情况','MediQ不提供急救医疗。紧急情况下请立即联系急救机构或就近急诊。'],
+    ]},
+    notices:{ title:'公告', sections:[
+      ['[更新] 新增维生素搭配功能 — 2026.01.05','选择目标（缓解疲劳、睡眠、免疫等），即可获得适合一起服用的营养组合建议。'],
+      ['[更新] 支持四种语言 — 2026.01.03','支持中文、韩语、英语、日语。可在页眉的地球图标处切换语言。'],
+      ['[公告] 系统维护通知 — 2026.01.01','为提供更稳定的服务，我们将进行定期维护。维护期间部分功能可能受限。'],
+    ]},
+  },
+};
+function openLegal(key){
+  const L=LEGAL[lang][key]; if(!L) return;
+  document.getElementById('legalTitle').textContent=L.title;
+  const upd=(key==='terms'||key==='privacy')?LEGAL[lang].updated:'';
+  const updEl=document.getElementById('legalUpdated'); updEl.textContent=upd; updEl.classList.toggle('hidden',!upd);
+  document.getElementById('legalBody').innerHTML=L.sections.map(([h,b])=>`<section><h3 class="mb-1.5 text-[14.5px] font-bold tracking-tight text-ink">${h}</h3><p class="whitespace-pre-line text-ink-2">${b}</p></section>`).join('');
+  const m=document.getElementById('legalModal'); m.classList.remove('hidden'); m.classList.add('flex');
+  document.getElementById('legalBody').scrollTop=0;
+}
+function closeLegal(){ const m=document.getElementById('legalModal'); m.classList.add('hidden'); m.classList.remove('flex'); }
+function getAuth(){ try{ return JSON.parse(localStorage.getItem('mc-auth')||'null'); }catch(e){ return null; } }
+function toast(msg){
+  const w=document.getElementById('toastWrap'); if(!w) return;
+  const t=document.createElement('div'); t.className='toast';
+  t.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span></span>';
+  t.querySelector('span').textContent=msg;
+  w.appendChild(t);
+  setTimeout(()=>{ t.classList.add('out'); setTimeout(()=>t.remove(),320); }, 2200);
+}
+function stepIcon(target){ return target==='ai' ? I.heart : (CARD[target]?CARD[target].svg:I.search); }
+function stepTone(key,target){ return target==='ai' ? 'var(--brand)' : (ACCENT[target]||'var(--brand)'); }
+function nextStepsHTML(id){
+  const flow=FLOW[id]; if(!flow||!flow.length) return '';
+  const a=AICOPY[lang];
+  const chips=flow.map(([key,target])=>{
+    const tone=stepTone(key,target);
+    const attr = target==='ai' ? 'data-ai="1"' : `data-tab="${target}"`;
+    return `<button ${attr} class="group/step flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" style="--a:${tone}">
+      <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style="background:color-mix(in srgb, var(--a) 13%, transparent);color:var(--a)"><svg viewBox="0 0 24 24" class="h-[18px] w-[18px]" fill="currentColor">${stepIcon(target)}</svg></span>
+      <span class="min-w-0 flex-1 text-[13.5px] font-bold leading-snug text-ink">${NEXT[key][lang]}</span>
+      <span class="text-[16px] font-bold transition group-hover/step:translate-x-0.5" style="color:var(--a)">→</span>
+    </button>`;
+  }).join('');
+  const aiPanel = aiOpen ? `<div class="mt-3 rounded-2xl border border-brand-tint-2 bg-brand-tint/60 p-3.5">
+      <textarea id="aiInput" rows="2" placeholder="${a.ph}" class="w-full resize-y rounded-xl border border-line-2 bg-surface px-3.5 py-2.5 text-[13.5px] text-ink shadow-sm outline-none transition placeholder:text-ink-4 focus:border-brand focus:ring-[3px] focus:ring-brand-tint"></textarea>
+      <div class="mt-2.5 flex items-center justify-between gap-3">
+        <p class="text-[11px] leading-snug text-ink-4">${a.disc}</p>
+        <button id="aiAsk" class="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-[10px] bg-brand px-4 text-[13px] font-bold text-white shadow-[0_10px_22px_-14px_rgba(11,110,97,0.9)] transition hover:bg-brand-2">${a.ask}</button>
+      </div>
+      <div id="aiAnswer" class="mt-3 hidden whitespace-pre-wrap rounded-xl border border-line bg-surface px-3.5 py-3 text-[13.5px] leading-relaxed text-ink-2"></div>
+    </div>` : '';
+  return `<div class="mt-7 border-t border-line pt-6">
+    <div class="mb-3.5 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-ink-3"><span class="h-1 w-5 rounded-full" style="background:var(--tool,var(--brand))"></span>${NEXT.title[lang]}</div>
+    <div class="grid gap-2.5 sm:grid-cols-3">${chips}</div>
+    ${aiPanel}
+  </div>`;
+}
+async function askAI(){
+  const ta=document.getElementById('aiInput'); if(!ta) return;
+  const q=ta.value.trim(); if(!q) return;
+  const out=document.getElementById('aiAnswer'); const a=AICOPY[lang];
+  out.classList.remove('hidden'); out.textContent=a.thinking;
+  try{
+    if(window.claude && window.claude.complete){
+      out.textContent = await window.claude.complete(a.sys+'\n\n'+q);
+    } else { out.textContent=a.noai; }
+  }catch(e){ out.textContent=a.err; }
+}
+
+// Prescription-photo OCR (real, in-browser via Tesseract.js — kor+eng)
+const RX = {
+  ko:{ btn:'처방전 사진으로 인식', hint:'처방전·약봉투 사진을 올리면 글자를 읽어 자동 입력해요', busy:'인식 중', loading:'언어 데이터 불러오는 중…', scanned:'사진에서 읽은 내용을 아래 칸에 넣었어요. 확인 후 수정하세요.', err:'인식에 실패했어요. 더 밝고 선명한 사진으로 다시 시도하세요.', noLib:'인식 모듈을 불러오지 못했어요(네트워크 확인).' },
+  en:{ btn:'Scan prescription photo', hint:'Upload a prescription/medication photo to auto-fill', busy:'Reading', loading:'Loading language data…', scanned:'Pulled the text into the field below — review and edit.', err:'Couldn’t read it. Try a brighter, sharper photo.', noLib:'Couldn’t load the recognition module (check your network).' },
+  ja:{ btn:'処方箋を写真で読み取り', hint:'処方箋・薬袋の写真をあげると文字を読み取り自動入力', busy:'読み取り中', loading:'言語データを読み込み中…', scanned:'写真から読み取った内容を下の欄に入れました。確認して修正を。', err:'読み取れませんでした。明るく鮮明な写真で再試行を。', noLib:'認識モジュールを読み込めませんでした（通信をご確認ください）。' },
+  zh:{ btn:'拍照识别处方', hint:'上传处方/药袋照片即可自动识别填入', busy:'识别中', loading:'正在加载语言数据…', scanned:'已将照片中的文字填入下方，请核对并修改。', err:'识别失败，请用更清晰明亮的照片重试。', noLib:'无法加载识别模块（请检查网络）。' },
+};
+let rx = { thumb:null, status:'' };
+function cleanRxText(t){ return (t||'').split('\n').map(s=>s.replace(/[ \t]+/g,' ').trim()).filter(s=>s.length>1).slice(0,12).join('\n').trim(); }
+async function handleRx(input){
+  const f = input.files && input.files[0]; if(!f) return;
+  const r = RX[lang];
+  const reader = new FileReader();
+  reader.onload = e=>{ rx.thumb = e.target.result; const img=document.getElementById('rxThumb'); if(img){ img.src=rx.thumb; img.classList.remove('hidden'); } };
+  reader.readAsDataURL(f);
+  const setS = (txt)=>{ const s=document.getElementById('rxStatus'); if(s) s.textContent=txt; };
+  if(!window.Tesseract){ setS(r.noLib); return; }
+  setS(r.busy+'… 0%');
+  try{
+    const res = await window.Tesseract.recognize(f, 'kor+eng', { logger:m=>{
+      if(m.status==='recognizing text') setS(r.busy+'… '+Math.round(m.progress*100)+'%');
+      else if(m.status && /load|download|initial/i.test(m.status)) setS(r.loading);
+    }});
+    const text = cleanRxText(res.data.text);
+    if(text){ ixCurrent = text; rx.status = r.scanned; renderPanel(); }
+    else setS(r.err);
+  }catch(err){ setS(r.err); }
+}
+
+// Vitamin-pairing UI strings
+const VT = {
+  ko:{ head:['목표에 맞는 비타민 궁합','원하는 목표를 고르면 함께 먹으면 좋은 영양제 조합을 안내합니다.'], pick:'목표를 선택하세요', orInput:'또는 직접 입력', inputPh:'예: 눈 피로, 집중력, 면역', go:'추천 보기', comboFor:'추천 조합', items:'함께 먹으면 좋아요', tipLabel:'복용 팁', noMatch:'딱 맞는 목표를 찾지 못했어요. 아래에서 가장 가까운 목표를 골라 보세요.', disclaimer:'일반적인 영양 정보이며 의학적 조언이 아닙니다. 복용 중인 약이 있으면 약사와 상담하세요.' },
+  en:{ head:['Vitamin pairing for your goal','Pick a goal and we suggest supplements that work well together.'], pick:'Choose a goal', orInput:'or type your own', inputPh:'e.g., eye strain, focus, immunity', go:'See picks', comboFor:'Recommended combo', items:'Good to take together', tipLabel:'How to take', noMatch:'No exact match — pick the closest goal below.', disclaimer:'General nutrition info, not medical advice. If you take medication, consult a pharmacist.' },
+  ja:{ head:['目標に合うビタミンの相性','目標を選ぶと相性の良いサプリの組み合わせを案内します。'], pick:'目標を選択', orInput:'または自由入力', inputPh:'例：眼精疲労、集中力、免疫', go:'おすすめを見る', comboFor:'おすすめの組み合わせ', items:'一緒に摂ると良い', tipLabel:'摂り方', noMatch:'一致する目標が見つかりません。下から近いものを選んでください。', disclaimer:'一般的な栄養情報であり医療アドバイスではありません。服薬中は薬剤師にご相談を。' },
+  zh:{ head:['契合目标的维生素搭配','选择目标，为你推荐适合一起服用的营养组合。'], pick:'选择目标', orInput:'或自行输入', inputPh:'例如：眼疲劳、专注、免疫', go:'查看推荐', comboFor:'推荐组合', items:'适合一起服用', tipLabel:'服用建议', noMatch:'未找到完全匹配，请在下方选择最接近的目标。', disclaimer:'仅为一般营养信息，非医疗建议。如在服药请咨询药师。' },
+};
+
+// Goal → recommended supplement combos (language-independent structure)
+const VIT_GOALS = [
+  { id:'fatigue', tone:'amber', kw:['피로','피곤','기운','지침','fatigue','tired','energy','疲れ','疲労','疲劳','累','乏力'],
+    label:ML('피로 회복','Fatigue recovery','疲労回復','缓解疲劳'),
+    summary:ML('에너지 대사와 활력을 끌어올리는 조합','Lifts energy metabolism and vitality','エネルギー代謝と活力を高める','提升能量代谢与活力'),
+    items:[
+      [ML('비타민 B군','B-complex','ビタミンB群','维生素B族'), ML('에너지 대사를 도와 피로를 줄여요','Aids energy metabolism','エネルギー代謝を助ける','帮助能量代谢')],
+      [ML('마그네슘','Magnesium','マグネシウム','镁'), ML('근육·신경 피로 회복을 도와요','Eases muscle & nerve fatigue','筋肉・神経の疲労を回復','缓解肌肉与神经疲劳')],
+      [ML('코엔자임 Q10','CoQ10','コエンザイムQ10','辅酶Q10'), ML('세포 에너지 생성을 지원해요','Supports cellular energy','細胞のエネルギー産生を支える','支持细胞能量生成')],
+      [ML('비타민 C','Vitamin C','ビタミンC','维生素C'), ML('항산화로 활력 회복을 도와요','Antioxidant support for recovery','抗酸化で回復を後押し','抗氧化助力恢复')],
+    ],
+    tip:ML('아침 식후 B군·C, 저녁에 마그네슘이 좋아요.','B/C after breakfast, magnesium in the evening.','朝食後にB群・C、夜にマグネシウムを。','早餐后B族/C，晚上服镁。') },
+  { id:'skin', tone:'brand', kw:['피부','미용','생기','skin','beauty','美容','肌','皮肤','美肌'],
+    label:ML('피부 생기','Skin vitality','肌のハリ','皮肤活力'),
+    summary:ML('콜라겐과 항산화로 피부 탄력을 지켜요','Collagen & antioxidants for supple skin','コラーゲンと抗酸化でハリを保つ','胶原与抗氧化守护弹润'),
+    items:[
+      [ML('비타민 C','Vitamin C','ビタミンC','维生素C'), ML('콜라겐 합성과 미백을 도와요','Aids collagen synthesis & brightening','コラーゲン生成と美白を助ける','促进胶原合成与提亮')],
+      [ML('비타민 E','Vitamin E','ビタミンE','维生素E'), ML('피부를 산화로부터 보호해요','Protects skin from oxidation','肌を酸化から守る','保护皮肤抗氧化')],
+      [ML('아연','Zinc','亜鉛','锌'), ML('피부 재생과 트러블 진정에 도움','Supports renewal & calms breakouts','再生を助け肌荒れを鎮める','助再生并舒缓痘痘')],
+      [ML('콜라겐 펩타이드','Collagen peptide','コラーゲンペプチド','胶原蛋白肽'), ML('탄력과 수분 유지를 도와요','Helps elasticity & hydration','弾力と潤いを保つ','维持弹性与水润')],
+    ],
+    tip:ML('C와 콜라겐은 함께, E는 지용성이라 식후에.','Take C with collagen; E (fat-soluble) after meals.','CとコラーゲンはＶ一緒に、Eは食後に。','C与胶原同服，E为脂溶性宜餐后。') },
+  { id:'sleep', tone:'brand', kw:['수면','잠','불면','숙면','sleep','insomnia','rest','睡眠','眠','失眠','睡'],
+    label:ML('편한 수면','Restful sleep','快眠サポート','舒适睡眠'),
+    summary:ML('신경을 이완해 잠들기 쉽게 도와요','Relaxes the nervous system for easier sleep','神経を緩めて入眠を助ける','放松神经助你入睡'),
+    items:[
+      [ML('마그네슘','Magnesium','マグネシウム','镁'), ML('신경 이완과 수면의 질을 도와요','Relaxes nerves, improves sleep quality','神経を緩め睡眠の質を上げる','放松神经改善睡眠质量')],
+      [ML('비타민 B6','Vitamin B6','ビタミンB6','维生素B6'), ML('멜라토닌 생성을 보조해요','Supports melatonin production','メラトニン生成を補助','辅助褪黑素生成')],
+      [ML('L-테아닌','L-theanine','L-テアニン','L-茶氨酸'), ML('긴장을 풀어 편안하게 이완','Eases tension for calm relaxation','緊張を和らげリラックス','舒缓紧张放松身心')],
+      [ML('글리신','Glycine','グリシン','甘氨酸'), ML('심부 체온을 낮춰 입면을 도와요','Lowers core temp to aid falling asleep','深部体温を下げ入眠を助ける','降低核心体温助入睡')],
+    ],
+    tip:ML('취침 30~60분 전, 카페인은 피하세요.','30–60 min before bed; avoid caffeine.','就寝30〜60分前に、カフェインは避けて。','睡前30–60分钟服用，避免咖啡因。') },
+  { id:'recovery', tone:'brand', kw:['근육','운동','회복','muscle','workout','recovery','exercise','筋','運動','回復','肌肉','运动','恢复'],
+    label:ML('운동 후 근육 회복','Post-workout recovery','運動後の筋回復','运动后肌肉恢复'),
+    summary:ML('근단백 재건과 염증 완화를 도와요','Rebuilds muscle protein, eases soreness','筋タンパク再建と炎症緩和','重建肌蛋白并缓解炎症'),
+    items:[
+      [ML('단백질 · BCAA','Protein · BCAA','プロテイン・BCAA','蛋白质·BCAA'), ML('근섬유 재건과 근손상 감소','Rebuilds fibers, cuts muscle damage','筋線維の再建と損傷軽減','重建肌纤维减少损伤')],
+      [ML('마그네슘','Magnesium','マグネシウム','镁'), ML('근경련 예방과 이완을 도와요','Prevents cramps, aids relaxation','痙攣予防とリラックス','预防抽筋并放松')],
+      [ML('비타민 D','Vitamin D','ビタミンD','维生素D'), ML('근기능과 회복을 지원해요','Supports muscle function & recovery','筋機能と回復を支える','支持肌肉功能与恢复')],
+      [ML('오메가-3','Omega-3','オメガ3','欧米伽-3'), ML('운동 후 염증 완화에 도움','Helps ease post-exercise inflammation','運動後の炎症を和らげる','缓解运动后炎症')],
+    ],
+    tip:ML('운동 직후 30분 내 단백질·BCAA가 효과적.','Protein/BCAA within 30 min post-workout.','運動直後30分以内にタンパク質を。','运动后30分钟内补蛋白质效果佳。') },
+  { id:'training', tone:'danger', kw:['훈련','강도','고강도','training','intense','endurance','トレ','高強度','训练','高强度'],
+    label:ML('강도 높은 훈련 후','After intense training','高強度トレ後','高强度训练后'),
+    summary:ML('과훈련 스트레스와 산화를 방어해요','Defends against overtraining & oxidation','オーバートレと酸化を防ぐ','抵御过度训练与氧化'),
+    items:[
+      [ML('L-글루타민','L-glutamine','L-グルタミン','L-谷氨酰胺'), ML('면역·근회복과 과훈련 보호','Immune & muscle recovery support','免疫・筋回復を支える','支持免疫与肌肉恢复')],
+      [ML('비타민 C · E','Vitamin C · E','ビタミンC・E','维生素C·E'), ML('산화 스트레스를 완화해요','Reduces oxidative stress','酸化ストレスを軽減','减轻氧化应激')],
+      [ML('아연','Zinc','亜鉛','锌'), ML('회복과 호르몬 균형을 도와요','Supports recovery & hormone balance','回復とホルモンバランスを支える','支持恢复与激素平衡')],
+      [ML('코엔자임 Q10','CoQ10','コエンザイムQ10','辅酶Q10'), ML('미토콘드리아 회복을 지원','Supports mitochondrial recovery','ミトコンドリアの回復を支援','支持线粒体恢复')],
+    ],
+    tip:ML('강훈련일엔 항산화를 늘리고 수분·전해질을 충분히.','On hard days, add antioxidants and electrolytes.','ハード日は抗酸化と電解質を十分に。','大强度日增加抗氧化与电解质。') },
+  { id:'immune', tone:'brand', kw:['면역','감기','환절기','immune','immunity','cold','免疫','感冒','免疫力'],
+    label:ML('면역 강화','Immune support','免疫サポート','增强免疫'),
+    summary:ML('환절기 면역 방어를 탄탄하게','Strengthens seasonal immune defense','季節の変わり目の免疫を強化','加固换季免疫防线'),
+    items:[
+      [ML('비타민 C','Vitamin C','ビタミンC','维生素C'), ML('면역세포 기능을 지원해요','Supports immune cell function','免疫細胞の機能を支える','支持免疫细胞功能')],
+      [ML('비타민 D','Vitamin D','ビタミンD','维生素D'), ML('면역 균형 조절을 도와요','Helps regulate immune balance','免疫バランスを整える','帮助调节免疫平衡')],
+      [ML('아연','Zinc','亜鉛','锌'), ML('면역 방어와 회복 단축에 도움','Aids defense & faster recovery','防御と回復短縮を助ける','助防御并缩短恢复')],
+      [ML('프로바이오틱스','Probiotics','プロバイオティクス','益生菌'), ML('장 면역 환경을 건강하게','Supports gut immune health','腸の免疫環境を整える','维护肠道免疫环境')],
+    ],
+    tip:ML('D와 아연은 함께, 환절기엔 꾸준히 드세요.','Take D with zinc; stay consistent in season changes.','DとＶ亜鉛は一緒に、季節の変わり目は継続を。','D与锌同服，换季坚持服用。') },
+];
+let vitGoal = 'fatigue';
+function matchGoal(text){
+  const tx=(text||'').toLowerCase().trim();
+  if(!tx) return null;
+  return VIT_GOALS.find(g=> g.label[lang].toLowerCase().includes(tx) || tx.includes(g.label[lang].toLowerCase()) || g.kw.some(k=>tx.includes(k.toLowerCase())) ) || null;
+}
+
+const PANELS = {
+  symptom(){
+    const s=T[lang].symptom;
+    return `
+    <div class="mb-6 flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3 shadow-sm">${ic('info','h-[18px] w-[18px] shrink-0 text-brand')}<p class="text-[12.5px] leading-snug text-ink-2">${s.disclaimer}</p></div>
+    <div class="rounded-[22px] border border-line bg-surface p-5 shadow-sm sm:p-6"><div class="grid grid-cols-1 gap-5">
+      <label class="space-y-2.5 block"><span class="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.12em] text-ink-3">${ic('pulse','h-3.5 w-3.5 text-ink-3')}${s.symptomsLabel}</span><textarea rows="4" placeholder="${s.symptomsPh}" class="w-full resize-y rounded-xl border border-line-2 bg-surface-soft px-4 py-3 text-sm leading-relaxed text-ink shadow-sm outline-none transition placeholder:text-ink-4 focus:border-brand focus:bg-surface focus:ring-[3px] focus:ring-brand-tint">${s.symptomsVal}</textarea></label>
+      <label class="space-y-2.5 block"><span class="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.12em] text-ink-3">${ic('pill','h-3.5 w-3.5 text-ink-3')}${s.medsLabel}</span><textarea rows="3" placeholder="${s.medsPh}" class="w-full resize-y rounded-xl border border-line-2 bg-surface-soft px-4 py-3 text-sm leading-relaxed text-ink shadow-sm outline-none transition placeholder:text-ink-4 focus:border-brand focus:bg-surface focus:ring-[3px] focus:ring-brand-tint">${s.medsVal}</textarea></label>
+      <button class="mt-1 inline-flex h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-brand text-[15px] font-bold text-white shadow-[0_14px_26px_-16px_rgba(11,110,97,0.85)] transition hover:bg-brand-2">${ic('search','h-[18px] w-[18px]')}${s.analyze}</button>
+    </div></div>
+    <article class="mt-6 space-y-4 sm:mt-8">
+      <div class="flex flex-wrap items-center justify-between gap-3"><h2 class="text-[17px] font-bold tracking-tight text-ink">${s.resultsOverview}</h2><span class="inline-flex h-7 items-center gap-1.5 rounded-full bg-surface-soft px-3 text-[12px] font-bold text-ink-3 ring-1 ring-line">${s.educationalSummary}</span></div>
+      <section class="${card}">${blockHead('brand','pill',s.otcTitle)}<ul class="space-y-2.5 text-[13.5px] leading-snug text-ink-2">${s.otc.map(x=>li(x,'bg-brand-bright')).join('')}</ul></section>
+      <section class="${card}">${blockHead('warn','alert',s.interactionTitle)}<p class="text-[13.5px] leading-relaxed text-ink-2">${s.interaction}</p></section>
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <section class="${card}">${blockHead('brand','heart',s.exerciseTitle)}<p class="text-[13.5px] leading-relaxed text-ink-2">${s.exercise}</p></section>
+        <section class="${card}">${blockHead('brand','leaf',s.herbalTitle)}<ul class="space-y-2.5 text-[13.5px] leading-snug text-ink-2">${s.herbal.map(x=>li(x,'bg-brand-bright')).join('')}</ul></section>
+      </div>
+      <section class="${card}">${blockHead('danger','shield',s.redFlagTitle)}<ul class="space-y-2.5 text-[13.5px] leading-snug text-ink-2">${s.redFlags.map(x=>li(x,'bg-danger')).join('')}</ul></section>
+      <button data-tab="pharmacy" class="mt-1 inline-flex h-[52px] w-full items-center justify-center gap-2 rounded-xl border border-brand-tint-2 bg-brand-tint text-[14.5px] font-bold text-brand transition hover:bg-brand hover:text-white">${ic('pin','h-[18px] w-[18px]')}${s.findPharmacy}<span class="text-[18px] leading-none">→</span></button>
+    </article>`;
+  },
+
+  interaction(){
+    const x=T[lang].interaction;
+    const r=RX[lang];
+    const sevTone = { danger:'danger', caution:'warn', duplicate:'brand' };
+    const sevDot  = { danger:'bg-danger', caution:'bg-warn', duplicate:'bg-brand-bright' };
+    const sevBadge= { danger:'bg-danger-tint text-danger', caution:'bg-warn-tint text-warn', duplicate:'bg-brand-tint text-brand' };
+
+    let results = '';
+    if(ixResult){
+      const vTone = { danger:'danger', caution:'warn', safe:'ok' }[ixResult.verdict];
+      const vIcon = { danger:'alert', caution:'info', safe:'check' }[ixResult.verdict];
+      const vRing = { danger:'border-danger-line bg-danger-tint text-danger', caution:'border-[color:var(--warn)]/30 bg-warn-tint text-warn', safe:'border-[color:var(--ok)]/30 bg-ok-tint text-ok' }[ixResult.verdict];
+      const countTxt = lang==='en' ? `${ixResult.findings.length} issue(s) found` : lang==='ja' ? `${ixResult.findings.length} 件の該当` : lang==='zh' ? `发现 ${ixResult.findings.length} 项` : `${ixResult.findings.length}건 해당`;
+      const verdictBar = `<div class="flex items-center gap-3 rounded-[16px] border ${vRing} px-4 py-3.5">
+        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface/70">${ic(vIcon,'h-[18px] w-[18px]')}</span>
+        <div class="min-w-0 flex-1 leading-tight"><b class="text-[15px] font-bold">${x.verdict[ixResult.verdict]}</b><span class="ml-2 text-[12px] font-medium opacity-80">${countTxt}</span></div>
+      </div>`;
+
+      let cards = '';
+      if(ixResult.findings.length === 0){
+        cards = `<section class="${card}">${blockHead('brand','check',x.safeTitle)}<p class="text-[13.5px] leading-relaxed text-ink-2">${x.safeDetail}</p></section>`;
+      } else {
+        cards = ixResult.findings.map(f=>{
+          const r = x.rules[f.id];
+          return `<section class="rounded-[16px] border border-line bg-surface p-4 shadow-sm sm:px-5">
+            <div class="flex items-start gap-3">
+              <span class="mt-[3px] h-2 w-2 shrink-0 rounded-full ${sevDot[f.sev]}"></span>
+              <div class="min-w-0 flex-1">
+                <div class="flex flex-wrap items-center gap-2"><h4 class="text-[14.5px] font-bold text-ink">${r[0]}</h4><span class="shrink-0 whitespace-nowrap rounded-full px-2 py-[2px] text-[10.5px] font-extrabold ${sevBadge[f.sev]}">${x.sev[f.sev]}</span></div>
+                <p class="mt-1.5 text-[13px] leading-relaxed text-ink-2">${r[1]}</p>
+              </div>
+            </div>
+          </section>`;
+        }).join('');
+      }
+      results = `<div class="mt-6 space-y-3.5">
+        <h2 class="text-[15px] font-bold tracking-tight text-ink">${x.findingsTitle}</h2>
+        ${verdictBar}
+        ${cards}
+      </div>`;
+    }
+
+    return `
+    <div class="mb-6 flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3 shadow-sm">${ic('info','h-[18px] w-[18px] shrink-0 text-brand')}<p class="text-[12.5px] leading-snug text-ink-2">${x.disclaimer}</p></div>
+    <div class="rounded-[22px] border border-line bg-surface p-5 shadow-sm sm:p-6"><div class="grid grid-cols-1 gap-5">
+      <label class="space-y-2.5 block"><span class="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.12em] text-ink-3">${ic('search','h-3.5 w-3.5 text-ink-3')}${x.queryLabel}</span><textarea id="ixQuery" rows="2" placeholder="${x.queryPh}" class="w-full resize-y rounded-xl border border-line-2 bg-surface-soft px-4 py-3 text-sm leading-relaxed text-ink shadow-sm outline-none transition placeholder:text-ink-4 focus:border-brand focus:bg-surface focus:ring-[3px] focus:ring-brand-tint">${ixQuery||x.queryVal}</textarea></label>
+      <label class="space-y-2.5 block"><span class="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.12em] text-ink-3">${ic('pill','h-3.5 w-3.5 text-ink-3')}${x.currentLabel}</span><textarea id="ixCurrent" rows="3" placeholder="${x.currentPh}" class="w-full resize-y rounded-xl border border-line-2 bg-surface-soft px-4 py-3 text-sm leading-relaxed text-ink shadow-sm outline-none transition placeholder:text-ink-4 focus:border-brand focus:bg-surface focus:ring-[3px] focus:ring-brand-tint">${ixCurrent||x.currentVal}</textarea></label>
+      <div class="rounded-xl border border-dashed border-line-2 bg-surface-soft p-3.5">
+        <div class="flex flex-wrap items-center gap-2.5">
+          <button type="button" onclick="document.getElementById('rxFile').click()" class="inline-flex h-10 items-center gap-2 rounded-[10px] bg-brand px-3.5 text-[13px] font-bold text-white shadow-[0_10px_22px_-14px_rgba(11,110,97,0.9)] transition hover:bg-brand-2"><svg viewBox="0 0 24 24" class="h-[17px] w-[17px]" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a2 2 0 0 1 2-2h1l1-2h6l1 2h1a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8Z"/><circle cx="12" cy="13" r="3.2"/></svg>${r.btn}</button>
+          <span id="rxStatus" class="min-w-0 flex-1 text-[12px] font-semibold leading-snug text-ink-3">${rx.status||r.hint}</span>
+          <input id="rxFile" type="file" accept="image/*" capture="environment" class="hidden" onchange="handleRx(this)" />
+        </div>
+        <img id="rxThumb" src="${rx.thumb||''}" alt="" class="${rx.thumb?'':'hidden'} mt-3 h-16 w-16 rounded-lg object-cover ring-1 ring-line" />
+      </div>
+      <button id="ixCheck" class="mt-1 inline-flex h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-brand text-[15px] font-bold text-white shadow-[0_14px_26px_-16px_rgba(11,110,97,0.85)] transition hover:bg-brand-2">${ic('shieldcheck','h-[18px] w-[18px]')}${x.checkBtn}</button>
+    </div></div>
+    ${results}`;
+  },
+
+  pharmacy(){
+    const p=T[lang].pharmacy;
+    const pins = PH_META.filter(m=>m.pin).map(m=>`<div class="absolute -translate-x-1/2 -translate-y-full" style="left:${m.pin.l};top:${m.pin.t}"><span class="flex h-[28px] w-[28px] items-center justify-center bg-brand shadow-md" style="border-radius:50% 50% 50% 0;transform:rotate(-45deg)"><span class="text-[13px] font-extrabold leading-none text-white" style="transform:rotate(45deg)">+</span></span></div>`).join('');
+    return `
+    <div class="flex flex-wrap gap-2.5">
+      <button class="inline-flex h-[50px] flex-1 min-w-[200px] items-center justify-center gap-2.5 rounded-xl bg-brand text-sm font-bold text-white shadow-[0_14px_26px_-18px_rgba(11,110,97,0.85)] transition hover:bg-brand-2">${ic('nav','h-[17px] w-[17px]')}${p.useLocation}</button>
+      <button class="inline-flex h-[50px] flex-1 min-w-[200px] items-center justify-center gap-2.5 rounded-xl border border-line-2 bg-surface text-sm font-semibold text-ink-2 transition hover:border-brand-tint-2 hover:text-brand">${ic('pin','h-[17px] w-[17px]')}${p.enterAddress}</button>
+    </div>
+    <div class="relative mt-4 h-[220px] overflow-hidden rounded-[20px] border border-line bg-surface-soft">
+      <div class="absolute inset-0 opacity-60" style="background-image:repeating-linear-gradient(0deg,var(--line) 0 1px,transparent 1px 40px),repeating-linear-gradient(90deg,var(--line) 0 1px,transparent 1px 40px)"></div>
+      <div class="absolute left-0 right-0 top-[92px] h-3.5 bg-surface" style="box-shadow:0 0 0 1px var(--line)"></div>
+      <div class="absolute bottom-0 top-0 left-[38%] w-3 bg-surface" style="box-shadow:0 0 0 1px var(--line)"></div>
+      <span class="absolute left-3 top-3 rounded-lg border border-line bg-surface/90 px-2.5 py-1 text-[11.5px] font-semibold text-ink-3">${p.within}</span>
+      <div class="absolute -translate-x-1/2 -translate-y-full" style="left:38%;top:96px"><span class="flex h-[26px] w-[26px] items-center justify-center rounded-full bg-[#2563eb] text-white shadow-md"><span class="text-[13px] font-extrabold leading-none">●</span></span></div>
+      ${pins}
+    </div>
+    <div class="mt-4 flex flex-col gap-2.5">${p.items.map((it,i)=>{
+      const m=PH_META[i];
+      const badge = m.open ? `<span class="rounded-full bg-ok-tint px-2 py-[3px] text-[10.5px] font-extrabold text-ok">${p.open}</span>` : `<span class="rounded-full bg-danger-tint px-2 py-[3px] text-[10.5px] font-extrabold text-danger">${p.closed}</span>`;
+      return `<div class="flex items-start gap-3.5 rounded-[14px] border border-line bg-surface p-4 transition hover:border-line-2 hover:shadow-sm sm:px-[18px]">
+        <span class="mt-0.5 flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[9px] bg-brand-tint text-[13px] font-extrabold text-brand">${i+1}</span>
+        <div class="min-w-0 flex-1">
+          <div class="flex flex-wrap items-center gap-2.5"><h4 class="text-[15px] font-bold text-ink">${it.name}</h4>${badge}</div>
+          <p class="mt-1.5 text-[12.5px] text-ink-3">${it.addr}</p>
+          <div class="mt-2 flex flex-wrap items-center gap-4 text-[12px] font-medium text-ink-3"><span class="flex items-center gap-1.5">${ic('pin','h-3.5 w-3.5')}${m.distance}</span><span class="flex items-center gap-1.5" style="color:#c8910a">${star('h-3.5 w-3.5')}${m.rating}</span><span>${it.note}</span></div>
+        </div>
+        <button class="inline-flex h-9 shrink-0 items-center gap-1.5 self-center rounded-[9px] border border-line bg-surface-soft px-3.5 text-[12.5px] font-semibold text-ink-2 transition hover:border-brand-tint-2 hover:bg-brand-tint hover:text-brand">${p.directions}</button>
+      </div>`;
+    }).join('')}</div>`;
+  },
+
+  history(){
+    const h=T[lang].history;
+    return `
+    <div class="mb-3.5 flex items-center justify-between"><h3 class="text-base font-bold text-ink">${h.title}</h3><button class="inline-flex h-[38px] items-center gap-1.5 rounded-[10px] border border-line bg-surface px-3.5 text-[12.5px] font-semibold text-ink-2 transition hover:border-line-2 hover:text-ink">${h.clearAll}</button></div>
+    <div class="flex flex-col gap-2.5">${h.items.map((it,i)=>{
+      const m=HIST_META[i];
+      return `<div class="flex items-center gap-4 rounded-[14px] border border-line bg-surface p-4 transition hover:border-line-2 hover:shadow-sm sm:px-[18px]">
+        <div class="w-[74px] shrink-0 text-[11.5px] font-bold leading-snug text-ink-4">${m.date}<br>${m.time}</div>
+        <div class="min-w-0 flex-1"><p class="truncate text-[13.5px] leading-snug text-ink">${it.text}</p><span class="mt-1.5 inline-flex h-6 items-center rounded-full bg-brand-tint px-2.5 text-[11.5px] font-bold text-brand">${it.tag}</span></div>
+        <button class="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[9px] border border-transparent text-ink-4 transition hover:bg-danger-tint hover:text-danger">${ic('trash','h-4 w-4')}</button>
+      </div>`;
+    }).join('')}</div>`;
+  },
+
+  privacy(){
+    const pv=T[lang].privacy;
+    return `
+    <div class="overflow-hidden rounded-[18px] border border-line bg-surface shadow-sm">${pv.items.map((it,i)=>`
+      <div class="flex items-center justify-between gap-4 px-5 py-[18px] ${i<pv.items.length-1?'border-b border-line':''}">
+        <div><b class="block text-sm font-bold text-ink">${it.title}</b><span class="mt-0.5 block text-[12.5px] leading-snug text-ink-3">${it.desc}</span></div>
+        <button data-toggle class="relative h-[27px] w-[46px] shrink-0 rounded-full transition ${PRIV_ON[i]?'bg-brand':'bg-line-2'}"><span class="absolute top-[3px] h-[21px] w-[21px] rounded-full bg-white shadow-sm transition-all ${PRIV_ON[i]?'left-[22px]':'left-[3px]'}"></span></button>
+      </div>`).join('')}</div>
+    <div class="mt-4 flex flex-wrap gap-2.5"><a href="#" class="inline-flex items-center gap-2 rounded-[14px] border border-line bg-surface px-4 py-3.5 text-[13.5px] font-semibold text-ink-2 transition hover:border-line-2 hover:text-ink">${pv.policy}</a><a href="#" class="inline-flex items-center gap-2 rounded-[14px] border border-line bg-surface px-4 py-3.5 text-[13.5px] font-semibold text-ink-2 transition hover:border-line-2 hover:text-ink">${pv.terms}</a></div>
+    <button class="mt-4 inline-flex h-11 items-center gap-2 rounded-[14px] border border-danger-line bg-danger-tint px-[18px] text-[13.5px] font-bold text-danger transition hover:bg-surface">${ic('trash','h-[15px] w-[15px]')}${pv.deleteAll}</button>`;
+  },
+
+  vitamin(){
+    const v=VT[lang];
+    const tones = {
+      amber:{badge:'bg-amber-500', chipOn:'border-amber-300 bg-amber-50 text-amber-700', soft:'bg-amber-50 text-amber-700 ring-amber-200'},
+      brand:{badge:'bg-brand', chipOn:'border-brand-tint-2 bg-brand-tint text-brand', soft:'bg-brand-tint text-brand ring-brand-tint-2'},
+      danger:{badge:'bg-danger', chipOn:'border-danger-line bg-danger-tint text-danger', soft:'bg-danger-tint text-danger ring-danger-line'},
+    };
+    const chips = VIT_GOALS.map(g=>{
+      const on=g.id===vitGoal;
+      const cls = on
+        ? 'border-brand bg-brand text-white shadow-[0_8px_18px_-10px_rgba(11,110,97,0.8)]'
+        : 'border-line bg-surface text-ink-2 hover:border-brand-tint-2 hover:text-brand';
+      return `<button data-vit="${g.id}" class="inline-flex items-center whitespace-nowrap rounded-full border px-4 py-2 text-[13px] font-bold transition ${cls}">${g.label[lang]}</button>`;
+    }).join('');
+
+    const sel = VIT_GOALS.find(g=>g.id===vitGoal);
+    let combo='';
+    if(sel){
+      const tn = tones[sel.tone]||tones.brand;
+      combo = `<div class="mt-6 space-y-4">
+        <div class="flex flex-wrap items-center gap-2.5">
+          <span class="flex h-9 w-9 items-center justify-center rounded-xl ${tn.badge} text-white shadow-sm">${ic('leaf','h-[18px] w-[18px]')}</span>
+          <div class="min-w-0"><div class="text-[11px] font-bold uppercase tracking-[0.12em] text-ink-3">${v.comboFor}</div><h3 class="text-[17px] font-bold tracking-tight text-ink">${sel.label[lang]}</h3></div>
+        </div>
+        <p class="text-[13.5px] leading-relaxed text-ink-2">${sel.summary[lang]}</p>
+        <section class="${card}">${blockHead('brand','pill',v.items)}<ul class="space-y-3 text-[13.5px] leading-snug text-ink-2">${sel.items.map(it=>`<li class="flex gap-3"><span class="mt-[6px] h-1.5 w-1.5 shrink-0 rounded-full bg-brand-bright"></span><span><b class="font-bold text-ink">${it[0][lang]}</b> — ${it[1][lang]}</span></li>`).join('')}</ul></section>
+        <div class="flex items-start gap-3 rounded-[16px] border border-brand-tint-2 bg-brand-tint px-4 py-3.5">${ic('info','h-[18px] w-[18px] shrink-0 text-brand')}<p class="text-[13px] leading-relaxed text-ink-2"><b class="font-bold text-brand">${v.tipLabel}</b> · ${sel.tip[lang]}</p></div>
+      </div>`;
+    } else {
+      combo = `<div class="mt-6 flex items-center gap-3 rounded-[16px] border border-warn-tint bg-warn-tint px-4 py-3.5" style="border-color:var(--warn-tint)">${ic('info','h-[18px] w-[18px] shrink-0 text-warn')}<p class="text-[13px] leading-relaxed text-ink-2">${v.noMatch}</p></div>`;
+    }
+
+    return `
+    <div class="mb-6 flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3 shadow-sm">${ic('info','h-[18px] w-[18px] shrink-0 text-brand')}<p class="text-[12.5px] leading-snug text-ink-2">${v.disclaimer}</p></div>
+    <div class="rounded-[22px] border border-line bg-surface p-5 shadow-sm sm:p-6">
+      <div class="text-[11px] font-bold uppercase tracking-[0.12em] text-ink-3">${v.pick}</div>
+      <div class="mt-3 flex flex-wrap gap-2">${chips}</div>
+      <div class="mt-5 flex flex-col gap-2.5 sm:flex-row">
+        <input id="vitInput" type="text" placeholder="${v.inputPh}" class="min-w-0 flex-1 rounded-xl border border-line-2 bg-surface-soft px-4 py-3 text-sm text-ink shadow-sm outline-none transition placeholder:text-ink-4 focus:border-brand focus:bg-surface focus:ring-[3px] focus:ring-brand-tint" />
+        <button id="vitGo" class="inline-flex h-[48px] shrink-0 items-center justify-center gap-2 rounded-xl bg-brand px-5 text-[14px] font-bold text-white shadow-[0_14px_26px_-16px_rgba(11,110,97,0.85)] transition hover:bg-brand-2">${ic('search','h-[17px] w-[17px]')}${v.go}</button>
+      </div>
+    </div>
+    ${combo}`;
+  },
+};
+
+/* ---------------- render ---------------- */
+function renderChrome(){
+  const t=T[lang];
+  document.documentElement.lang = lang;
+  document.getElementById('brandName').textContent = t.brand.name;
+  document.getElementById('brandTag').textContent = '';
+  document.getElementById('eyebrowText').textContent = t.brand.tag;
+  const head = active==='home' ? HOME_HEAD[lang] : active==='vitamin' ? VT[lang].head : t.head[active];
+  document.getElementById('h1').textContent = head[0];
+  document.getElementById('sub').textContent = head[1];
+
+  // trust strip
+  const tcheck='<svg viewBox="0 0 24 24" class="h-[14px] w-[14px] text-brand" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+  document.getElementById('trustStrip').innerHTML = TRUST[lang].map(s=>`<span class="inline-flex items-center gap-1.5 whitespace-nowrap">${tcheck}${s}</span>`).join('');
+
+  // footer
+  const f=FOOTER[lang];
+  document.getElementById('footerDisc').textContent = t.footer;
+  document.getElementById('footBrand').textContent = t.brand.name;
+  document.getElementById('footTagline').textContent = f.tagline;
+  document.getElementById('footLinks').innerHTML = f.links.map((l,i)=>{
+    const key=LEGAL_LINK[i];
+    return key
+      ? `<button data-legal="${key}" class="text-left text-ink-3 transition hover:text-brand">${l}</button>`
+      : `<a href="#" class="text-ink-3 transition hover:text-brand">${l}</a>`;
+  }).join('');
+  document.getElementById('footBiz').textContent = f.biz;
+  document.getElementById('footCopy').textContent = f.copy;
+
+  const isHome = active==='home';
+  document.getElementById('homeView').classList.toggle('hidden', !isHome);
+  document.getElementById('toolView').classList.toggle('hidden', isHome);
+  document.getElementById('homeH2').textContent = HOME_HEAD[lang][2];
+
+  // home menu: compact icon badges revealed step-by-step (badge → line → label, item by item)
+  document.getElementById('cardGrid').innerHTML = TABS.map((tab,i)=>{
+    const m=CARD[tab.id];
+    const base=i*150;
+    const ac=ACCENT[tab.id]||'var(--brand)';
+    return `<button data-tab="${tab.id}" class="group flex flex-col items-center" style="--a:${ac}">
+      <div class="step-badge" style="animation-delay:${base}ms">
+        <div class="mbadge flex h-[56px] w-[56px] items-center justify-center rounded-[16px] ring-1 ring-black/[0.04]" style="box-shadow:0 10px 24px -16px var(--a)">
+          <svg viewBox="0 0 24 24" class="h-[26px] w-[26px]" fill="currentColor">${m.svg}</svg>
+        </div>
+      </div>
+      <div class="step-line mline h-5 w-px bg-line-2 transition-colors duration-300" style="animation-delay:${base+170}ms"></div>
+      <span class="step-label mlabel whitespace-nowrap text-[12.5px] font-semibold tracking-tight text-ink-3 transition-colors duration-300" style="animation-delay:${base+300}ms">${m.label[lang]}</span>
+    </button>`;
+  }).join('');
+
+  // tool screen nav: home / prev / next
+  if(!isHome){
+    document.getElementById('toolView').style.setProperty('--tool', ACCENT[active]||'var(--brand)');
+    const idx=TABS.findIndex(x=>x.id===active);
+    const prev=TABS[(idx-1+TABS.length)%TABS.length].id;
+    const next=TABS[(idx+1)%TABS.length].id;
+    document.getElementById('toolNav').innerHTML = `
+      <button data-tab="home" class="inline-flex h-10 items-center gap-2 rounded-[12px] border border-line bg-surface px-4 text-[13.5px] font-semibold text-ink-2 transition hover:border-brand-tint-2 hover:text-brand"><span class="text-[16px] leading-none">\u2190</span>${NAVL[lang].home}</button>
+      <div class="flex items-center gap-1.5">
+        <button data-tab="${prev}" title="${CARD[prev].label[lang]}" class="flex h-10 w-10 items-center justify-center rounded-[12px] border border-line bg-surface text-[18px] font-bold text-ink-3 transition hover:border-brand-tint-2 hover:text-brand">\u2039</button>
+        <span class="flex items-center gap-1.5 whitespace-nowrap px-2 text-[13.5px] font-bold" style="color:var(--tool,var(--brand))"><span class="h-1.5 w-1.5 rounded-full" style="background:var(--tool,var(--brand))"></span>${CARD[active].label[lang]}</span>
+        <button data-tab="${next}" title="${CARD[next].label[lang]}" class="flex h-10 w-10 items-center justify-center rounded-[12px] border border-line bg-surface text-[18px] font-bold text-ink-3 transition hover:border-brand-tint-2 hover:text-brand">\u203a</button>
+      </div>`;
+  }
+
+  // language button + menu
+  const cur = LANGS.find(l=>l.code===lang);
+  document.getElementById('langBtn').innerHTML = ic('globe','h-4 w-4') + `<span>${cur.native}</span>`;
+  document.getElementById('langMenu').innerHTML = LANGS.map(l=>{
+    const on=l.code===lang;
+    return `<button data-lang="${l.code}" class="flex w-full items-center justify-between gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-[13px] font-semibold transition ${on?'bg-brand-tint text-brand':'text-ink-2 hover:bg-surface-soft'}"><span>${l.native}</span>${on?ic('check','h-3.5 w-3.5'):''}</button>`;
+  }).join('');
+}
+function renderPanel(){
+  if(active==='home') return;
+  const panel=document.getElementById('panel');
+  panel.innerHTML=PANELS[active]() + nextStepsHTML(active);
+  panel.classList.remove('fade'); void panel.offsetWidth; panel.classList.add('fade');
+}
+function go(id){ active=id; aiOpen=false; renderAll(); window.scrollTo({top:0,behavior:'smooth'}); }
+function renderAll(){ renderChrome(); renderPanel(); }
+
+/* ---------------- events ---------------- */
+document.addEventListener('click',e=>{
+  const tb=e.target.closest('[data-tab]');
+  if(tb){go(tb.dataset.tab); return;}
+
+  const lb=e.target.closest('#langBtn');
+  if(lb){ document.getElementById('langMenu').classList.toggle('show'); document.getElementById('acctMenu').classList.remove('show'); return; }
+
+  const lo=e.target.closest('[data-lang]');
+  if(lo){ lang=lo.dataset.lang; localStorage.setItem('mc-lang',lang); document.getElementById('langMenu').classList.remove('show'); paintTheme(); renderAll(); renderAuthChrome(); toast(ACCT[lang].langChanged); return; }
+
+  // close menus on outside click
+  if(!e.target.closest('#acctBtn') && !e.target.closest('#acctMenu')) document.getElementById('acctMenu').classList.remove('show');
+
+  // close lang menu on outside click
+  if(!e.target.closest('#langMenu')) document.getElementById('langMenu').classList.remove('show');
+
+  const tg=e.target.closest('[data-toggle]');
+  if(tg){const on=tg.classList.contains('bg-brand'); tg.classList.toggle('bg-brand',!on); tg.classList.toggle('bg-line-2',on); const k=tg.querySelector('span'); k.classList.toggle('left-[22px]',!on); k.classList.toggle('left-[3px]',on); return;}
+
+  const ck=e.target.closest('#ixCheck');
+  if(ck){
+    ixQuery = document.getElementById('ixQuery').value;
+    ixCurrent = document.getElementById('ixCurrent').value;
+    ixResult = runInteractionCheck(ixQuery, ixCurrent);
+    renderPanel();
+    return;
+  }
+
+  const vv=e.target.closest('[data-vit]');
+  if(vv){ vitGoal=vv.dataset.vit; renderPanel(); return; }
+
+  const vg=e.target.closest('#vitGo');
+  if(vg){ const m=matchGoal(document.getElementById('vitInput').value); vitGoal = m?m.id:null; renderPanel(); return; }
+
+  const aiBtn=e.target.closest('[data-ai]');
+  if(aiBtn){ aiOpen=!aiOpen; renderPanel(); if(aiOpen){ const t=document.getElementById('aiInput'); if(t) t.focus(); } return; }
+  const aiAsk=e.target.closest('#aiAsk');
+  if(aiAsk){ askAI(); return; }
+
+  const ob=e.target.closest('[data-oauth]');
+  if(ob){ signIn(ob.dataset.oauth); return; }
+  const gb=e.target.closest('#authGuest');
+  if(gb){ signIn('guest'); return; }
+  const ab=e.target.closest('#acctBtn');
+  if(ab){ document.getElementById('acctMenu').classList.toggle('show'); return; }
+  const lgo=e.target.closest('[data-logout]');
+  if(lgo){ signOut(); return; }
+
+  const lg=e.target.closest('[data-legal]');
+  if(lg){ openLegal(lg.dataset.legal); return; }
+  const lc=e.target.closest('#legalClose');
+  if(lc){ closeLegal(); return; }
+  if(e.target.id==='legalModal'){ closeLegal(); return; }
+});
+
+/* ---------------- OAuth login gate (demo — swap signIn() for a real provider flow) ---------------- */
+const AUTH = {
+  ko:{ title:'로그인', sub:'건강 정보를 안전하게 보관하려면 로그인하세요.', guest:'로그인 없이 둘러보기', note:'데모 로그인입니다. 실제 인증 서버에는 연결되지 않습니다.', signout:'로그아웃' },
+  en:{ title:'Sign in', sub:'Sign in to keep your health information secure.', guest:'Browse without signing in', note:'Demo sign-in — no real auth server is connected.', signout:'Sign out' },
+  ja:{ title:'ログイン', sub:'健康情報を安全に保つにはログインしてください。', guest:'ログインせずに見る', note:'デモログインです。実際の認証サーバーには接続されません。', signout:'ログアウト' },
+  zh:{ title:'登录', sub:'登录以安全保存您的健康信息。', guest:'不登录先浏览', note:'演示登录，未连接真实认证服务器。', signout:'退出登录' },
+};
+const OAUTH = [
+  { id:'google', name:'Google', bg:'#ffffff', fg:'#1f1f1f', bd:'#e3e3e3' },
+  { id:'apple',  name:'Apple',  bg:'#111111', fg:'#ffffff', bd:'#111111' },
+  { id:'kakao',  name:'Kakao',  bg:'#FEE500', fg:'#181600', bd:'#FEE500' },
+  { id:'naver',  name:'Naver',  bg:'#03C75A', fg:'#ffffff', bd:'#03C75A' },
+];
+function providerLabel(name){
+  return lang==='ko' ? name+'(으)로 계속'
+       : lang==='ja' ? name+'で続ける'
+       : lang==='zh' ? '使用'+name+' 继续'
+       : 'Continue with '+name;
+}
+function providerMeta(p){
+  const m={ google:{name:'Google',bg:'#ffffff',fg:'#1f1f1f'}, apple:{name:'Apple',bg:'#111111',fg:'#ffffff'}, kakao:{name:'Kakao',bg:'#FEE500',fg:'#181600'}, naver:{name:'Naver',bg:'#03C75A',fg:'#ffffff'}, guest:{name:ACCT[lang].guest,bg:'var(--brand)',fg:'#ffffff'} };
+  return m[p]||m.guest;
+}
+function renderAuthChrome(){
+  const a=AUTH[lang], ac=ACCT[lang];
+  document.getElementById('authTitle').textContent=a.title;
+  document.getElementById('authSub').textContent=a.sub;
+  document.getElementById('authGuest').textContent=a.guest;
+  document.getElementById('authNote').textContent=a.note;
+  document.getElementById('authProviders').innerHTML = OAUTH.map(p=>`<button data-oauth="${p.id}" class="flex h-12 w-full items-center justify-center gap-2.5 rounded-xl border text-[14px] font-bold shadow-sm transition hover:shadow-md" style="background:${p.bg};color:${p.fg};border-color:${p.bd}"><span class="flex h-5 w-5 items-center justify-center rounded-full text-[12px] font-black" style="background:${p.fg};color:${p.bg}">${p.name[0]}</span>${providerLabel(p.name)}</button>`).join('');
+  // account chip + dropdown
+  const auth=getAuth(); const acctBtn=document.getElementById('acctBtn');
+  if(auth){
+    const pm=providerMeta(auth.provider); const initial=(pm.name[0]||'·').toUpperCase();
+    acctBtn.innerHTML = `<span class="flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-black" style="background:${pm.bg};color:${pm.fg};box-shadow:inset 0 0 0 1px var(--line)">${initial}</span><span class="hidden sm:inline">${ac.account}</span><svg viewBox="0 0 24 24" class="h-3 w-3 text-ink-4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`;
+    document.getElementById('acctMenu').innerHTML = `
+      <div class="px-3 py-2.5">
+        <p class="text-[10px] font-bold uppercase tracking-[0.12em] text-ink-4">${ac.account}</p>
+        <p class="mt-1.5 flex items-center gap-2 text-[13px] font-bold text-ink"><span class="flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-black" style="background:${pm.bg};color:${pm.fg};box-shadow:inset 0 0 0 1px var(--line)">${initial}</span>${pm.name}</p>
+      </div>
+      <div class="my-1 h-px bg-line"></div>
+      <a href="#" class="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-semibold text-ink-2 transition hover:bg-surface-soft">${ic('shield','h-4 w-4 text-ink-3')}${ac.settings}</a>
+      <a href="#" class="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-semibold text-ink-2 transition hover:bg-surface-soft">${ic('info','h-4 w-4 text-ink-3')}${ac.help}</a>
+      <div class="my-1 h-px bg-line"></div>
+      <button data-logout="1" class="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-semibold text-danger transition hover:bg-danger-tint">${ic('x','h-4 w-4')}${ac.signout}</button>`;
+  }
+}
+function applyAuth(){
+  const authed=!!localStorage.getItem('mc-auth');
+  const gate=document.getElementById('authGate');
+  gate.classList.toggle('hidden',authed); gate.classList.toggle('flex',!authed);
+  renderAuthChrome();
+  const ab=document.getElementById('acctBtn');
+  ab.classList.toggle('hidden',!authed); ab.classList.toggle('flex',authed);
+  if(!authed) document.getElementById('acctMenu').classList.remove('show');
+}
+function signIn(provider){ localStorage.setItem('mc-auth',JSON.stringify({provider,ts:Date.now()})); applyAuth(); toast(ACCT[lang].welcome+' · '+providerMeta(provider).name); }
+function signOut(){ localStorage.removeItem('mc-auth'); applyAuth(); toast(ACCT[lang].bye); }
+
+/* ---------------- theme (time-based auto / light / dark) ---------------- */
+const NIGHT = () => { const h = new Date().getHours(); return h >= 18 || h < 6; };
+let mode = (localStorage.getItem('mc-theme') || 'auto');
+let night = NIGHT();
+const themeBtn=document.getElementById('themeBtn');
+function isDark(){ return mode==='dark' || (mode==='auto' && night); }
+function paintTheme(){
+  night = NIGHT();
+  const dark = isDark();
+  document.documentElement.classList.toggle('dark',dark);
+  const th = T[lang].theme;
+  const icon = mode==='auto' ? 'auto' : dark ? 'moon' : 'sun';
+  const label = mode==='auto' ? (th.auto+' · '+(night?th.night:th.day)) : mode==='dark' ? th.dark : th.light;
+  themeBtn.innerHTML = ic(icon,'h-4 w-4') + '<span class="hidden sm:inline">'+label+'</span>';
+  themeBtn.title = label;
+}
+themeBtn.addEventListener('click',()=>{
+  mode = mode==='auto' ? 'light' : mode==='light' ? 'dark' : 'auto';
+  localStorage.setItem('mc-theme',mode);
+  paintTheme();
+});
+setInterval(paintTheme, 60000);
+
+paintTheme();
+renderAll();
+renderAuthChrome();
+applyAuth();
+
+/* ---------------- landing: 3D animated hero (Three.js) ---------------- */
+(function(){
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const hero = document.querySelector('.hero');
+  const canvas = document.getElementById('heroCanvas');
+  const bg = document.querySelector('.hero-bg');
+  if(!hero || !canvas || !window.THREE) return;
+  const THREE = window.THREE;
+  const ACC = [0x0a7d6e,0xb5781a,0x2f9e44,0xc2452f,0x5b6ad0,0x12a08b,0x0c7567];
+
+  const renderer = new THREE.WebGLRenderer({ canvas, alpha:true, antialias:true });
+  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio||1));
+  renderer.setClearColor(0x000000, 0);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+  camera.position.set(0, 0, 16);
+
+  // lighting — soft, clinical
+  scene.add(new THREE.HemisphereLight(0xffffff, 0xb9c6c2, 1.05));
+  const key = new THREE.DirectionalLight(0xffffff, 1.6); key.position.set(6, 10, 8); scene.add(key);
+  const rim = new THREE.DirectionalLight(0xdfeee9, 0.7); rim.position.set(-8, -4, 4); scene.add(rim);
+
+  const group = new THREE.Group(); scene.add(group);
+
+  // build floating pills + capsules + spheres
+  const pills = [];
+  const rand=(a,b)=>a+Math.random()*(b-a);
+  const mkMat=(col,opts={})=>new THREE.MeshPhysicalMaterial(Object.assign({ color:col, roughness:0.3, metalness:0.0, clearcoat:0.7, clearcoatRoughness:0.25, transparent:true, opacity:0.97 }, opts));
+  // ① telescoping two-tone gelatin capsule (colored body + cap of another colour)
+  function makeCapsule(){
+    const r = rand(0.4, 0.6);
+    const len = rand(1.0, 1.9);          // cylinder section length
+    const g = new THREE.Group();
+    const colBody = ACC[(Math.random()*ACC.length)|0];
+    const colCap  = Math.random()<0.45 ? 0xf3f5f4 : ACC[(Math.random()*ACC.length)|0];
+    const matBody = mkMat(colBody), matCap = mkMat(colCap);
+    // body: full capsule in body colour
+    const body = new THREE.Mesh(new THREE.CapsuleGeometry(r, len, 12, 24), matBody);
+    g.add(body);
+    // cap: telescopes over the top half — slightly larger radius cylinder + dome
+    const rc = r*1.05, capLen = len*0.52;
+    const tip = len/2 + r;
+    const capCyl = new THREE.Mesh(new THREE.CylinderGeometry(rc, rc, capLen, 24, 1, true), matCap);
+    capCyl.position.y = tip - r - capLen/2;
+    const capDome = new THREE.Mesh(new THREE.SphereGeometry(rc, 24, 16, 0, Math.PI*2, 0, Math.PI/2), matCap);
+    capDome.position.y = capCyl.position.y + capLen/2;
+    g.add(capCyl, capDome);
+    g.userData.refLen = (len/2 + r)*2;
+    return g;
+  }
+  // ② biconvex round coated tablet (flattened smooth disc), some with a score line
+  function makeTablet(){
+    const r = rand(0.55, 0.85);
+    const g = new THREE.Group();
+    const col = ACC[(Math.random()*ACC.length)|0];
+    const tab = new THREE.Mesh(new THREE.SphereGeometry(r, 30, 22), mkMat(col, {roughness:0.34}));
+    const flat = rand(0.4, 0.52); tab.scale.y = flat;
+    g.add(tab);
+    if(Math.random()<0.6){ // debossed score line across the top
+      const score = new THREE.Mesh(new THREE.BoxGeometry(r*1.7, 0.05, 0.05), mkMat(0x0e1a19,{opacity:0.18, clearcoat:0}));
+      score.position.y = r*flat;
+      g.add(score);
+    }
+    g.userData.refLen = r*2;
+    return g;
+  }
+  // ③ flattened oblong caplet (smooth coated, single tone)
+  function makeCaplet(){
+    const r = rand(0.34, 0.46);
+    const len = rand(1.1, 1.8);
+    const g = new THREE.Group();
+    const col = ACC[(Math.random()*ACC.length)|0];
+    const cap = new THREE.Mesh(new THREE.CapsuleGeometry(r, len, 12, 24), mkMat(col,{roughness:0.32}));
+    cap.scale.z = 0.62;  // flatten into a caplet
+    g.add(cap);
+    g.userData.refLen = (len/2 + r)*2;
+    return g;
+  }
+  const COUNT = 16;
+  for(let i=0;i<COUNT;i++){
+    const kind = Math.random();
+    const m = kind<0.5 ? makeCapsule() : kind<0.8 ? makeTablet() : makeCaplet();
+    m.position.set(rand(-11,11), rand(-6.5,6.5), rand(-7,3));
+    m.rotation.set(rand(0,6.28), rand(0,6.28), rand(0,6.28));
+    m.userData = Object.assign(m.userData||{}, {
+      rx: rand(-0.004,0.004), ry: rand(-0.006,0.006), rz: rand(-0.003,0.003),
+      fx: rand(0,6.28), fy: rand(0,6.28), amp: rand(0.18,0.5), spd: rand(0.4,0.9),
+      baseY: m.position.y, depth: (m.position.z+7)/10
+    });
+    const s = rand(0.75, 1.1); m.scale.multiplyScalar(s);
+    group.add(m); pills.push(m);
+  }
+
+  let W=0,H=0, tx=0,ty=0, mx=0,my=0, t0=performance.now();
+  function resize(){
+    const r = hero.getBoundingClientRect(); W=r.width; H=r.height;
+    if(W===0||H===0) return false;
+    renderer.setSize(W, H, false);
+    camera.aspect = W/H; camera.updateProjectionMatrix();
+    return true;
+  }
+  function render(now){
+    const t = (now - t0)/1000;
+    mx += (tx-mx)*0.05; my += (ty-my)*0.05;
+    for(const m of pills){
+      const u=m.userData;
+      m.rotation.x += u.rx; m.rotation.y += u.ry; m.rotation.z += u.rz;
+      m.position.y = u.baseY + Math.sin(t*u.spd + u.fy)*u.amp;
+      m.position.x += Math.sin(t*0.2 + u.fx)*0.0012;
+    }
+    // parallax: tilt the whole group + dolly camera slightly toward cursor
+    group.rotation.y += ((mx*0.5) - group.rotation.y)*0.04;
+    group.rotation.x += ((-my*0.4) - group.rotation.x)*0.04;
+    camera.position.x += ((mx*2.2) - camera.position.x)*0.04;
+    camera.position.y += ((-my*1.6) - camera.position.y)*0.04;
+    camera.lookAt(0,0,0);
+    if(bg) bg.style.transform=`translate(${mx*14}px, ${my*10}px) scale(1.05)`;
+    renderer.render(scene, camera);
+  }
+  let raf=0;
+  function loop(now){ render(now); raf=requestAnimationFrame(loop); }
+  function onMove(e){
+    const r=hero.getBoundingClientRect();
+    tx=((e.clientX-(r.left+r.width/2))/r.width);
+    ty=((e.clientY-(r.top+r.height/2))/r.height);
+  }
+  function onLeave(){ tx=0; ty=0; }
+
+  let started=false;
+  function boot(){
+    if(!resize()){ requestAnimationFrame(boot); return; }
+    if(started){ render(performance.now()); return; }
+    started=true;
+    render(performance.now());
+    if(!reduce){
+      raf=requestAnimationFrame(loop);
+      window.addEventListener('pointermove', onMove, {passive:true});
+      hero.addEventListener('pointerleave', onLeave);
+    }
+  }
+  boot();
+  window.addEventListener('load', boot);
+  if('ResizeObserver' in window){
+    const ro=new ResizeObserver(()=>{ if(resize() && (reduce||!started)) render(performance.now()); else if(resize()&&reduce) render(performance.now()); });
+    ro.observe(hero);
+  } else {
+    let rt; window.addEventListener('resize',()=>{ clearTimeout(rt); rt=setTimeout(()=>{ if(resize()&&reduce) render(performance.now()); }, 200); });
+  }
+})();
+</script>
+</body>
+</html>

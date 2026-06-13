@@ -45,10 +45,8 @@ export default function HeroCanvas() {
     const group = new THREE.Group();
     scene.add(group);
 
-    type Pill = THREE.Object3D & {
-      userData: { rx: number; ry: number; rz: number; fx: number; fy: number; amp: number; spd: number; baseY: number };
-    };
-    const pills: Pill[] = [];
+    type PillMotion = { rx: number; ry: number; rz: number; fx: number; fy: number; amp: number; spd: number; baseY: number };
+    const pills: { object: THREE.Group; motion: PillMotion }[] = [];
     const disposables: (THREE.BufferGeometry | THREE.Material)[] = [];
 
     const mkMat = (col: number, opts: Record<string, number> = {}) => {
@@ -108,16 +106,16 @@ export default function HeroCanvas() {
     const COUNT = 16;
     for (let i = 0; i < COUNT; i++) {
       const kind = Math.random();
-      const m = (kind < 0.5 ? makeCapsule() : kind < 0.8 ? makeTablet() : makeCaplet()) as Pill;
+      const m = kind < 0.5 ? makeCapsule() : kind < 0.8 ? makeTablet() : makeCaplet();
       m.position.set(rand(-11, 11), rand(-6.5, 6.5), rand(-7, 3));
       m.rotation.set(rand(0, 6.28), rand(0, 6.28), rand(0, 6.28));
-      m.userData = {
+      const motion = {
         rx: rand(-0.004, 0.004), ry: rand(-0.006, 0.006), rz: rand(-0.003, 0.003),
         fx: rand(0, 6.28), fy: rand(0, 6.28), amp: rand(0.18, 0.5), spd: rand(0.4, 0.9), baseY: m.position.y,
       };
       m.scale.multiplyScalar(rand(0.75, 1.1));
       group.add(m);
-      pills.push(m);
+      pills.push({ object: m, motion });
     }
 
     let W = 0, H = 0, tx = 0, ty = 0, mx = 0, my = 0, raf = 0;
@@ -136,8 +134,7 @@ export default function HeroCanvas() {
       const t = (now - t0) / 1000;
       mx += (tx - mx) * 0.05;
       my += (ty - my) * 0.05;
-      for (const m of pills) {
-        const u = m.userData;
+      for (const { object: m, motion: u } of pills) {
         m.rotation.x += u.rx; m.rotation.y += u.ry; m.rotation.z += u.rz;
         m.position.y = u.baseY + Math.sin(t * u.spd + u.fy) * u.amp;
         m.position.x += Math.sin(t * 0.2 + u.fx) * 0.0012;

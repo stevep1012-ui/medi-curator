@@ -7,9 +7,29 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   const projectId = env.VITE_FIREBASE_PROJECT_ID || 'demo-medi-curator';
   const region = 'asia-northeast3';
+  const firebaseConfig = {
+    apiKey: env.VITE_FIREBASE_API_KEY,
+    authDomain: env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: env.VITE_FIREBASE_APP_ID,
+  };
 
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      react(),
+      tailwindcss(),
+      {
+        name: 'firebase-runtime-config',
+        configureServer(server) {
+          server.middlewares.use('/__/firebase/init.json', (_req, res) => {
+            res.setHeader('content-type', 'application/json');
+            res.end(JSON.stringify(firebaseConfig));
+          });
+        },
+      },
+    ],
     server: {
       proxy: {
         '/api/curate': {
