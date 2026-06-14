@@ -78,12 +78,16 @@ export type Dict = {
     open: string;
     closed: string;
     directions: string;
+    preparing: string;
+    previewNote: string;
+    demoBadge: string;
     items: { name: string; addr: string; note: string }[];
   };
   history: {
     title: string;
     clearAll: string;
     empty: string;
+    delete: string;
     items: { text: string; tag: string }[];
   };
   privacy: {
@@ -205,6 +209,9 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
       open: "영업 중",
       closed: "영업 종료",
       directions: "길찾기",
+      preparing: "준비 중",
+      previewNote: "위치 기반 약국 검색은 준비 중입니다. 아래는 화면 예시입니다.",
+      demoBadge: "샘플 데이터",
       items: [
         { name: "온누리약국", addr: "서울 강남구 역삼로 152 · 1층", note: "02-538-1004" },
         { name: "역삼365약국", addr: "서울 강남구 테헤란로 211 · 지하 1층", note: "02-501-7942" },
@@ -214,6 +221,7 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
     history: {
       title: "검색 기록",
       clearAll: "전체 삭제",
+      delete: "삭제",
       empty: "저장된 검색이 없습니다. 기록은 이 기기에만 저장됩니다.",
       items: [
         { text: "3일간 인후통과 기침, 약 37.5°C 미열.", tag: "이비인후과" },
@@ -330,6 +338,9 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
       open: "OPEN",
       closed: "CLOSED",
       directions: "Directions",
+      preparing: "Coming soon",
+      previewNote: "Location-based pharmacy search is coming soon. Below is a sample screen.",
+      demoBadge: "Sample data",
       items: [
         { name: "Onnuri Pharmacy", addr: "152 Yeoksam-ro, Gangnam-gu · 1F", note: "02-538-1004" },
         { name: "Yeoksam 365 Pharmacy", addr: "211 Teheran-ro, Gangnam-gu · B1", note: "02-501-7942" },
@@ -339,6 +350,7 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
     history: {
       title: "Search history",
       clearAll: "Clear all",
+      delete: "Delete",
       empty: "No saved searches. Your history stays on this device only.",
       items: [
         { text: "Sore throat and cough for 3 days, mild fever around 37.5°C.", tag: "ENT" },
@@ -455,6 +467,9 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
       open: "営業中",
       closed: "営業終了",
       directions: "経路",
+      preparing: "準備中",
+      previewNote: "位置情報による薬局検索は準備中です。以下はサンプル画面です。",
+      demoBadge: "サンプルデータ",
       items: [
         { name: "オンヌリ薬局", addr: "ソウル江南区 駅三路152・1F", note: "02-538-1004" },
         { name: "駅三365薬局", addr: "ソウル江南区 テヘラン路211・B1", note: "02-501-7942" },
@@ -464,6 +479,7 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
     history: {
       title: "検索履歴",
       clearAll: "すべて削除",
+      delete: "削除",
       empty: "保存された検索はありません。履歴はこの端末にのみ保存されます。",
       items: [
         { text: "3日間のどの痛みと咳、約37.5℃の微熱。", tag: "耳鼻咽喉科" },
@@ -580,6 +596,9 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
       open: "营业中",
       closed: "已打烊",
       directions: "导航",
+      preparing: "准备中",
+      previewNote: "基于位置的药房搜索正在准备中。以下为示例界面。",
+      demoBadge: "示例数据",
       items: [
         { name: "温暖药房", addr: "首尔江南区 驿三路152 · 1层", note: "02-538-1004" },
         { name: "驿三365药房", addr: "首尔江南区 德黑兰路211 · 地下1层", note: "02-501-7942" },
@@ -589,6 +608,7 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
     history: {
       title: "搜索记录",
       clearAll: "全部清除",
+      delete: "删除",
       empty: "暂无保存的搜索。记录仅保存在本设备。",
       items: [
         { text: "咽喉痛和咳嗽3天，低烧约37.5°C。", tag: "耳鼻喉科" },

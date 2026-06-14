@@ -268,7 +268,10 @@ export const curate = onRequest(
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({
               contents: [{ role: 'user', parts: [{ text: `${sys}\n\n${user}` }] }],
-              generationConfig: { temperature: 0.3, maxOutputTokens: 4096 },
+              // responseMimeType asks Gemini to emit a bare JSON object (no prose,
+              // no markdown fence), so the regex extraction below is only a fallback
+              // for older models that ignore it — preventing NO_JSON/PARSE 502s.
+              generationConfig: { temperature: 0.3, maxOutputTokens: 4096, responseMimeType: 'application/json' },
             }),
             signal: ctl.signal,
           });

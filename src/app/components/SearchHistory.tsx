@@ -1,21 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { TrashIcon } from "./icons";
-import { HIST_META, useI18n } from "./i18n";
+import { useI18n } from "./i18n";
+
+interface HistoryItem {
+  id: number;
+  date: string;
+  time: string;
+  text: string;
+  tag: string;
+}
 
 export default function SearchHistory() {
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   const h = t.history;
 
-  // Seed from the current language; reset when language changes.
-  const seed = () => h.items.map((it, i) => ({ id: i, ...it, ...HIST_META[i] }));
-  const [items, setItems] = useState(seed);
-
-  useEffect(() => {
-    setItems(seed());
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lang]);
+  // No real history store exists yet, so a new user must see the empty state —
+  // never fabricated past searches they did not make (alarming in a health/privacy
+  // context). When a real per-device/account history source lands, seed from it.
+  const [items, setItems] = useState<HistoryItem[]>([]);
 
   return (
     <div>
@@ -54,7 +58,7 @@ export default function SearchHistory() {
               <button
                 onClick={() => setItems((cur) => cur.filter((x) => x.id !== it.id))}
                 className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[9px] border border-transparent text-ink-4 transition hover:bg-danger-tint hover:text-danger"
-                aria-label="Delete"
+                aria-label={h.delete}
               >
                 <TrashIcon className="h-4 w-4" />
               </button>
