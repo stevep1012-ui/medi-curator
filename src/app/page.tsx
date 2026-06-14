@@ -2,12 +2,15 @@
 
 import { useEffect, useState, type CSSProperties } from "react";
 import { AutoIcon, MoonIcon, PulseIcon, SunIcon } from "./components/icons";
-import { I18nProvider, useI18n } from "./components/i18n";
+import { useI18n } from "./components/i18n";
+import { I18nProvider } from "./components/I18nProvider";
 import LanguageSwitcher from "./components/LanguageSwitcher";
-import { MenuCards, ToolNav, HOME_HEAD, ACCENT, type ViewId, type MenuId } from "./components/Menu";
+import { HOME_HEAD, ACCENT, type ViewId, type MenuId } from "./components/Menu";
+import { MenuCards, ToolNav } from "./components/menu-views";
 import SymptomAnalysis from "./components/SymptomAnalysis";
 import InteractionCheck from "./components/InteractionCheck";
-import VitaminPairing, { VITAMIN_HEAD } from "./components/VitaminPairing";
+import VitaminPairing from "./components/VitaminPairing";
+import { VITAMIN_HEAD } from "./components/vitamin-data";
 import NextSteps from "./components/NextSteps";
 import HeroCanvas from "./components/HeroCanvas";
 import PharmacyFinder from "./components/PharmacyFinder";
@@ -19,10 +22,8 @@ import {
   ProductFooter,
   Toaster,
   TrustStrip,
-  toast,
-  useAuth,
-  ACCT_TOASTS,
 } from "./components/Chrome";
+import { toast, useAuth, ACCT_TOASTS } from "./components/chrome-helpers";
 
 type ThemeMode = "auto" | "light" | "dark";
 

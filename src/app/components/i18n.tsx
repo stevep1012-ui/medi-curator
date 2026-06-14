@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useContext } from "react";
 
 export type Lang = "ko" | "en" | "ja" | "zh";
 
@@ -617,43 +610,8 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
 };
 
 /* ---------------- context ---------------- */
-type I18nValue = { lang: Lang; setLang: (l: Lang) => void; t: Dict };
-const I18nContext = createContext<I18nValue | null>(null);
-
-function detectInitialLang(): Lang {
-  const saved = localStorage.getItem("mc-lang") as Lang | null;
-  if (saved && TRANSLATIONS[saved]) return saved;
-  // No saved preference → respect the device's default language.
-  const cands =
-    typeof navigator !== "undefined" && navigator.languages && navigator.languages.length
-      ? navigator.languages
-      : [typeof navigator !== "undefined" ? navigator.language : ""];
-  for (const raw of cands) {
-    const c = (raw || "").toLowerCase();
-    if (c.startsWith("ko")) return "ko";
-    if (c.startsWith("ja")) return "ja";
-    if (c.startsWith("zh")) return "zh";
-    if (c.startsWith("en")) return "en";
-  }
-  return "ko";
-}
-
-export function I18nProvider({ children }: { children: ReactNode }) {
-  // Resolve language in the initializer (avoids setState-in-effect).
-  const [lang, setLangState] = useState<Lang>(detectInitialLang);
-
-  useEffect(() => {
-    document.documentElement.lang = lang;
-  }, [lang]);
-
-  const setLang = (l: Lang) => {
-    localStorage.setItem("mc-lang", l);
-    setLangState(l);
-  };
-
-  const value = useMemo<I18nValue>(() => ({ lang, setLang, t: TRANSLATIONS[lang] }), [lang]);
-  return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
-}
+export type I18nValue = { lang: Lang; setLang: (l: Lang) => void; t: Dict };
+export const I18nContext = createContext<I18nValue | null>(null);
 
 export function useI18n() {
   const ctx = useContext(I18nContext);

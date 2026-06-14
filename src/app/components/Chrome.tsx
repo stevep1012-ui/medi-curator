@@ -2,16 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useI18n, type Lang } from "./i18n";
-import { LegalModal, type LegalKey } from "./Legal";
-import { watchAuth, signInWithGoogle, signOutUser } from "../../firebase";
-import type { User as FbUser } from "firebase/auth";
+import { LegalModal } from "./LegalModal";
+import { type LegalKey } from "./Legal";
+import { type ToastDetail } from "./chrome-helpers";
 
-/* ---------------- toast ---------------- */
-type ToastDetail = { msg: string };
-export function toast(msg: string) {
-  if (typeof window === "undefined") return;
-  window.dispatchEvent(new CustomEvent<ToastDetail>("mq-toast", { detail: { msg } }));
-}
+/* ---------------- toast (emitter + copy + useAuth live in chrome-helpers.ts) ---------------- */
 const CheckIcon = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
     <path d="M20 6 9 17l-5-5" />
@@ -218,13 +213,6 @@ export function AccountMenu({ provider, onSignOut }: { provider: string; onSignO
   );
 }
 
-export const ACCT_TOASTS: Record<Lang, { welcome: string; bye: string; langChanged: string }> = {
-  ko: { welcome: "환영합니다", bye: "로그아웃되었습니다", langChanged: "언어가 변경되었습니다" },
-  en: { welcome: "Welcome", bye: "Signed out", langChanged: "Language changed" },
-  ja: { welcome: "ようこそ", bye: "ログアウトしました", langChanged: "言語を変更しました" },
-  zh: { welcome: "欢迎", bye: "已退出登录", langChanged: "已切换语言" },
-};
-
 /* ---------------- auth (demo OAuth gate) ---------------- */
 const AUTHC: Record<Lang, { title: string; sub: string; guest: string; note: string }> = {
   ko: { title: "로그인", sub: "건강 정보를 안전하게 보관하려면 로그인하세요.", guest: "로그인 없이 둘러보기", note: "데모 로그인입니다. 실제 인증 서버에는 연결되지 않습니다." },
@@ -240,68 +228,6 @@ const OAUTH = [
 ];
 function providerLabel(name: string, lang: Lang) {
   return lang === "ko" ? `${name}(으)로 계속` : lang === "ja" ? `${name}で続ける` : lang === "zh" ? `使用${name} 继续` : `Continue with ${name}`;
-}
-// Real Firebase auth. Google is fully wired; other providers (Apple/Kakao/Naver)
-// require Firebase OIDC provider setup and are surfaced as "준비 중" for now.
-// "guest" is a local browse-only mode (curation will return 401 until sign-in).
-export function useAuth() {
-  // Restore guest browse-mode from the initializer (avoids setState-in-effect).
-  const [provider, setProvider] = useState<string | null>(() => {
-    try {
-      const a = JSON.parse(localStorage.getItem("mc-auth") || "null");
-      return a?.provider === "guest" ? "guest" : null;
-    } catch {
-      return null;
-    }
-  });
-  const [user, setUser] = useState<FbUser | null>(null);
-
-  useEffect(() => {
-    let unsub = () => {};
-    watchAuth((u) => {
-      setUser(u);
-      setProvider((prev) => (u ? "google" : prev === "guest" ? "guest" : null));
-    })
-      .then((fn) => {
-        unsub = fn;
-      })
-      .catch(() => {
-        /* firebase unavailable (e.g. no config) — stay signed out */
-      });
-    return () => unsub();
-  }, []);
-
-  const signIn = async (p: string) => {
-    if (p === "guest") {
-      localStorage.setItem("mc-auth", JSON.stringify({ provider: "guest", ts: Date.now() }));
-      setProvider("guest");
-      return;
-    }
-    if (p !== "google") {
-      toast("이 로그인 방식은 준비 중이에요. Google 로그인을 이용해 주세요.");
-      return;
-    }
-    try {
-      const u = await signInWithGoogle();
-      setUser(u);
-      setProvider("google");
-    } catch {
-      toast("로그인에 실패했어요. 잠시 후 다시 시도해 주세요.");
-    }
-  };
-
-  const signOut = async () => {
-    try {
-      await signOutUser();
-    } catch {
-      /* ignore */
-    }
-    localStorage.removeItem("mc-auth");
-    setUser(null);
-    setProvider(null);
-  };
-
-  return { provider, user, signIn, signOut };
 }
 export function LoginGate({ onSignIn }: { onSignIn: (p: string) => void }) {
   const { lang } = useI18n();

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { TrashIcon } from "./icons";
 import { PRIV_ON, useI18n } from "./i18n";
-import { toast } from "./Chrome";
+import { toast } from "./chrome-helpers";
 import { saveConsent } from "../../services/consentService";
 
 export default function PrivacySettings({ uid }: { uid?: string }) {
