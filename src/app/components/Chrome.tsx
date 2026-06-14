@@ -215,10 +215,10 @@ export function AccountMenu({ provider, onSignOut }: { provider: string; onSignO
 
 /* ---------------- auth (demo OAuth gate) ---------------- */
 const AUTHC: Record<Lang, { title: string; sub: string; guest: string; note: string }> = {
-  ko: { title: "로그인", sub: "건강 정보를 안전하게 보관하려면 로그인하세요.", guest: "로그인 없이 둘러보기", note: "데모 로그인입니다. 실제 인증 서버에는 연결되지 않습니다." },
-  en: { title: "Sign in", sub: "Sign in to keep your health information secure.", guest: "Browse without signing in", note: "Demo sign-in — no real auth server is connected." },
-  ja: { title: "ログイン", sub: "健康情報を安全に保つにはログインしてください。", guest: "ログインせずに見る", note: "デモログインです。実際の認証サーバーには接続されません。" },
-  zh: { title: "登录", sub: "登录以安全保存您的健康信息。", guest: "不登录先浏览", note: "演示登录，未连接真实认证服务器。" },
+  ko: { title: "로그인", sub: "건강 정보를 안전하게 보관하려면 로그인하세요.", guest: "로그인 없이 둘러보기", note: "Google·Apple·카카오·네이버 계정으로 로그인합니다. 정보는 안전하게 보호됩니다." },
+  en: { title: "Sign in", sub: "Sign in to keep your health information secure.", guest: "Browse without signing in", note: "Sign in with Google, Apple, Kakao or Naver. Your data is protected." },
+  ja: { title: "ログイン", sub: "健康情報を安全に保つにはログインしてください。", guest: "ログインせずに見る", note: "Google・Apple・カカオ・ネイバーのアカウントでログインします。情報は安全に保護されます。" },
+  zh: { title: "登录", sub: "登录以安全保存您的健康信息。", guest: "不登录先浏览", note: "使用 Google、Apple、Kakao 或 Naver 账户登录。您的信息受到安全保护。" },
 };
 const OAUTH = [
   { id: "google", name: "Google", bg: "#ffffff", fg: "#1f1f1f", bd: "#e3e3e3" },

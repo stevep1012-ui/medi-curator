@@ -5,7 +5,7 @@
 // (react-refresh/only-export-components).
 import { useState, useEffect } from "react";
 import { type Lang } from "./i18n";
-import { watchAuth, signInWithGoogle, signOutUser } from "../../firebase";
+import { watchAuth, signInWith, signOutUser, type ProviderKey } from "../../firebase";
 import type { User as FbUser } from "firebase/auth";
 
 export type ToastDetail = { msg: string };
@@ -22,9 +22,21 @@ export const ACCT_TOASTS: Record<Lang, { welcome: string; bye: string; langChang
   zh: { welcome: "欢迎", bye: "已退出登录", langChanged: "已切换语言" },
 };
 
-// Real Firebase auth. Google is fully wired; other providers (Apple/Kakao/Naver)
-// require Firebase OIDC provider setup and are surfaced as "준비 중" for now.
-// "guest" is a local browse-only mode (curation will return 401 until sign-in).
+const PROVIDER_KEYS: ProviderKey[] = ["google", "apple", "kakao", "naver"];
+
+// Map a signed-in Firebase user back to our provider key (providerData[0]).
+function providerKeyOf(u: FbUser | null): string | null {
+  const pid = u?.providerData?.[0]?.providerId ?? "";
+  if (pid.includes("google")) return "google";
+  if (pid.includes("apple")) return "apple";
+  if (pid.includes("kakao")) return "kakao";
+  if (pid.includes("naver")) return "naver";
+  return u ? "google" : null;
+}
+
+// Real Firebase OAuth. google/apple are built-in; kakao/naver use custom OIDC
+// providers (oidc.kakao / oidc.naver) registered in the Firebase console — until
+// registered they fail with a friendly error. "guest" is a local browse-only mode.
 export function useAuth() {
   // Restore guest browse-mode from the initializer (avoids setState-in-effect).
   const [provider, setProvider] = useState<string | null>(() => {
@@ -41,7 +53,7 @@ export function useAuth() {
     let unsub = () => {};
     watchAuth((u) => {
       setUser(u);
-      setProvider((prev) => (u ? "google" : prev === "guest" ? "guest" : null));
+      setProvider((prev) => (u ? providerKeyOf(u) : prev === "guest" ? "guest" : null));
     })
       .then((fn) => {
         unsub = fn;
@@ -58,15 +70,18 @@ export function useAuth() {
       setProvider("guest");
       return;
     }
-    if (p !== "google") {
-      toast("이 로그인 방식은 준비 중이에요. Google 로그인을 이용해 주세요.");
+    if (!PROVIDER_KEYS.includes(p as ProviderKey)) {
+      toast("지원하지 않는 로그인 방식이에요.");
       return;
     }
     try {
-      const u = await signInWithGoogle();
+      const u = await signInWith(p as ProviderKey);
       setUser(u);
-      setProvider("google");
-    } catch {
+      setProvider(providerKeyOf(u) ?? p);
+    } catch (e) {
+      const code = (e as { code?: string })?.code ?? "";
+      if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") return;
+      // 미등록 provider(auth/operation-not-allowed) 등은 친절한 메시지로.
       toast("로그인에 실패했어요. 잠시 후 다시 시도해 주세요.");
     }
   };

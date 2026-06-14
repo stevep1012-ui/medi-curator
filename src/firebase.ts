@@ -14,10 +14,12 @@ import {
 import {
   getAuth,
   GoogleAuthProvider,
+  OAuthProvider,
   signInWithPopup,
   signOut,
   onAuthStateChanged,
   type Auth,
+  type AuthProvider,
   type User,
 } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
@@ -93,10 +95,38 @@ export async function getIdToken(): Promise<string | null> {
   }
 }
 
-export async function signInWithGoogle(): Promise<User> {
+// Auth providers. google/apple are Firebase built-ins; kakao/naver are custom
+// OIDC providers that must be registered in the Firebase console as
+// `oidc.kakao` / `oidc.naver` (owner setup). Until registered, sign-in throws
+// auth/operation-not-allowed, which the caller surfaces as a friendly message.
+export type ProviderKey = "google" | "apple" | "kakao" | "naver";
+
+function makeProvider(key: ProviderKey): AuthProvider {
+  switch (key) {
+    case "apple": {
+      const p = new OAuthProvider("apple.com");
+      p.addScope("email");
+      p.addScope("name");
+      return p;
+    }
+    case "kakao":
+      return new OAuthProvider("oidc.kakao");
+    case "naver":
+      return new OAuthProvider("oidc.naver");
+    case "google":
+    default:
+      return new GoogleAuthProvider();
+  }
+}
+
+export async function signInWith(key: ProviderKey): Promise<User> {
   const auth = await getAuthInstance();
-  const cred = await signInWithPopup(auth, new GoogleAuthProvider());
+  const cred = await signInWithPopup(auth, makeProvider(key));
   return cred.user;
+}
+
+export async function signInWithGoogle(): Promise<User> {
+  return signInWith("google");
 }
 
 export async function signOutUser(): Promise<void> {
