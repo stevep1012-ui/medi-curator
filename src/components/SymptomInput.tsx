@@ -4,6 +4,7 @@
 // layer that does not wait for a server round-trip.
 import { useRef, useState } from 'react';
 import { useLanguage } from '../contexts/useLanguage';
+import { detectEmergency } from '../lib/emergency';
 
 // SpeechRecognition is a non-standard Web API not in TypeScript's DOM lib, so we
 // declare the minimal surface we use.
@@ -27,23 +28,6 @@ declare global {
     SpeechRecognition?: VoiceRecognitionCtor;
     webkitSpeechRecognition?: VoiceRecognitionCtor;
   }
-}
-
-const MENTAL_KEYWORDS = [
-  '죽고 싶', '자살', '자해', '살고 싶지 않', '극단적 선택',
-  'suicide', 'self-harm', 'kill myself',
-];
-const PHYSICAL_KEYWORDS = [
-  '흉통', '가슴통증', '호흡곤란', '숨을 못 쉬', '의식잃', '의식불명',
-  '반신마비', '안면마비', '극심한 두통', '갑작스러운 두통', '토혈', '혈변', '대량출혈',
-  'chest pain', 'cannot breathe', 'unconscious', 'stroke', 'heart attack',
-];
-
-function detectEmergency(text: string): 'mental' | 'physical' | null {
-  const lower = text.toLowerCase();
-  if (MENTAL_KEYWORDS.some((kw) => lower.includes(kw.toLowerCase()))) return 'mental';
-  if (PHYSICAL_KEYWORDS.some((kw) => lower.includes(kw.toLowerCase()))) return 'physical';
-  return null;
 }
 
 interface SymptomInputProps {

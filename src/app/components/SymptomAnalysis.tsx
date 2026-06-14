@@ -11,10 +11,12 @@ import {
 } from "./icons";
 import { useI18n } from "./i18n";
 import { getCurationFromGemini } from "../../services/geminiService";
+import { detectEmergency, HOTLINES } from "../../lib/emergency";
 import type { CurationResult } from "../../types";
 
 // Emergency crisis surface (AGENTS.md R-005): self-harm/suicide must lead with
-// 1393/109, not just 119. The server returns these departments for crisis input.
+// 109/1577-0199, not just 119. Detected on BOTH the live input (instant, no
+// network/auth needed) and the server result department.
 const MENTAL_DEPT = "정신건강의학과";
 const PHYSICAL_DEPT = "응급의학과";
 
@@ -59,8 +61,34 @@ export default function SymptomAnalysis() {
       result.recommendedDepartment === PHYSICAL_DEPT);
   const isMentalCrisis = result?.recommendedDepartment === MENTAL_DEPT;
 
+  // Instant client-side crisis detection — fires as the user types, before any
+  // network/auth, so a person in crisis always sees the hotline immediately.
+  const instantEmergency = detectEmergency(symptoms);
+
   return (
     <>
+      {instantEmergency && (
+        <section
+          role="alert"
+          className="mb-6 rounded-[18px] border border-danger/40 bg-danger-tint p-5 shadow-sm"
+        >
+          <h2 className="mb-2 flex items-center gap-2.5 text-[15px] font-extrabold tracking-tight text-danger">
+            <ShieldIcon className="h-[17px] w-[17px]" />
+            지금은 즉시 도움을 받는 것이 우선입니다
+          </h2>
+          <p className="mb-3 text-[13px] leading-relaxed text-ink-2">
+            {instantEmergency === "mental"
+              ? "혼자 견디지 마세요. 24시간 전문 상담을 받을 수 있어요."
+              : "응급 징후가 의심됩니다. 지금 바로 119 또는 응급실을 이용하세요."}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {HOTLINES[instantEmergency].map((h) => (
+              <CrisisCall key={h.tel} tel={h.tel} label={h.label} aria={h.aria} />
+            ))}
+          </div>
+        </section>
+      )}
+
       <div className="mb-6 flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3 shadow-sm">
         <InfoIcon className="h-[18px] w-[18px] shrink-0 text-brand" />
         <p className="text-[12.5px] leading-snug text-ink-2">{s.disclaimer}</p>
@@ -189,10 +217,11 @@ export default function SymptomAnalysis() {
   );
 }
 
-function CrisisCall({ tel, label }: { tel: string; label: string }) {
+function CrisisCall({ tel, label, aria }: { tel: string; label: string; aria?: string }) {
   return (
     <a
       href={`tel:${tel}`}
+      aria-label={aria ?? label}
       className="inline-flex h-9 items-center gap-1.5 rounded-full bg-danger px-4 text-[13px] font-bold text-white shadow-sm transition hover:opacity-90"
     >
       <AlertIcon className="h-3.5 w-3.5" />
