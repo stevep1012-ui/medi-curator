@@ -39,6 +39,17 @@ export type Dict = {
     medsPh: string;
     medsVal: string;
     analyze: string;
+    analyzing: string;
+    retry: string;
+    deptLabel: string;
+    adviceLabel: string;
+    analysisError: string;
+    crisisTitle: string;
+    crisisMental: string;
+    crisisPhysical: string;
+    callSuicide: string;
+    callMentalCrisis: string;
+    callEmergency: string;
     resultsOverview: string;
     educationalSummary: string;
     findPharmacy: string;
@@ -145,6 +156,17 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
       medsPh: "예: 세르트랄린 50mg 매일",
       medsVal: "세르트랄린 50mg 매일",
       analyze: "증상 분석하기",
+      analyzing: "분석 중…",
+      retry: "다시 시도",
+      deptLabel: "권장 진료과",
+      adviceLabel: "안내",
+      analysisError: "분석에 실패했습니다. 잠시 후 다시 시도해 주세요.",
+      crisisTitle: "지금은 즉시 도움을 받는 것이 우선입니다",
+      crisisMental: "혼자 견디지 마세요. 24시간 전문 상담을 받을 수 있어요.",
+      crisisPhysical: "응급 징후가 의심됩니다. 지금 바로 119 또는 응급실을 이용하세요.",
+      callSuicide: "자살예방 상담 109",
+      callMentalCrisis: "정신건강 위기상담 1577-0199",
+      callEmergency: "응급 119",
       resultsOverview: "결과 요약",
       educationalSummary: "교육용 요약",
       findPharmacy: "약국 찾기 열기",
@@ -274,6 +296,17 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
       medsPh: "e.g., sertraline 50mg daily",
       medsVal: "sertraline 50mg daily",
       analyze: "Analyze symptoms",
+      analyzing: "Analyzing…",
+      retry: "Try again",
+      deptLabel: "Recommended department",
+      adviceLabel: "Guidance",
+      analysisError: "Analysis failed. Please try again in a moment.",
+      crisisTitle: "Getting help right now comes first",
+      crisisMental: "You don't have to go through this alone. 24-hour professional counseling is available.",
+      crisisPhysical: "Emergency signs are suspected. Call 119 or go to an emergency room now.",
+      callSuicide: "Suicide prevention 109",
+      callMentalCrisis: "Mental-health crisis 1577-0199",
+      callEmergency: "Emergency 119",
       resultsOverview: "Results overview",
       educationalSummary: "Educational summary",
       findPharmacy: "Open pharmacy finder",
@@ -403,6 +436,17 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
       medsPh: "例：セルトラリン50mg 毎日",
       medsVal: "セルトラリン50mg 毎日",
       analyze: "症状を分析",
+      analyzing: "分析中…",
+      retry: "再試行",
+      deptLabel: "推奨される診療科",
+      adviceLabel: "案内",
+      analysisError: "分析に失敗しました。しばらくしてからもう一度お試しください。",
+      crisisTitle: "今すぐ助けを求めることが最優先です",
+      crisisMental: "一人で抱え込まないでください。24時間の専門相談を受けられます。",
+      crisisPhysical: "緊急の兆候が疑われます。今すぐ119または救急外来を利用してください。",
+      callSuicide: "自殺予防相談 109",
+      callMentalCrisis: "メンタルヘルス危機相談 1577-0199",
+      callEmergency: "救急 119",
       resultsOverview: "結果の概要",
       educationalSummary: "教育用の要約",
       findPharmacy: "薬局検索を開く",
@@ -532,6 +576,17 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
       medsPh: "例如：舍曲林50mg每日",
       medsVal: "舍曲林50mg每日",
       analyze: "分析症状",
+      analyzing: "分析中…",
+      retry: "重试",
+      deptLabel: "推荐就诊科室",
+      adviceLabel: "提示",
+      analysisError: "分析失败，请稍后再试。",
+      crisisTitle: "现在立即寻求帮助是第一位的",
+      crisisMental: "不要独自承受。可获得24小时专业咨询。",
+      crisisPhysical: "疑似紧急征兆。请立即拨打119或前往急诊。",
+      callSuicide: "自杀预防咨询 109",
+      callMentalCrisis: "精神健康危机咨询 1577-0199",
+      callEmergency: "急救 119",
       resultsOverview: "结果概览",
       educationalSummary: "教育性摘要",
       findPharmacy: "打开药房查找",
