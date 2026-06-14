@@ -36,14 +36,11 @@ function HomeInner() {
   const { t, lang } = useI18n();
   const { provider, user, signIn, signOut } = useAuth();
   const [view, setView] = useState<ViewId>("home");
-  const [mode, setMode] = useState<ThemeMode>("auto");
-  const [isNight, setIsNight] = useState(false);
-
-  // Load saved theme preference
-  useEffect(() => {
+  const [mode, setMode] = useState<ThemeMode>(() => {
     const saved = localStorage.getItem("mc-theme") as ThemeMode | null;
-    if (saved === "auto" || saved === "light" || saved === "dark") setMode(saved);
-  }, []);
+    return saved === "auto" || saved === "light" || saved === "dark" ? saved : "auto";
+  });
+  const [isNight, setIsNight] = useState(false);
 
   // Re-evaluate time-of-day every minute so it flips at the boundary
   useEffect(() => {

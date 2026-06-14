@@ -245,16 +245,18 @@ function providerLabel(name: string, lang: Lang) {
 // require Firebase OIDC provider setup and are surfaced as "준비 중" for now.
 // "guest" is a local browse-only mode (curation will return 401 until sign-in).
 export function useAuth() {
-  const [provider, setProvider] = useState<string | null>(null);
+  // Restore guest browse-mode from the initializer (avoids setState-in-effect).
+  const [provider, setProvider] = useState<string | null>(() => {
+    try {
+      const a = JSON.parse(localStorage.getItem("mc-auth") || "null");
+      return a?.provider === "guest" ? "guest" : null;
+    } catch {
+      return null;
+    }
+  });
   const [user, setUser] = useState<FbUser | null>(null);
 
   useEffect(() => {
-    try {
-      const a = JSON.parse(localStorage.getItem("mc-auth") || "null");
-      if (a?.provider === "guest") setProvider("guest");
-    } catch {
-      /* ignore */
-    }
     let unsub = () => {};
     watchAuth((u) => {
       setUser(u);

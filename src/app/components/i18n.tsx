@@ -620,32 +620,27 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
 type I18nValue = { lang: Lang; setLang: (l: Lang) => void; t: Dict };
 const I18nContext = createContext<I18nValue | null>(null);
 
-export function I18nProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>("ko");
+function detectInitialLang(): Lang {
+  const saved = localStorage.getItem("mc-lang") as Lang | null;
+  if (saved && TRANSLATIONS[saved]) return saved;
+  // No saved preference → respect the device's default language.
+  const cands =
+    typeof navigator !== "undefined" && navigator.languages && navigator.languages.length
+      ? navigator.languages
+      : [typeof navigator !== "undefined" ? navigator.language : ""];
+  for (const raw of cands) {
+    const c = (raw || "").toLowerCase();
+    if (c.startsWith("ko")) return "ko";
+    if (c.startsWith("ja")) return "ja";
+    if (c.startsWith("zh")) return "zh";
+    if (c.startsWith("en")) return "en";
+  }
+  return "ko";
+}
 
-  useEffect(() => {
-    const saved = localStorage.getItem("mc-lang") as Lang | null;
-    if (saved && TRANSLATIONS[saved]) {
-      setLangState(saved);
-      return;
-    }
-    // No saved preference → respect the device's default language.
-    const cands =
-      typeof navigator !== "undefined" && navigator.languages && navigator.languages.length
-        ? navigator.languages
-        : [typeof navigator !== "undefined" ? navigator.language : ""];
-    const detect = (): Lang => {
-      for (const raw of cands) {
-        const c = (raw || "").toLowerCase();
-        if (c.startsWith("ko")) return "ko";
-        if (c.startsWith("ja")) return "ja";
-        if (c.startsWith("zh")) return "zh";
-        if (c.startsWith("en")) return "en";
-      }
-      return "ko";
-    };
-    setLangState(detect());
-  }, []);
+export function I18nProvider({ children }: { children: ReactNode }) {
+  // Resolve language in the initializer (avoids setState-in-effect).
+  const [lang, setLangState] = useState<Lang>(detectInitialLang);
 
   useEffect(() => {
     document.documentElement.lang = lang;
