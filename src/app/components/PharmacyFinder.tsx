@@ -16,15 +16,28 @@ export default function PharmacyFinder() {
   return (
     <div>
       <div className="flex flex-wrap gap-2.5">
-        <button className="inline-flex h-[50px] flex-1 min-w-[200px] items-center justify-center gap-2.5 rounded-xl bg-brand text-sm font-bold text-white shadow-[0_14px_26px_-18px_rgba(11,110,97,0.85)] transition hover:bg-brand-2">
+        <button
+          type="button"
+          disabled
+          title="준비 중"
+          className="inline-flex h-[50px] flex-1 min-w-[200px] items-center justify-center gap-2.5 rounded-xl bg-brand text-sm font-bold text-white shadow-[0_14px_26px_-18px_rgba(11,110,97,0.85)] transition disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none"
+        >
           <NavIcon className="h-[17px] w-[17px]" />
           {p.useLocation}
         </button>
-        <button className="inline-flex h-[50px] flex-1 min-w-[200px] items-center justify-center gap-2.5 rounded-xl border border-line-2 bg-surface text-sm font-semibold text-ink-2 transition hover:border-brand-tint-2 hover:text-brand">
+        <button
+          type="button"
+          disabled
+          title="준비 중"
+          className="inline-flex h-[50px] flex-1 min-w-[200px] items-center justify-center gap-2.5 rounded-xl border border-line-2 bg-surface text-sm font-semibold text-ink-2 transition disabled:cursor-not-allowed disabled:opacity-60"
+        >
           <PinIcon className="h-[17px] w-[17px]" />
           {p.enterAddress}
         </button>
       </div>
+      <p className="mt-2.5 text-[12.5px] leading-snug text-ink-3">
+        위치 기반 약국 검색은 준비 중입니다. 아래는 화면 예시입니다.
+      </p>
 
       {/* Map mock */}
       <div className="relative mt-4 h-[220px] overflow-hidden rounded-[20px] border border-line bg-surface-soft">

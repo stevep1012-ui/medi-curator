@@ -150,7 +150,17 @@ export default function SymptomAnalysis() {
               className="flex items-start gap-2.5 rounded-xl border border-danger/30 bg-danger-tint px-4 py-3 text-[13.5px] font-medium leading-snug text-danger"
             >
               <AlertIcon className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>{error}</span>
+              <div className="flex-1">
+                <span>{error}</span>
+                <button
+                  type="button"
+                  onClick={runAnalysis}
+                  disabled={loading}
+                  className="ml-2 font-bold underline underline-offset-2 disabled:no-underline disabled:opacity-60"
+                >
+                  다시 시도
+                </button>
+              </div>
             </div>
           )}
         </div>

@@ -5,6 +5,8 @@ import { TrashIcon } from "./icons";
 import { PRIV_ON, useI18n } from "./i18n";
 import { toast } from "./chrome-helpers";
 import { saveConsent } from "../../services/consentService";
+import { LegalModal } from "./LegalModal";
+import { type LegalKey } from "./Legal";
 
 export default function PrivacySettings({ uid }: { uid?: string }) {
   const { t } = useI18n();
@@ -14,6 +16,7 @@ export default function PrivacySettings({ uid }: { uid?: string }) {
   const toggle = (i: number) => setOn((cur) => cur.map((v, idx) => (idx === i ? !v : v)));
 
   const [saving, setSaving] = useState(false);
+  const [legalDoc, setLegalDoc] = useState<LegalKey | null>(null);
   // Persist the PIPA sensitive-info consent record (required by /api/curate).
   // NOTE (legal gate): the consent items, copy, and adult verification (isAdult)
   // require legal-advisor + medical-reviewer sign-off (AGENTS.md). isAdult is
@@ -76,19 +79,22 @@ export default function PrivacySettings({ uid }: { uid?: string }) {
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2.5">
-        <a
-          href="#"
+        <button
+          type="button"
+          onClick={() => setLegalDoc("privacy")}
           className="inline-flex items-center gap-2 rounded-[14px] border border-line bg-surface px-4 py-3.5 text-[13.5px] font-semibold text-ink-2 transition hover:border-line-2 hover:text-ink"
         >
           {pv.policy}
-        </a>
-        <a
-          href="#"
+        </button>
+        <button
+          type="button"
+          onClick={() => setLegalDoc("terms")}
           className="inline-flex items-center gap-2 rounded-[14px] border border-line bg-surface px-4 py-3.5 text-[13.5px] font-semibold text-ink-2 transition hover:border-line-2 hover:text-ink"
         >
           {pv.terms}
-        </a>
+        </button>
       </div>
+      <LegalModal docKey={legalDoc} onClose={() => setLegalDoc(null)} />
 
       <button
         onClick={acceptConsent}
