@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+# Sitemap: add the absolute sitemap URL here once the production domain is confirmed.

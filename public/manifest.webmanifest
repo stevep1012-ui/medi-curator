@@ -1,0 +1,11 @@
+{
+  "name": "메디큐레이터 · MediQ",
+  "short_name": "MediQ",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#091211",
+  "theme_color": "#0a5d52",
+  "icons": [
+    { "src": "/favicon.svg", "type": "image/svg+xml", "sizes": "any", "purpose": "any maskable" }
+  ]
+}
