@@ -1,0 +1,40 @@
+# Render Blueprint — medi-curator 시험(UI 미리보기) 정적 호스팅.
+#
+# 범위(중요): 이 앱은 본래 Firebase Hosting 전용이다. Firebase Hosting이 제공하는
+# 런타임 config(/__/firebase/init.json)와 /api/* → Functions rewrite, App Check
+# 도메인 바인딩이 Render에는 없다. 따라서 이 Blueprint는 프론트엔드 UI를 미리보기
+# 용도로 띄우는 정적 사이트다. 로그인·동의 저장·AI 큐레이션 같은 Firebase 의존
+# 기능은 동작하지 않으며(우아한 에러로 처리됨), 실제 동작하는 시험 서비스는
+# Firebase Hosting 프리뷰 채널 + Firebase 프로젝트/시크릿 설정이 필요하다.
+#
+# 사용법: Render 대시보드 → New → Blueprint → GitHub의 stevep1012-ui/medi-curator
+# 연결 → 이 파일을 자동 인식 → 배포. 아래 envVars(sync:false)는 대시보드에서 입력.
+services:
+  - type: web
+    name: medi-curator-test
+    runtime: static
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    pullRequestPreviewsEnabled: false
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+    routes:
+      # SPA fallback — 실제 정적 파일이 없으면 index.html로. (Vite 단일 페이지)
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      # 클라이언트 빌드타임 공개 키. 값은 Render 대시보드에서 설정(sync:false).
+      # reCAPTCHA Enterprise 사이트키가 없으면 App Check는 자동 비활성(코드가 처리).
+      - key: VITE_RECAPTCHA_ENTERPRISE_SITE_KEY
+        sync: false
+      - key: VITE_GOOGLE_MAPS_API_KEY
+        sync: false
