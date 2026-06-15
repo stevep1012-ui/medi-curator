@@ -122,13 +122,18 @@ function emergencyResult(kind: 'mental' | 'physical') {
   );
 }
 
+// MUST stay in sync with src/schemas/consent.ts CONSENT_VERSION. The client and
+// functions packages cannot share an import, so a policy-version bump requires
+// editing this constant, the client schema, and the firestore.rules path together.
+const CONSENT_VERSION = '2026-06-01';
+
 async function requireAuthenticatedConsent(req: { headers: Record<string, unknown> }) {
   const authz = String(req.headers.authorization ?? '');
   const m = /^Bearer (.+)$/.exec(authz);
   if (!m) return { ok: false as const, status: 401, code: 'NO_TOKEN', message: '인증이 필요합니다' };
   try {
     const decoded = await auth.verifyIdToken(m[1]);
-    const snap = await db.collection('users').doc(decoded.uid).collection('consents').doc('2026-06-01').get();
+    const snap = await db.collection('users').doc(decoded.uid).collection('consents').doc(CONSENT_VERSION).get();
     const data = snap.data();
     if (!snap.exists || !data?.items?.sensitiveHealth || data?.isAdult !== true) {
       return { ok: false as const, status: 403, code: 'CONSENT_REQUIRED', message: '동의가 필요합니다' };

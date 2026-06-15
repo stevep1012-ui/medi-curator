@@ -38,11 +38,13 @@ export function Toaster() {
 }
 
 /* ---------------- trust strip ---------------- */
+// "약사 감수" 등 임상 감독 주장은 검증 근거가 확정되기 전까지 사용하지 않는다
+// (REDTEAM RT-006/RT-011, IMPROVE rank 7). 참고용 정보 수준으로 de-escalate.
 const TRUST: Record<Lang, string[]> = {
-  ko: ["약사 감수 정보", "개인정보 안전 보호", "4개 언어 지원"],
-  en: ["Pharmacist-reviewed", "Privacy protected", "4 languages"],
-  ja: ["薬剤師監修の情報", "プライバシー保護", "4言語対応"],
-  zh: ["药师审核信息", "隐私安全保护", "支持4种语言"],
+  ko: ["참고용 건강 정보", "개인정보 보호", "4개 언어 지원"],
+  en: ["Reference health info", "Privacy protected", "4 languages"],
+  ja: ["参考用の健康情報", "プライバシー保護", "4言語対応"],
+  zh: ["参考性健康信息", "隐私保护", "支持4种语言"],
 };
 export function TrustStrip() {
   const { lang } = useI18n();

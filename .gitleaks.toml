@@ -1,0 +1,15 @@
+title = "medi-curator gitleaks config"
+
+# 기본 룰셋을 그대로 사용하면서 아래 allowlist만 추가한다.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Firebase 웹 앱 config는 설계상 공개값(모든 Firebase 웹 클라 번들에 노출)이며 비밀이 아니다. 보안은 Firestore 규칙 + App Check가 담당한다."
+paths = [
+  '''public/__/firebase/init\.json''',
+]
+# init.json의 공개 apiKey 형태(AIza...)도 명시적으로 허용.
+regexes = [
+  '''AIzaSyAyQhrMeKCgkIlM5Erjlvv6NM5DLdOPgLY''',
+]

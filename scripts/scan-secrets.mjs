@@ -10,7 +10,15 @@ const PATTERNS = [
   { name: 'JWT', re: /eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}/g },
 ];
 
-const ALLOWLIST = [/\.env\.local\.example$/, /node_modules/, /dist\//, /\.git\//, /scan-secrets\.mjs$/];
+const ALLOWLIST = [
+  /\.env\.local\.example$/,
+  /node_modules/,
+  /dist\//,
+  /\.git\//,
+  /scan-secrets\.mjs$/,
+  // Firebase 웹 config는 공개값(비밀 아님). 정적 호스트(Render 등)용 런타임 config.
+  /public\/__\/firebase\/init\.json$/,
+];
 
 let hits = 0;
 function walk(dir) {
