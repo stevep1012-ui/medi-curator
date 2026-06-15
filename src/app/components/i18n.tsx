@@ -78,6 +78,8 @@ export type Dict = {
     sev: { danger: string; caution: string; duplicate: string };
     safeTitle: string;
     safeDetail: string;
+    notice: string;
+    askPharmacist: string;
     disclaimer: string;
     count: (n: number) => string;
     rules: Record<RuleId, [string, string]>;
@@ -207,9 +209,12 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
       noInput: "위 두 칸을 채우고 검사를 눌러 주세요.",
       verdict: { danger: "주의가 필요해요", caution: "확인이 필요해요", safe: "특이사항이 없어요" },
       sev: { danger: "위험", caution: "주의", duplicate: "중복" },
-      safeTitle: "알려진 충돌 없음",
+      safeTitle: "사전 정의된 항목 없음",
       safeDetail:
-        "입력하신 조합에서 알려진 중복·상호작용은 확인되지 않았습니다. 모든 상호작용을 다루지는 않으니, 새 보충제는 약사와 상담 후 시작하세요.",
+        "입력하신 조합에서 사전 정의된 항목은 확인되지 않았습니다. 이 도구는 모든 상호작용을 확인하지 못하며, 결과 없음이 안전을 의미하지 않습니다. 복용 전 반드시 약사·의사와 상담하세요.",
+      notice:
+        "이 도구는 위험·안전 여부를 판정하지 않습니다. 아래 내용은 약사·의사와 확인하기 위한 참고용입니다.",
+      askPharmacist: "약사 확인 권장",
       disclaimer: "이 검사는 일반 정보이며 전문 상담을 대체하지 않습니다. 복용 전 약사·의사와 확인하세요.",
       count: (n) => `${n}건 해당`,
       rules: {
@@ -347,9 +352,12 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
       noInput: "Fill in both fields above, then run the check.",
       verdict: { danger: "Needs caution", caution: "Worth checking", safe: "Nothing notable" },
       sev: { danger: "RISK", caution: "CAUTION", duplicate: "DUPLICATE" },
-      safeTitle: "No known conflicts",
+      safeTitle: "No predefined items matched",
       safeDetail:
-        "No known duplicates or interactions were found for the combination you entered. This does not cover every interaction — start any new supplement after checking with a pharmacist.",
+        "No predefined items matched the combination you entered. This tool cannot check every interaction, and no result does not mean it is safe. Always confirm with a pharmacist or doctor before taking.",
+      notice:
+        "This tool does not judge whether a combination is safe or risky. The items below are for reference when checking with a pharmacist or doctor.",
+      askPharmacist: "Ask a pharmacist",
       disclaimer: "This check is general information and does not replace professional advice. Confirm with a pharmacist or doctor before taking.",
       count: (n) => `${n} issue(s) found`,
       rules: {
@@ -487,9 +495,12 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
       noInput: "上の2つを入力してチェックを押してください。",
       verdict: { danger: "注意が必要です", caution: "確認が必要です", safe: "特記事項はありません" },
       sev: { danger: "危険", caution: "注意", duplicate: "重複" },
-      safeTitle: "既知の衝突なし",
+      safeTitle: "事前定義の該当なし",
       safeDetail:
-        "入力された組み合わせで、既知の重複・相互作用は確認されませんでした。すべての相互作用を網羅するものではありません。新しいサプリは薬剤師に相談してから始めてください。",
+        "入力された組み合わせに事前定義の該当はありませんでした。このツールはすべての相互作用を確認できるわけではなく、該当なしは安全を意味しません。服用前に必ず薬剤師・医師に相談してください。",
+      notice:
+        "このツールは安全・危険の判定を行いません。以下は薬剤師・医師に確認するための参考情報です。",
+      askPharmacist: "薬剤師に確認",
       disclaimer: "このチェックは一般情報であり、専門的な助言に代わるものではありません。服用前に薬剤師・医師にご確認ください。",
       count: (n) => `${n} 件の該当`,
       rules: {
@@ -627,9 +638,12 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
       noInput: "请填写以上两栏后点击检查。",
       verdict: { danger: "需要注意", caution: "值得确认", safe: "无特别事项" },
       sev: { danger: "风险", caution: "注意", duplicate: "重复" },
-      safeTitle: "未发现已知冲突",
+      safeTitle: "未匹配到预设项目",
       safeDetail:
-        "未发现您所输入组合的已知重复或相互作用。这并不涵盖所有相互作用——开始任何新补充剂前请咨询药剂师。",
+        "您输入的组合未匹配到预设项目。本工具无法检查所有相互作用，无结果并不代表安全。服用前请务必咨询药剂师或医生。",
+      notice:
+        "本工具不判定组合是否安全或有风险。以下内容仅供您咨询药剂师或医生时参考。",
+      askPharmacist: "请咨询药剂师",
       disclaimer: "本检查为一般信息，不能替代专业建议。服用前请向药剂师或医生确认。",
       count: (n) => `发现 ${n} 项`,
       rules: {

@@ -1,20 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { AlertIcon, CheckIcon, InfoIcon, PillIcon, SearchIcon, ShieldCheckIcon } from "./icons";
+import { InfoIcon, PillIcon, SearchIcon, ShieldCheckIcon } from "./icons";
 import { useI18n } from "./i18n";
-import { runInteractionCheck, type CheckResult, type Severity } from "./interactionRules";
-
-const SEV_DOT: Record<Severity, string> = {
-  danger: "bg-danger",
-  caution: "bg-warn",
-  duplicate: "bg-brand-bright",
-};
-const SEV_BADGE: Record<Severity, string> = {
-  danger: "bg-danger-tint text-danger",
-  caution: "bg-warn-tint text-warn",
-  duplicate: "bg-brand-tint text-brand",
-};
+import { runInteractionCheck, type CheckResult } from "./interactionRules";
 
 export default function InteractionCheck() {
   const { t } = useI18n();
@@ -23,17 +12,6 @@ export default function InteractionCheck() {
   const [query, setQuery] = useState(x.queryVal);
   const [current, setCurrent] = useState(x.currentVal);
   const [result, setResult] = useState<CheckResult | null>(null);
-
-  const vRing = {
-    danger: "border-danger-line bg-danger-tint text-danger",
-    caution: "border-[color:var(--warn)]/30 bg-warn-tint text-warn",
-    safe: "border-[color:var(--ok)]/30 bg-ok-tint text-ok",
-  } as const;
-  const vIcon = {
-    danger: <AlertIcon className="h-[18px] w-[18px]" />,
-    caution: <InfoIcon className="h-[18px] w-[18px]" />,
-    safe: <CheckIcon className="h-[18px] w-[18px]" />,
-  } as const;
 
   return (
     <div>
@@ -88,21 +66,21 @@ export default function InteractionCheck() {
         <div className="mt-6 space-y-3.5">
           <h2 className="text-[15px] font-bold tracking-tight text-ink">{x.findingsTitle}</h2>
 
-          <div className={`flex items-center gap-3 rounded-[16px] border px-4 py-3.5 ${vRing[result.verdict]}`}>
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface/70">
-              {vIcon[result.verdict]}
+          {/* Non-judgmental notice — the tool no longer renders a danger/caution/safe
+              verdict (RT-005: avoid personalized medical judgment). It only surfaces
+              topics to confirm with a pharmacist. */}
+          <div className="flex items-start gap-3 rounded-[16px] border border-line bg-surface px-4 py-3.5">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-soft text-ink-3">
+              <InfoIcon className="h-[18px] w-[18px]" />
             </span>
-            <div className="min-w-0 flex-1 leading-tight">
-              <b className="text-[15px] font-bold">{x.verdict[result.verdict]}</b>
-              <span className="ml-2 text-[12px] font-medium opacity-80">{x.count(result.findings.length)}</span>
-            </div>
+            <p className="min-w-0 flex-1 text-[13px] leading-relaxed text-ink-2">{x.notice}</p>
           </div>
 
           {result.findings.length === 0 ? (
             <section className="rounded-[18px] border border-line bg-surface p-5 shadow-sm">
               <h3 className="mb-3.5 flex items-center gap-2.5 text-[14px] font-bold tracking-tight text-ink">
-                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-tint text-brand">
-                  <CheckIcon className="h-[15px] w-[15px]" />
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-surface-soft text-ink-3">
+                  <InfoIcon className="h-[15px] w-[15px]" />
                 </span>
                 {x.safeTitle}
               </h3>
@@ -114,12 +92,12 @@ export default function InteractionCheck() {
               return (
                 <section key={f.id} className="rounded-[16px] border border-line bg-surface p-4 shadow-sm sm:px-5">
                   <div className="flex items-start gap-3">
-                    <span className={`mt-[3px] h-2 w-2 shrink-0 rounded-full ${SEV_DOT[f.sev]}`} />
+                    <span className="mt-[3px] h-2 w-2 shrink-0 rounded-full bg-ink-4" />
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <h4 className="text-[14.5px] font-bold text-ink">{r[0]}</h4>
-                        <span className={`shrink-0 whitespace-nowrap rounded-full px-2 py-[2px] text-[10.5px] font-extrabold ${SEV_BADGE[f.sev]}`}>
-                          {x.sev[f.sev]}
+                        <span className="shrink-0 whitespace-nowrap rounded-full bg-surface-soft px-2 py-[2px] text-[10.5px] font-extrabold text-ink-3">
+                          {x.askPharmacist}
                         </span>
                       </div>
                       <p className="mt-1.5 text-[13px] leading-relaxed text-ink-2">{r[1]}</p>
