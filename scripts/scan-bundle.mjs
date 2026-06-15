@@ -16,6 +16,8 @@ let hits = [];
 function walk(d) {
   for (const e of fs.readdirSync(d, { withFileTypes: true })) {
     const p = path.join(d, e.name);
+    // Firebase 웹 config(init.json)는 공개값 — 정적 호스트용 런타임 config라 dist에 포함되며 비밀 아님.
+    if (/[\\/]__[\\/]firebase[\\/]init\.json$/.test(p)) continue;
     if (e.isDirectory()) walk(p);
     else if (/\.(js|html|json|map)$/.test(e.name)) {
       const txt = fs.readFileSync(p, 'utf8');
