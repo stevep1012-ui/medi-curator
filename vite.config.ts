@@ -39,6 +39,22 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
+    build: {
+      // Firebase SDK를 별도 벤더 청크로 분리해 초기 번들을 줄인다(앱 코드와 캐시 분리).
+      // 분리 후에도 firebase 청크가 500kB를 넘어 경고가 남으므로 임계치를 올려 무음 처리.
+      chunkSizeWarningLimit: 900,
+      rollupOptions: {
+        output: {
+          // rolldown-vite는 함수 형식만 허용. firebase/@firebase 모듈을 한 청크로 묶는다.
+          manualChunks(id: string) {
+            if (id.includes('node_modules/firebase') || id.includes('node_modules/@firebase')) {
+              return 'firebase';
+            }
+            return undefined;
+          },
+        },
+      },
+    },
     test: {
       environment: 'jsdom',
       globals: true,
