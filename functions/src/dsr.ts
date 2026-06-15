@@ -6,6 +6,7 @@ import { onRequest } from 'firebase-functions/v2/https';
 import * as logger from 'firebase-functions/logger';
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
+import { enforceCentralRateLimit } from './rateLimit';
 
 if (!admin.apps.length) admin.initializeApp();
 const db = admin.firestore();
@@ -68,6 +69,19 @@ export const dsr = onRequest(
       return;
     }
 
+    // App Check — curate와 동일한 무결성 가드. 무결한 앱에서 온 요청만 허용한다.
+    const appCheckToken = String(req.headers['x-firebase-appcheck'] ?? '');
+    if (!appCheckToken) {
+      res.status(401).json({ ok: false, code: 'APP_CHECK_REQUIRED', message: '앱 무결성 확인이 필요합니다' });
+      return;
+    }
+    try {
+      await admin.appCheck().verifyToken(appCheckToken);
+    } catch {
+      res.status(401).json({ ok: false, code: 'APP_CHECK_REQUIRED', message: '앱 무결성 확인에 실패했습니다' });
+      return;
+    }
+
     // ID 토큰 검증
     const authz = req.headers.authorization ?? '';
     const m = /^Bearer (.+)$/.exec(authz);
@@ -76,11 +90,25 @@ export const dsr = onRequest(
       return;
     }
     let uid: string;
+    let authTimeSec = 0;
     try {
       const decoded = await auth.verifyIdToken(m[1]);
       uid = decoded.uid;
+      authTimeSec = typeof decoded.auth_time === 'number' ? decoded.auth_time : 0;
     } catch {
       res.status(401).json({ ok: false, code: 'BAD_TOKEN', message: '토큰 검증 실패' });
+      return;
+    }
+
+    // uid 단위 rate limit — 토큰 탈취 시 플러드/비용 폭주(다중 Firestore op + auditLog) 방지.
+    let rateAllowed = true;
+    try {
+      rateAllowed = await enforceCentralRateLimit(db, uid);
+    } catch {
+      rateAllowed = true; // rate-limit 백엔드 장애 시 사용자 권리 요청을 막지 않는다(fail-open).
+    }
+    if (!rateAllowed) {
+      res.status(429).json({ ok: false, code: 'RATE_LIMIT', message: '요청이 많습니다. 잠시 후 다시 시도해 주세요' });
       return;
     }
 
@@ -90,6 +118,16 @@ export const dsr = onRequest(
       return;
     }
     const { type, patch } = parsed.data;
+
+    // 되돌릴 수 없는 계정/데이터 삭제(erase)는 최근 재인증을 요구한다(PIPA §36). 탈취·재생된
+    // ID 토큰 한 번으로 계정이 영구 삭제되는 것을 막기 위해 auth_time이 5분 이내여야 한다.
+    if (type === 'erase') {
+      const ageSec = Math.floor(Date.now() / 1000) - authTimeSec;
+      if (!authTimeSec || ageSec > 300) {
+        res.status(401).json({ ok: false, code: 'REAUTH_REQUIRED', message: '계정 삭제는 최근 로그인 확인이 필요합니다. 다시 로그인 후 시도해 주세요' });
+        return;
+      }
+    }
     const requestId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
     logger.info('dsr.start', { requestId, uid, type });
 
