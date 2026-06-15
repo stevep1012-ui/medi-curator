@@ -64,25 +64,29 @@ export function useAuth() {
     return () => unsub();
   }, []);
 
-  const signIn = async (p: string) => {
+  // Returns true only when sign-in actually succeeded, so the caller can defer the
+  // "welcome" toast until then (a failed/cancelled login must not show "Welcome").
+  const signIn = async (p: string): Promise<boolean> => {
     if (p === "guest") {
       localStorage.setItem("mc-auth", JSON.stringify({ provider: "guest", ts: Date.now() }));
       setProvider("guest");
-      return;
+      return true;
     }
     if (!PROVIDER_KEYS.includes(p as ProviderKey)) {
       toast("지원하지 않는 로그인 방식이에요.");
-      return;
+      return false;
     }
     try {
       const u = await signInWith(p as ProviderKey);
       setUser(u);
       setProvider(providerKeyOf(u) ?? p);
+      return true;
     } catch (e) {
       const code = (e as { code?: string })?.code ?? "";
-      if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") return;
+      if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") return false;
       // 미등록 provider(auth/operation-not-allowed) 등은 친절한 메시지로.
       toast("로그인에 실패했어요. 잠시 후 다시 시도해 주세요.");
+      return false;
     }
   };
 

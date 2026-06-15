@@ -65,8 +65,9 @@ function HomeInner() {
     });
   };
 
-  const onSignIn = (p: string) => {
-    signIn(p);
+  const onSignIn = async (p: string) => {
+    const ok = await signIn(p);
+    if (!ok) return; // failed/cancelled login: no "welcome" toast
     const name = p === "guest" ? ACCT_TOASTS[lang].welcome : `${ACCT_TOASTS[lang].welcome} · ${p[0].toUpperCase() + p.slice(1)}`;
     toast(name);
   };

@@ -155,6 +155,7 @@ export function AccountMenu({ provider, onSignOut }: { provider: string; onSignO
   const pm = providerMeta(provider, ac.guest);
   const initial = (pm.name[0] || "·").toUpperCase();
   const [open, setOpen] = useState(false);
+  const [legal, setLegal] = useState<LegalKey | null>(null);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
@@ -188,14 +189,17 @@ export function AccountMenu({ provider, onSignOut }: { provider: string; onSignO
             <p className="mt-1.5 flex items-center gap-2 text-[13px] font-bold text-ink">{avatar("h-5 w-5 text-[10px]")}{pm.name}</p>
           </div>
           <div className="my-1 h-px bg-line" />
-          <a href="#" className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-semibold text-ink-2 transition hover:bg-surface-soft">
-            <svg viewBox="0 0 24 24" className="h-4 w-4 text-ink-3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" /></svg>
-            {ac.settings}
-          </a>
-          <a href="#" className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-semibold text-ink-2 transition hover:bg-surface-soft">
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              setLegal("support");
+            }}
+            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[13px] font-semibold text-ink-2 transition hover:bg-surface-soft"
+          >
             <svg viewBox="0 0 24 24" className="h-4 w-4 text-ink-3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9.2" /><path d="M12 8h.01M11 12h1v4h1" /></svg>
             {ac.help}
-          </a>
+          </button>
           <div className="my-1 h-px bg-line" />
           <button
             onClick={() => {
@@ -209,6 +213,7 @@ export function AccountMenu({ provider, onSignOut }: { provider: string; onSignO
           </button>
         </div>
       )}
+      <LegalModal docKey={legal} onClose={() => setLegal(null)} />
     </div>
   );
 }
@@ -232,14 +237,57 @@ function providerLabel(name: string, lang: Lang) {
 export function LoginGate({ onSignIn }: { onSignIn: (p: string) => void }) {
   const { lang } = useI18n();
   const a = AUTHC[lang];
+  const dialogRef = useRef<HTMLDivElement>(null);
+  // Modal a11y: move focus in, trap Tab inside the dialog, restore focus on close,
+  // and let Escape fall back to guest browsing (the gate's non-blocking exit).
+  useEffect(() => {
+    const node = dialogRef.current;
+    const prevFocus = document.activeElement as HTMLElement | null;
+    const focusables = () =>
+      Array.from(node?.querySelectorAll<HTMLElement>("button, [href], input, [tabindex]:not([tabindex='-1'])") ?? []).filter(
+        (el) => !el.hasAttribute("disabled"),
+      );
+    focusables()[0]?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onSignIn("guest");
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const f = focusables();
+      if (f.length === 0) return;
+      const first = f[0];
+      const last = f[f.length - 1];
+      const active = document.activeElement;
+      if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      prevFocus?.focus?.();
+    };
+  }, [onSignIn]);
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ background: "rgba(8,18,17,.55)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}>
-      <div className="w-full max-w-sm rounded-[24px] border border-line bg-surface p-7 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.55)]">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="login-gate-title"
+        className="w-full max-w-sm rounded-[24px] border border-line bg-surface p-7 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.55)]"
+      >
         <div className="flex flex-col items-center text-center">
           <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-ink text-surface ring-1 ring-black/5">
             <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12h4l2-6 4 14 2-8h6" /></svg>
           </span>
-          <h2 className="mt-4 text-[20px] font-bold tracking-tight text-ink">{a.title}</h2>
+          <h2 id="login-gate-title" className="mt-4 text-[20px] font-bold tracking-tight text-ink">{a.title}</h2>
           <p className="mt-1.5 max-w-[16rem] text-[13px] leading-snug text-ink-3">{a.sub}</p>
         </div>
         <div className="mt-6 flex flex-col gap-2.5">

@@ -19,7 +19,7 @@ export default function PharmacyFinder() {
         <button
           type="button"
           disabled
-          title="준비 중"
+          title={p.preparing}
           className="inline-flex h-[50px] flex-1 min-w-[200px] items-center justify-center gap-2.5 rounded-xl bg-brand text-sm font-bold text-white shadow-[0_14px_26px_-18px_rgba(11,110,97,0.85)] transition disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none"
         >
           <NavIcon className="h-[17px] w-[17px]" />
@@ -28,7 +28,7 @@ export default function PharmacyFinder() {
         <button
           type="button"
           disabled
-          title="준비 중"
+          title={p.preparing}
           className="inline-flex h-[50px] flex-1 min-w-[200px] items-center justify-center gap-2.5 rounded-xl border border-line-2 bg-surface text-sm font-semibold text-ink-2 transition disabled:cursor-not-allowed disabled:opacity-60"
         >
           <PinIcon className="h-[17px] w-[17px]" />
@@ -36,7 +36,7 @@ export default function PharmacyFinder() {
         </button>
       </div>
       <p className="mt-2.5 text-[12.5px] leading-snug text-ink-3">
-        위치 기반 약국 검색은 준비 중입니다. 아래는 화면 예시입니다.
+        {p.previewNote}
       </p>
 
       {/* Map mock */}
@@ -73,7 +73,12 @@ export default function PharmacyFinder() {
         ))}
       </div>
 
-      <div className="mt-4 flex flex-col gap-2.5">
+      <div className="mt-4 flex items-center">
+        <span className="inline-flex h-6 items-center rounded-full border border-line-2 bg-surface-soft px-2.5 text-[11px] font-bold uppercase tracking-wide text-ink-4">
+          {p.demoBadge}
+        </span>
+      </div>
+      <div className="mt-2.5 flex flex-col gap-2.5">
         {p.items.map((item, i) => {
           const meta = PH_META[i];
           return (
@@ -106,7 +111,12 @@ export default function PharmacyFinder() {
                   <span>{item.note}</span>
                 </div>
               </div>
-              <button className="inline-flex h-9 shrink-0 items-center gap-1.5 self-center rounded-[9px] border border-line bg-surface-soft px-3.5 text-[12.5px] font-semibold text-ink-2 transition hover:border-brand-tint-2 hover:bg-brand-tint hover:text-brand">
+              <button
+                type="button"
+                disabled
+                title={p.preparing}
+                className="inline-flex h-9 shrink-0 items-center gap-1.5 self-center rounded-[9px] border border-line bg-surface-soft px-3.5 text-[12.5px] font-semibold text-ink-2 transition disabled:cursor-not-allowed disabled:opacity-50"
+              >
                 {p.directions}
               </button>
             </div>

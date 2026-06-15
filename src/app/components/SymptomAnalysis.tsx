@@ -21,7 +21,7 @@ const MENTAL_DEPT = "정신건강의학과";
 const PHYSICAL_DEPT = "응급의학과";
 
 export default function SymptomAnalysis() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const s = t.symptom;
 
   const [symptoms, setSymptoms] = useState(s.symptomsVal);
@@ -30,9 +30,15 @@ export default function SymptomAnalysis() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<CurationResult | null>(null);
 
+  // Instant client-side crisis detection — fires as the user types, before any
+  // network/auth, so a person in crisis always sees the hotline immediately.
+  const instantEmergency = detectEmergency(symptoms);
+
+  // On a mental-health crisis, block general curation entirely (R-004): the user
+  // should see crisis hotlines only, not a general AI health result alongside.
   const isAnalyzeDisabled = useMemo(
-    () => loading || (!symptoms.trim() && !currentMedication.trim()),
-    [loading, symptoms, currentMedication]
+    () => loading || instantEmergency === "mental" || (!symptoms.trim() && !currentMedication.trim()),
+    [loading, instantEmergency, symptoms, currentMedication]
   );
 
   async function runAnalysis() {
@@ -44,12 +50,12 @@ export default function SymptomAnalysis() {
         symptoms.trim(),
         currentMedication.trim(),
         false,
-        "ko"
+        lang
       );
       setResult(data);
     } catch (e) {
-      // Service maps auth/transport/forbidden errors to friendly Korean messages.
-      setError(e instanceof Error ? e.message : "분석에 실패했습니다. 잠시 후 다시 시도해 주세요.");
+      // Service maps auth/transport/forbidden errors to friendly messages.
+      setError(e instanceof Error ? e.message : s.analysisError);
     } finally {
       setLoading(false);
     }
@@ -61,10 +67,6 @@ export default function SymptomAnalysis() {
       result.recommendedDepartment === PHYSICAL_DEPT);
   const isMentalCrisis = result?.recommendedDepartment === MENTAL_DEPT;
 
-  // Instant client-side crisis detection — fires as the user types, before any
-  // network/auth, so a person in crisis always sees the hotline immediately.
-  const instantEmergency = detectEmergency(symptoms);
-
   return (
     <>
       {instantEmergency && (
@@ -74,12 +76,10 @@ export default function SymptomAnalysis() {
         >
           <h2 className="mb-2 flex items-center gap-2.5 text-[15px] font-extrabold tracking-tight text-danger">
             <ShieldIcon className="h-[17px] w-[17px]" />
-            지금은 즉시 도움을 받는 것이 우선입니다
+            {s.crisisTitle}
           </h2>
           <p className="mb-3 text-[13px] leading-relaxed text-ink-2">
-            {instantEmergency === "mental"
-              ? "혼자 견디지 마세요. 24시간 전문 상담을 받을 수 있어요."
-              : "응급 징후가 의심됩니다. 지금 바로 119 또는 응급실을 이용하세요."}
+            {instantEmergency === "mental" ? s.crisisMental : s.crisisPhysical}
           </p>
           <div className="flex flex-wrap gap-2">
             {HOTLINES[instantEmergency].map((h) => (
@@ -134,7 +134,7 @@ export default function SymptomAnalysis() {
             {loading ? (
               <>
                 <span className="h-[18px] w-[18px] animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                분석 중…
+                {s.analyzing}
               </>
             ) : (
               <>
@@ -158,7 +158,7 @@ export default function SymptomAnalysis() {
                   disabled={loading}
                   className="ml-2 font-bold underline underline-offset-2 disabled:no-underline disabled:opacity-60"
                 >
-                  다시 시도
+                  {s.retry}
                 </button>
               </div>
             </div>
@@ -175,17 +175,17 @@ export default function SymptomAnalysis() {
             >
               <h3 className="mb-2 flex items-center gap-2.5 text-[15px] font-extrabold tracking-tight text-danger">
                 <ShieldIcon className="h-[17px] w-[17px]" />
-                지금은 즉시 도움을 받는 것이 우선입니다
+                {s.crisisTitle}
               </h3>
               <p className="mb-3 text-[13.5px] leading-relaxed text-ink-2">{result.aiAdvice}</p>
               <div className="flex flex-wrap gap-2">
                 {isMentalCrisis && (
                   <>
-                    <CrisisCall tel="109" label="자살예방 상담 109" />
-                    <CrisisCall tel="1577-0199" label="정신건강 위기상담 1577-0199" />
+                    <CrisisCall tel="109" label={s.callSuicide} />
+                    <CrisisCall tel="1577-0199" label={s.callMentalCrisis} />
                   </>
                 )}
-                <CrisisCall tel="119" label="응급 119" />
+                <CrisisCall tel="119" label={s.callEmergency} />
               </div>
             </section>
           )}
@@ -197,12 +197,12 @@ export default function SymptomAnalysis() {
             </span>
           </div>
 
-          <ResultBlock title="권장 진료과" tone="brand" icon={<InfoIcon className="h-[15px] w-[15px]" />}>
+          <ResultBlock title={s.deptLabel} tone="brand" icon={<InfoIcon className="h-[15px] w-[15px]" />}>
             <p className="text-[13.5px] leading-relaxed text-ink-2">{result.recommendedDepartment}</p>
           </ResultBlock>
 
           {!isCrisis && (
-            <ResultBlock title="안내" tone="brand" icon={<PulseIcon className="h-[15px] w-[15px]" />}>
+            <ResultBlock title={s.adviceLabel} tone="brand" icon={<PulseIcon className="h-[15px] w-[15px]" />}>
               <p className="text-[13.5px] leading-relaxed text-ink-2">{result.aiAdvice}</p>
             </ResultBlock>
           )}

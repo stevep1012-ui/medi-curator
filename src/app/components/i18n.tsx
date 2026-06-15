@@ -39,6 +39,17 @@ export type Dict = {
     medsPh: string;
     medsVal: string;
     analyze: string;
+    analyzing: string;
+    retry: string;
+    deptLabel: string;
+    adviceLabel: string;
+    analysisError: string;
+    crisisTitle: string;
+    crisisMental: string;
+    crisisPhysical: string;
+    callSuicide: string;
+    callMentalCrisis: string;
+    callEmergency: string;
     resultsOverview: string;
     educationalSummary: string;
     findPharmacy: string;
@@ -78,12 +89,16 @@ export type Dict = {
     open: string;
     closed: string;
     directions: string;
+    preparing: string;
+    previewNote: string;
+    demoBadge: string;
     items: { name: string; addr: string; note: string }[];
   };
   history: {
     title: string;
     clearAll: string;
     empty: string;
+    delete: string;
     items: { text: string; tag: string }[];
   };
   privacy: {
@@ -141,6 +156,17 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
       medsPh: "예: 세르트랄린 50mg 매일",
       medsVal: "세르트랄린 50mg 매일",
       analyze: "증상 분석하기",
+      analyzing: "분석 중…",
+      retry: "다시 시도",
+      deptLabel: "권장 진료과",
+      adviceLabel: "안내",
+      analysisError: "분석에 실패했습니다. 잠시 후 다시 시도해 주세요.",
+      crisisTitle: "지금은 즉시 도움을 받는 것이 우선입니다",
+      crisisMental: "혼자 견디지 마세요. 24시간 전문 상담을 받을 수 있어요.",
+      crisisPhysical: "응급 징후가 의심됩니다. 지금 바로 119 또는 응급실을 이용하세요.",
+      callSuicide: "자살예방 상담 109",
+      callMentalCrisis: "정신건강 위기상담 1577-0199",
+      callEmergency: "응급 119",
       resultsOverview: "결과 요약",
       educationalSummary: "교육용 요약",
       findPharmacy: "약국 찾기 열기",
@@ -205,6 +231,9 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
       open: "영업 중",
       closed: "영업 종료",
       directions: "길찾기",
+      preparing: "준비 중",
+      previewNote: "위치 기반 약국 검색은 준비 중입니다. 아래는 화면 예시입니다.",
+      demoBadge: "샘플 데이터",
       items: [
         { name: "온누리약국", addr: "서울 강남구 역삼로 152 · 1층", note: "02-538-1004" },
         { name: "역삼365약국", addr: "서울 강남구 테헤란로 211 · 지하 1층", note: "02-501-7942" },
@@ -214,6 +243,7 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
     history: {
       title: "검색 기록",
       clearAll: "전체 삭제",
+      delete: "삭제",
       empty: "저장된 검색이 없습니다. 기록은 이 기기에만 저장됩니다.",
       items: [
         { text: "3일간 인후통과 기침, 약 37.5°C 미열.", tag: "이비인후과" },
@@ -266,6 +296,17 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
       medsPh: "e.g., sertraline 50mg daily",
       medsVal: "sertraline 50mg daily",
       analyze: "Analyze symptoms",
+      analyzing: "Analyzing…",
+      retry: "Try again",
+      deptLabel: "Recommended department",
+      adviceLabel: "Guidance",
+      analysisError: "Analysis failed. Please try again in a moment.",
+      crisisTitle: "Getting help right now comes first",
+      crisisMental: "You don't have to go through this alone. 24-hour professional counseling is available.",
+      crisisPhysical: "Emergency signs are suspected. Call 119 or go to an emergency room now.",
+      callSuicide: "Suicide prevention 109",
+      callMentalCrisis: "Mental-health crisis 1577-0199",
+      callEmergency: "Emergency 119",
       resultsOverview: "Results overview",
       educationalSummary: "Educational summary",
       findPharmacy: "Open pharmacy finder",
@@ -330,6 +371,9 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
       open: "OPEN",
       closed: "CLOSED",
       directions: "Directions",
+      preparing: "Coming soon",
+      previewNote: "Location-based pharmacy search is coming soon. Below is a sample screen.",
+      demoBadge: "Sample data",
       items: [
         { name: "Onnuri Pharmacy", addr: "152 Yeoksam-ro, Gangnam-gu · 1F", note: "02-538-1004" },
         { name: "Yeoksam 365 Pharmacy", addr: "211 Teheran-ro, Gangnam-gu · B1", note: "02-501-7942" },
@@ -339,6 +383,7 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
     history: {
       title: "Search history",
       clearAll: "Clear all",
+      delete: "Delete",
       empty: "No saved searches. Your history stays on this device only.",
       items: [
         { text: "Sore throat and cough for 3 days, mild fever around 37.5°C.", tag: "ENT" },
@@ -391,6 +436,17 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
       medsPh: "例：セルトラリン50mg 毎日",
       medsVal: "セルトラリン50mg 毎日",
       analyze: "症状を分析",
+      analyzing: "分析中…",
+      retry: "再試行",
+      deptLabel: "推奨される診療科",
+      adviceLabel: "案内",
+      analysisError: "分析に失敗しました。しばらくしてからもう一度お試しください。",
+      crisisTitle: "今すぐ助けを求めることが最優先です",
+      crisisMental: "一人で抱え込まないでください。24時間の専門相談を受けられます。",
+      crisisPhysical: "緊急の兆候が疑われます。今すぐ119または救急外来を利用してください。",
+      callSuicide: "自殺予防相談 109",
+      callMentalCrisis: "メンタルヘルス危機相談 1577-0199",
+      callEmergency: "救急 119",
       resultsOverview: "結果の概要",
       educationalSummary: "教育用の要約",
       findPharmacy: "薬局検索を開く",
@@ -455,6 +511,9 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
       open: "営業中",
       closed: "営業終了",
       directions: "経路",
+      preparing: "準備中",
+      previewNote: "位置情報による薬局検索は準備中です。以下はサンプル画面です。",
+      demoBadge: "サンプルデータ",
       items: [
         { name: "オンヌリ薬局", addr: "ソウル江南区 駅三路152・1F", note: "02-538-1004" },
         { name: "駅三365薬局", addr: "ソウル江南区 テヘラン路211・B1", note: "02-501-7942" },
@@ -464,6 +523,7 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
     history: {
       title: "検索履歴",
       clearAll: "すべて削除",
+      delete: "削除",
       empty: "保存された検索はありません。履歴はこの端末にのみ保存されます。",
       items: [
         { text: "3日間のどの痛みと咳、約37.5℃の微熱。", tag: "耳鼻咽喉科" },
@@ -516,6 +576,17 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
       medsPh: "例如：舍曲林50mg每日",
       medsVal: "舍曲林50mg每日",
       analyze: "分析症状",
+      analyzing: "分析中…",
+      retry: "重试",
+      deptLabel: "推荐就诊科室",
+      adviceLabel: "提示",
+      analysisError: "分析失败，请稍后再试。",
+      crisisTitle: "现在立即寻求帮助是第一位的",
+      crisisMental: "不要独自承受。可获得24小时专业咨询。",
+      crisisPhysical: "疑似紧急征兆。请立即拨打119或前往急诊。",
+      callSuicide: "自杀预防咨询 109",
+      callMentalCrisis: "精神健康危机咨询 1577-0199",
+      callEmergency: "急救 119",
       resultsOverview: "结果概览",
       educationalSummary: "教育性摘要",
       findPharmacy: "打开药房查找",
@@ -580,6 +651,9 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
       open: "营业中",
       closed: "已打烊",
       directions: "导航",
+      preparing: "准备中",
+      previewNote: "基于位置的药房搜索正在准备中。以下为示例界面。",
+      demoBadge: "示例数据",
       items: [
         { name: "温暖药房", addr: "首尔江南区 驿三路152 · 1层", note: "02-538-1004" },
         { name: "驿三365药房", addr: "首尔江南区 德黑兰路211 · 地下1层", note: "02-501-7942" },
@@ -589,6 +663,7 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
     history: {
       title: "搜索记录",
       clearAll: "全部清除",
+      delete: "删除",
       empty: "暂无保存的搜索。记录仅保存在本设备。",
       items: [
         { text: "咽喉痛和咳嗽3天，低烧约37.5°C。", tag: "耳鼻喉科" },

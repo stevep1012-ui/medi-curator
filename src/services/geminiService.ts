@@ -8,8 +8,12 @@ import type { CurationResult } from '../types';
 import { getAppCheckToken, getIdToken } from '../firebase';
 
 // In-memory cache: identical queries within a session reuse the result and make
-// no further network calls.
-const cache = new Map<string, CurationResult>();
+// no further network calls. Bounded with insertion-order (LRU-ish) eviction and a
+// short TTL, so a long session can't grow the map without limit and a stale answer
+// can't outlive a mid-session model/policy change.
+const CACHE_MAX = 50;
+const CACHE_TTL_MS = 5 * 60_000; // 5 minutes
+const cache = new Map<string, { result: CurationResult; at: number }>();
 
 function cacheKey(symptoms: string, meds: string, isProMode: boolean, language: string): string {
   return JSON.stringify([symptoms, meds, isProMode, language]);
@@ -46,7 +50,13 @@ export async function getCurationFromGemini(
 ): Promise<CurationResult> {
   const key = cacheKey(symptoms, currentMedications, isProMode, language);
   const cached = cache.get(key);
-  if (cached) return cached; // cache-first: no network call on repeat queries
+  if (cached && Date.now() - cached.at < CACHE_TTL_MS) {
+    // cache-first: refresh recency for LRU eviction, no network call on repeats
+    cache.delete(key);
+    cache.set(key, cached);
+    return cached.result;
+  }
+  if (cached) cache.delete(key); // expired entry
 
   const parsedInput = SymptomQuery.safeParse({ symptoms, currentMedications, isProMode, language });
   if (!parsedInput.success) {
@@ -90,6 +100,10 @@ export async function getCurationFromGemini(
   }
 
   const result = validated.data as z.infer<typeof CurationResultSchema>;
-  cache.set(key, result);
+  if (cache.size >= CACHE_MAX) {
+    const oldest = cache.keys().next().value; // Map preserves insertion order
+    if (oldest !== undefined) cache.delete(oldest);
+  }
+  cache.set(key, { result, at: Date.now() });
   return result;
 }
