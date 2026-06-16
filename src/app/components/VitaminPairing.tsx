@@ -3,9 +3,18 @@
 import { useState } from "react";
 import { useI18n, type Lang } from "./i18n";
 import { VT } from "./vitamin-data";
+import { getPairingFromAI } from "../../services/aiToolsService";
+import type { PairingAIResultT } from "../../schemas/aiTools";
 
 type ML = Record<Lang, string>;
 const ml = (ko: string, en: string, ja: string, zh: string): ML => ({ ko, en, ja, zh });
+
+// AI-path labels kept local so vitamin-data's VT type stays untouched.
+const AI_T = {
+  badge: ml("AI 추천", "AI pick", "AIおすすめ", "AI 推荐"),
+  loading: ml("AI가 목표에 맞는 조합을 찾는 중…", "AI is finding a combo for your goal…", "AIが目標に合う組み合わせを探索中…", "AI 正在为你的目标寻找组合…"),
+  errorRetry: ml("다시 시도", "Retry", "再試行", "重试"),
+} as const;
 
 const InfoIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -145,6 +154,12 @@ export default function VitaminPairing() {
   const [goalId, setGoalId] = useState<string | null>("fatigue");
   const [text, setText] = useState("");
 
+  // Hybrid: predefined goal chips answer instantly; any free-text the chips can't
+  // match is judged by the AI so every input gets a real answer.
+  const [ai, setAi] = useState<PairingAIResultT | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+
   const matchGoal = (q: string): Goal | null => {
     const tx = q.toLowerCase().trim();
     if (!tx) return null;
@@ -157,6 +172,39 @@ export default function VitaminPairing() {
       ) || null
     );
   };
+
+  function clearAi() {
+    setAi(null);
+    setAiError(null);
+    setAiLoading(false);
+  }
+
+  function selectGoal(id: string) {
+    setGoalId(id);
+    clearAi();
+  }
+
+  async function runAi(goal: string) {
+    setAiLoading(true);
+    setAiError(null);
+    setAi(null);
+    setGoalId(null);
+    try {
+      setAi(await getPairingFromAI(goal, false, lang));
+    } catch (e) {
+      setAiError(e instanceof Error ? e.message : "요청에 실패했습니다.");
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
+  function onSubmit() {
+    const q = text.trim();
+    if (!q) return;
+    const m = matchGoal(q);
+    if (m) selectGoal(m.id);
+    else void runAi(q);
+  }
 
   const sel = GOALS.find((g) => g.id === goalId) || null;
 
@@ -178,7 +226,7 @@ export default function VitaminPairing() {
             return (
               <button
                 key={g.id}
-                onClick={() => setGoalId(g.id)}
+                onClick={() => selectGoal(g.id)}
                 className={`inline-flex items-center whitespace-nowrap rounded-full border px-4 py-2 text-[13px] font-bold transition ${cls}`}
               >
                 {g.label[lang]}
@@ -192,14 +240,15 @@ export default function VitaminPairing() {
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter") setGoalId(matchGoal(text)?.id ?? null);
+              if (e.key === "Enter") onSubmit();
             }}
             placeholder={v.inputPh}
             className="min-w-0 flex-1 rounded-xl border border-line-2 bg-surface-soft px-4 py-3 text-sm text-ink shadow-sm outline-none transition placeholder:text-ink-4 focus:border-brand focus:bg-surface focus:ring-[3px] focus:ring-brand-tint"
           />
           <button
-            onClick={() => setGoalId(matchGoal(text)?.id ?? null)}
-            className="inline-flex h-[48px] shrink-0 items-center justify-center gap-2 rounded-xl bg-brand px-5 text-[14px] font-bold text-white shadow-[0_14px_26px_-16px_rgba(11,110,97,0.85)] transition hover:bg-brand-2"
+            onClick={onSubmit}
+            disabled={aiLoading}
+            className="inline-flex h-[48px] shrink-0 items-center justify-center gap-2 rounded-xl bg-brand px-5 text-[14px] font-bold text-white shadow-[0_14px_26px_-16px_rgba(11,110,97,0.85)] transition hover:bg-brand-2 disabled:cursor-not-allowed disabled:bg-ink-4"
           >
             <SearchIcon className="h-[17px] w-[17px]" />
             {v.go}
@@ -207,7 +256,66 @@ export default function VitaminPairing() {
         </div>
       </div>
 
-      {sel ? (
+      {aiLoading ? (
+        <div className="mt-6 flex items-center gap-3 rounded-[16px] border border-brand-tint-2 bg-brand-tint/40 px-4 py-3.5">
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-brand border-t-transparent" />
+          <p className="text-[13px] leading-relaxed text-ink-2">{AI_T.loading[lang]}</p>
+        </div>
+      ) : aiError ? (
+        <div className="mt-6 flex flex-wrap items-center gap-3 rounded-[16px] border border-warn-tint bg-warn-tint px-4 py-3.5">
+          <InfoIcon className="h-[18px] w-[18px] shrink-0 text-warn" />
+          <p className="text-[13px] leading-relaxed text-ink-2">{aiError}</p>
+          <button
+            onClick={() => void runAi(text.trim())}
+            className="rounded-lg border border-line bg-surface px-3 py-1.5 text-[12.5px] font-bold text-ink-2 transition hover:border-brand hover:text-brand"
+          >
+            {AI_T.errorRetry[lang]}
+          </button>
+        </div>
+      ) : ai ? (
+        <div className="mt-6 space-y-4">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand text-white shadow-sm">
+              <LeafIcon className="h-[18px] w-[18px]" />
+            </span>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink-3">{v.comboFor}</div>
+                <span className="rounded-full bg-brand px-2 py-[1px] text-[10px] font-extrabold text-white">{AI_T.badge[lang]}</span>
+              </div>
+              <h3 className="text-[17px] font-bold tracking-tight text-ink">{ai.goalLabel}</h3>
+            </div>
+          </div>
+          <p className="text-[13.5px] leading-relaxed text-ink-2">{ai.summary}</p>
+          <section className={CARD_CLS}>
+            <h3 className="mb-3.5 flex items-center gap-2.5 text-[14px] font-bold tracking-tight text-ink">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-tint text-brand">
+                <PillIcon className="h-[15px] w-[15px]" />
+              </span>
+              {v.items}
+            </h3>
+            <ul className="space-y-3 text-[13.5px] leading-snug text-ink-2">
+              {ai.items.map((it, i) => (
+                <li key={i} className="flex gap-3">
+                  <span className="mt-[6px] h-1.5 w-1.5 shrink-0 rounded-full bg-brand-bright" />
+                  <span>
+                    <b className="font-bold text-ink">{it.name}</b> — {it.why}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+          {ai.tip && (
+            <div className="flex items-start gap-3 rounded-[16px] border border-brand-tint-2 bg-brand-tint px-4 py-3.5">
+              <InfoIcon className="h-[18px] w-[18px] shrink-0 text-brand" />
+              <p className="text-[13px] leading-relaxed text-ink-2">
+                <b className="font-bold text-brand">{v.tipLabel}</b> · {ai.tip}
+              </p>
+            </div>
+          )}
+          <p className="text-[11.5px] leading-relaxed text-ink-4">{ai.disclaimer}</p>
+        </div>
+      ) : sel ? (
         <div className="mt-6 space-y-4">
           <div className="flex flex-wrap items-center gap-2.5">
             <span className={`flex h-9 w-9 items-center justify-center rounded-xl text-white shadow-sm ${TONE[sel.tone]}`}>

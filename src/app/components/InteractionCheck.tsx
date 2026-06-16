@@ -2,16 +2,62 @@
 
 import { useState } from "react";
 import { InfoIcon, PillIcon, SearchIcon, ShieldCheckIcon } from "./icons";
-import { useI18n } from "./i18n";
+import { useI18n, type Lang } from "./i18n";
 import { runInteractionCheck, type CheckResult } from "./interactionRules";
+import { getInteractionFromAI } from "../../services/aiToolsService";
+import type { InteractionAIResultT } from "../../schemas/aiTools";
+
+// AI-section labels kept local (small multilingual map) so the large Dict type in
+// i18n.tsx stays untouched — same pattern as VitaminPairing's `ml()`.
+type ML = Record<Lang, string>;
+const ml = (ko: string, en: string, ja: string, zh: string): ML => ({ ko, en, ja, zh });
+const AI_T = {
+  sectionTitle: ml("AI 추가 점검", "AI extended check", "AIによる追加チェック", "AI 额外检查"),
+  badge: ml("AI 판단", "AI", "AI判断", "AI 判断"),
+  loading: ml("AI가 입력 내용을 분석 중…", "AI is analyzing your input…", "AIが入力内容を分析中…", "AI 正在分析输入…"),
+  none: ml(
+    "입력하신 항목에서 추가로 확인할 상호작용 주제를 찾지 못했어요.",
+    "No additional interaction topics were found for your input.",
+    "入力項目で追加の相互作用トピックは見つかりませんでした。",
+    "未在您的输入中发现额外的相互作用主题。",
+  ),
+  errorRetry: ml("다시 시도", "Retry", "再試行", "重试"),
+} as const;
 
 export default function InteractionCheck() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const x = t.interaction;
 
   const [query, setQuery] = useState(x.queryVal);
   const [current, setCurrent] = useState(x.currentVal);
   const [result, setResult] = useState<CheckResult | null>(null);
+
+  // Hybrid: deterministic rules give an instant safety net; the AI pass covers any
+  // free-text the predefined matrix can't match.
+  const [ai, setAi] = useState<InteractionAIResultT | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+
+  async function runAi(q: string, c: string) {
+    setAiLoading(true);
+    setAiError(null);
+    setAi(null);
+    try {
+      setAi(await getInteractionFromAI(q, c, false, lang));
+    } catch (e) {
+      setAiError(e instanceof Error ? e.message : "요청에 실패했습니다.");
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
+  function onCheck() {
+    const q = query.trim();
+    const c = current.trim();
+    if (!q || !c) return;
+    setResult(runInteractionCheck(q, c));
+    void runAi(q, c);
+  }
 
   return (
     <div>
@@ -52,8 +98,8 @@ export default function InteractionCheck() {
 
           <button
             type="button"
-            onClick={() => setResult(runInteractionCheck(query, current))}
-            disabled={!query.trim() || !current.trim()}
+            onClick={onCheck}
+            disabled={!query.trim() || !current.trim() || aiLoading}
             className="mt-1 inline-flex h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-brand text-[15px] font-bold text-white shadow-[0_14px_26px_-16px_rgba(11,110,97,0.85)] transition hover:bg-brand-2 hover:-translate-y-px active:translate-y-0 disabled:cursor-not-allowed disabled:bg-ink-4 disabled:shadow-none disabled:hover:translate-y-0"
           >
             <ShieldCheckIcon className="h-[18px] w-[18px]" />
@@ -107,6 +153,65 @@ export default function InteractionCheck() {
               );
             })
           )}
+
+          {/* AI extended check — covers free-text beyond the predefined rule matrix. */}
+          <section className="rounded-[18px] border border-brand-tint-2 bg-brand-tint/40 p-5 shadow-sm">
+            <h3 className="mb-3 flex items-center gap-2.5 text-[14px] font-bold tracking-tight text-ink">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand text-white">
+                <ShieldCheckIcon className="h-[15px] w-[15px]" />
+              </span>
+              {AI_T.sectionTitle[lang]}
+              <span className="rounded-full bg-brand px-2 py-[2px] text-[10px] font-extrabold text-white">
+                {AI_T.badge[lang]}
+              </span>
+            </h3>
+
+            {aiLoading && (
+              <p className="flex items-center gap-2 text-[13.5px] leading-relaxed text-ink-2">
+                <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-brand border-t-transparent" />
+                {AI_T.loading[lang]}
+              </p>
+            )}
+
+            {aiError && !aiLoading && (
+              <div className="flex flex-wrap items-center gap-3">
+                <p className="text-[13px] leading-relaxed text-danger">{aiError}</p>
+                <button
+                  type="button"
+                  onClick={() => void runAi(query.trim(), current.trim())}
+                  className="rounded-lg border border-line bg-surface px-3 py-1.5 text-[12.5px] font-bold text-ink-2 transition hover:border-brand hover:text-brand"
+                >
+                  {AI_T.errorRetry[lang]}
+                </button>
+              </div>
+            )}
+
+            {ai && !aiLoading && !aiError && (
+              <div className="space-y-3">
+                {ai.topics.length === 0 ? (
+                  <p className="text-[13.5px] leading-relaxed text-ink-2">{ai.generalNote || AI_T.none[lang]}</p>
+                ) : (
+                  <>
+                    {ai.topics.map((tp, i) => (
+                      <div key={i} className="rounded-[14px] border border-line bg-surface p-4 shadow-sm">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h4 className="text-[14px] font-bold text-ink">{tp.pair}</h4>
+                          <span className="shrink-0 whitespace-nowrap rounded-full bg-surface-soft px-2 py-[2px] text-[10.5px] font-extrabold text-ink-3">
+                            {x.askPharmacist}
+                          </span>
+                        </div>
+                        <p className="mt-1.5 text-[13px] leading-relaxed text-ink-2">{tp.topic}</p>
+                      </div>
+                    ))}
+                    {ai.generalNote && (
+                      <p className="text-[12.5px] leading-relaxed text-ink-3">{ai.generalNote}</p>
+                    )}
+                  </>
+                )}
+                <p className="text-[11.5px] leading-relaxed text-ink-4">{ai.disclaimer}</p>
+              </div>
+            )}
+          </section>
         </div>
       )}
     </div>

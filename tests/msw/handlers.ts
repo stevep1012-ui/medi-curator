@@ -54,4 +54,46 @@ export const handlers = [
     }
     return HttpResponse.json({ ok: true, data: VALID_RESULT, cached: false });
   }),
+  http.post('/api/interaction', async ({ request }) => {
+    const body = (await request.json()) as { query?: string };
+    const q = body?.query ?? '';
+    if (!q) return HttpResponse.json({ ok: false, code: 'BAD_INPUT', message: 'empty' }, { status: 400 });
+    if (q.includes('FORCE_FORBIDDEN')) {
+      return HttpResponse.json({ ok: false, code: 'FORBIDDEN', message: '금지 표현 감지: 진단됩니다' }, { status: 422 });
+    }
+    if (q.includes('FORCE_401')) {
+      return HttpResponse.json({ ok: false, code: 'NO_TOKEN', message: '인증이 필요합니다' }, { status: 401 });
+    }
+    if (q.includes('FORCE_403')) {
+      return HttpResponse.json({ ok: false, code: 'CONSENT_REQUIRED', message: '동의가 필요합니다' }, { status: 403 });
+    }
+    return HttpResponse.json({
+      ok: true,
+      cached: false,
+      data: {
+        topics: [{ pair: '비타민 K + 와파린', topic: '함께 복용 시 약효 변화를 약사와 확인해 보세요.', severity: 'caution' }],
+        generalNote: '새 제품을 시작하기 전 약사와 상의하세요.',
+        disclaimer: '본 정보는 의료 진단 또는 처방을 대체하지 않습니다.',
+      },
+    });
+  }),
+  http.post('/api/pairing', async ({ request }) => {
+    const body = (await request.json()) as { goal?: string };
+    const g = body?.goal ?? '';
+    if (!g) return HttpResponse.json({ ok: false, code: 'BAD_INPUT', message: 'empty' }, { status: 400 });
+    if (g.includes('FORCE_500')) {
+      return HttpResponse.json({ ok: false, code: 'EXCEPTION', message: 'boom' }, { status: 500 });
+    }
+    return HttpResponse.json({
+      ok: true,
+      cached: false,
+      data: {
+        goalLabel: '눈 피로 완화',
+        summary: '눈의 피로를 덜어주는 데 도움을 줄 수 있는 조합입니다.',
+        items: [{ name: '루테인', why: '망막 황반 색소 밀도 유지에 도움을 줄 수 있어요.' }],
+        tip: '식후에 지용성 성분과 함께 드세요.',
+        disclaimer: '일반적인 영양 정보이며 의학적 조언이 아닙니다.',
+      },
+    });
+  }),
 ];
