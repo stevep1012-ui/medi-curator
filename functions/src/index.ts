@@ -349,3 +349,4 @@ export const curate = onRequest(
 
 // DSR (정보주체 요구권) — 분리된 모듈에서 export
 export { dsr } from './dsr';
+export { pharmacies } from './pharmacies';

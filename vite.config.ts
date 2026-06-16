@@ -37,6 +37,12 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           rewrite: () => '',
         },
+        '/api/pharmacies': {
+          target: `http://127.0.0.1:5001/${projectId}/${region}/pharmacies`,
+          changeOrigin: true,
+          // 쿼리스트링(lat/lng/radius)은 보존하고 경로만 함수 루트로.
+          rewrite: (p) => p.replace(/^\/api\/pharmacies/, ''),
+        },
       },
     },
     build: {

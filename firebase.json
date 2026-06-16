@@ -5,6 +5,7 @@
     "rewrites": [
       { "source": "/api/curate", "function": { "functionId": "curate", "region": "asia-northeast3" } },
       { "source": "/api/dsr", "function": { "functionId": "dsr", "region": "asia-northeast3" } },
+      { "source": "/api/pharmacies", "function": { "functionId": "pharmacies", "region": "asia-northeast3" } },
       { "source": "**", "destination": "/index.html" }
     ],
     "headers": [

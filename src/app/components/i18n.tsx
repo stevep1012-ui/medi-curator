@@ -94,6 +94,10 @@ export type Dict = {
     preparing: string;
     previewNote: string;
     demoBadge: string;
+    locating: string;
+    searchError: string;
+    locationDenied: string;
+    empty: string;
     items: { name: string; addr: string; note: string }[];
   };
   history: {
@@ -239,6 +243,10 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
       preparing: "준비 중",
       previewNote: "위치 기반 약국 검색은 준비 중입니다. 아래는 화면 예시입니다.",
       demoBadge: "샘플 데이터",
+      locating: "주변 약국을 찾는 중…",
+      searchError: "약국을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.",
+      locationDenied: "위치 권한이 필요합니다. 브라우저에서 위치 접근을 허용해 주세요.",
+      empty: "주변에서 약국을 찾지 못했습니다.",
       items: [
         { name: "온누리약국", addr: "서울 강남구 역삼로 152 · 1층", note: "02-538-1004" },
         { name: "역삼365약국", addr: "서울 강남구 테헤란로 211 · 지하 1층", note: "02-501-7942" },
@@ -382,6 +390,10 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
       preparing: "Coming soon",
       previewNote: "Location-based pharmacy search is coming soon. Below is a sample screen.",
       demoBadge: "Sample data",
+      locating: "Finding nearby pharmacies…",
+      searchError: "Couldn't load pharmacies. Please try again in a moment.",
+      locationDenied: "Location permission is required. Please allow location access in your browser.",
+      empty: "No pharmacies found nearby.",
       items: [
         { name: "Onnuri Pharmacy", addr: "152 Yeoksam-ro, Gangnam-gu · 1F", note: "02-538-1004" },
         { name: "Yeoksam 365 Pharmacy", addr: "211 Teheran-ro, Gangnam-gu · B1", note: "02-501-7942" },
@@ -525,6 +537,10 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
       preparing: "準備中",
       previewNote: "位置情報による薬局検索は準備中です。以下はサンプル画面です。",
       demoBadge: "サンプルデータ",
+      locating: "近くの薬局を検索中…",
+      searchError: "薬局を取得できませんでした。しばらくしてからお試しください。",
+      locationDenied: "位置情報の許可が必要です。ブラウザで位置情報を許可してください。",
+      empty: "近くに薬局が見つかりませんでした。",
       items: [
         { name: "オンヌリ薬局", addr: "ソウル江南区 駅三路152・1F", note: "02-538-1004" },
         { name: "駅三365薬局", addr: "ソウル江南区 テヘラン路211・B1", note: "02-501-7942" },
@@ -668,6 +684,10 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
       preparing: "准备中",
       previewNote: "基于位置的药房搜索正在准备中。以下为示例界面。",
       demoBadge: "示例数据",
+      locating: "正在查找附近药房…",
+      searchError: "无法加载药房，请稍后再试。",
+      locationDenied: "需要位置权限，请在浏览器中允许访问位置。",
+      empty: "附近未找到药房。",
       items: [
         { name: "温暖药房", addr: "首尔江南区 驿三路152 · 1层", note: "02-538-1004" },
         { name: "驿三365药房", addr: "首尔江南区 德黑兰路211 · 地下1层", note: "02-501-7942" },
