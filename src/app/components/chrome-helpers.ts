@@ -83,9 +83,20 @@ export function useAuth() {
       return true;
     } catch (e) {
       const code = (e as { code?: string })?.code ?? "";
+      // 사용자가 팝업을 닫거나 중복 요청한 경우는 조용히 무시.
       if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") return false;
-      // 미등록 provider(auth/operation-not-allowed) 등은 친절한 메시지로.
-      toast("로그인에 실패했어요. 잠시 후 다시 시도해 주세요.");
+      // 설정 단계 디버깅용 — 어떤 코드로 실패했는지 콘솔에 남긴다.
+      if (code) console.warn("[auth] sign-in failed:", code);
+      if (code === "auth/operation-not-allowed") {
+        // OIDC provider(oidc.kakao 등)가 Firebase 콘솔에 아직 등록/활성화되지 않음.
+        toast("이 로그인 방식이 아직 활성화되지 않았어요. 다른 방식으로 로그인해 주세요.");
+      } else if (code === "auth/popup-blocked") {
+        toast("팝업이 차단되었어요. 브라우저 팝업 허용 후 다시 시도해 주세요.");
+      } else if (code === "auth/unauthorized-domain") {
+        toast("허용되지 않은 도메인이에요. 잠시 후 다시 시도해 주세요.");
+      } else {
+        toast("로그인에 실패했어요. 잠시 후 다시 시도해 주세요.");
+      }
       return false;
     }
   };
