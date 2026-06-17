@@ -24,6 +24,7 @@ const FLOW: Record<MenuId, Step[]> = {
   symptom: [["toInteraction", "interaction"], ["privacy", "privacy"]],
   interaction: [["consult", "pharmacy"], ["privacy", "privacy"]],
   vitamin: [["toInteraction", "interaction"], ["privacy", "privacy"]],
+  mymeds: [["toInteraction", "interaction"], ["privacy", "privacy"]],
   pharmacy: [["toSymptom", "symptom"], ["toInteraction", "interaction"]],
   history: [["toSymptom", "symptom"], ["toVitamin", "vitamin"]],
   privacy: [],

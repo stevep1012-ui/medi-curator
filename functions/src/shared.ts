@@ -83,10 +83,16 @@ export async function callGemini(opts: {
   sys: string;
   user: string;
   traceId: string;
+  // Optional inline image for multimodal (vision) prompts. The image is sent to the
+  // model for inference only — never stored or logged server-side.
+  image?: { mimeType: string; dataBase64: string };
 }): Promise<GeminiOutcome> {
-  const { apiKey, isProMode, sys, user, traceId } = opts;
+  const { apiKey, isProMode, sys, user, traceId, image } = opts;
   const models = modelCandidates(isProMode);
   let llm: Response | null = null;
+
+  const parts: Array<Record<string, unknown>> = [{ text: `${sys}\n\n${user}` }];
+  if (image) parts.push({ inlineData: { mimeType: image.mimeType, data: image.dataBase64 } });
 
   for (const [index, modelName] of models.entries()) {
     const ctl = new AbortController();
@@ -97,7 +103,7 @@ export async function callGemini(opts: {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: `${sys}\n\n${user}` }] }],
+          contents: [{ role: 'user', parts }],
           generationConfig: { temperature: 0.3, maxOutputTokens: 4096, responseMimeType: 'application/json' },
         }),
         signal: ctl.signal,

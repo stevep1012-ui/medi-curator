@@ -50,3 +50,35 @@ export const PairingAIResult = z.object({
 
 export type PairingAIResultT = z.infer<typeof PairingAIResult>;
 export type PairingItemT = z.infer<typeof PairingItem>;
+
+// ── 복용약/비타민 사진 인식 ─────────────────────────────────────────────────
+export const RecognizeQuery = z.object({
+  imageBase64: z.string().min(16).max(7_000_000),
+  mimeType: z.enum(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']),
+  language: Language.default('ko'),
+  isProMode: z.boolean().default(false),
+});
+
+export const MedCategory = z.enum(['medicine', 'supplement', 'vitamin', 'unknown']);
+
+export const RecognizedMed = z.object({
+  recognized: z.boolean(),
+  name: z.string().max(200),
+  category: MedCategory,
+  ingredients: z.array(z.string().max(200)).max(40),
+  efficacy: z.string().max(1200),
+  cautions: z.array(z.string().max(300)).max(15),
+  disclaimer: z.string().min(10).max(1000),
+});
+
+export type RecognizedMedT = z.infer<typeof RecognizedMed>;
+export type MedCategoryT = z.infer<typeof MedCategory>;
+
+// 기기 로컬에 저장되는 '내 약·비타민' 레코드 (서버로 전송하지 않음, PIPA).
+export const StoredMed = RecognizedMed.omit({ recognized: true }).extend({
+  id: z.string(),
+  addedAt: z.string(), // ISO 8601
+  note: z.string().max(500).default(''),
+});
+
+export type StoredMedT = z.infer<typeof StoredMed>;

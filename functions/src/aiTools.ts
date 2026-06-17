@@ -242,3 +242,123 @@ export const pairing = onRequest(
     res.status(200).json({ ok: true, cached: false, data: validated.data });
   },
 );
+
+// ──────────────────────────────────────────────────────────────────────────
+// 복용약/비타민 사진 인식 (recognizeMed) — 비전
+// 이미지는 추론에만 사용하고 저장·로깅하지 않는다(사용자 요구 + PIPA). 응답은 기록
+// 가능한 텍스트 정보(이름·성분·효능)만 반환한다.
+// ──────────────────────────────────────────────────────────────────────────
+
+const RECOGNIZE_MAX_BASE64 = 7_000_000; // ~5MB 이미지
+
+const RecognizeRequest = z.object({
+  imageBase64: z.string().min(16).max(RECOGNIZE_MAX_BASE64),
+  mimeType: z.enum(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']),
+  language: Language.default('ko'),
+  isProMode: z.boolean().default(false),
+});
+
+const RecognizedMed = z.object({
+  recognized: z.boolean(),
+  name: z.string().max(200),
+  category: z.enum(['medicine', 'supplement', 'vitamin', 'unknown']),
+  ingredients: z.array(z.string().max(200)).max(40),
+  efficacy: z.string().max(1200),
+  cautions: z.array(z.string().max(300)).max(15),
+  disclaimer: z.string().min(10).max(1000),
+});
+
+function recognizeSystemPrompt(language: string): string {
+  return `당신은 '메디-큐레이터'의 의약품·영양제 라벨 인식 도우미입니다. 한국 식약처(MFDS)/공개 의약 정보 기반.
+[역할] 사용자가 촬영한 약/영양제/비타민 제품(상자, 라벨, 정제 등) 이미지를 보고, 일반 공개 정보로 제품 이름·주요 성분·일반적 효능(용도)을 정리합니다.
+[절대 금지]
+1. 진단·처방·복용 지시 단정 금지. "처방", "진단됩니다", "완치" 등 단정 어휘 금지.
+2. 개인 맞춤 복용량 지시 금지. 일반적 용도/효능 수준으로만 서술.
+3. 이미지에서 식별이 불확실하면 추측을 단정하지 말고 recognized=false 로 두고 name 을 빈 문자열로.
+4. cautions 는 일반적 주의(예: "다른 약과 함께 복용 시 약사 상담") 수준의 비판단적 안내.
+5. disclaimer 필수.
+[언어] ${LANGUAGE_NAMES[language] ?? '한국어'} 로 모든 문자열 작성(성분명은 통용 표기 허용).
+[형식] 아래 JSON 스키마만 출력, 외부 텍스트·마크다운 금지.
+{
+  "recognized": true,
+  "name": "제품/성분 이름",
+  "category": "medicine|supplement|vitamin|unknown",
+  "ingredients": ["주요 성분 ..."],
+  "efficacy": "일반적 효능/용도 설명",
+  "cautions": ["일반적 주의사항 ..."],
+  "disclaimer": "본 정보는 의료 진단 또는 처방을 대체하지 않습니다."
+}`;
+}
+
+export const recognizeMed = onRequest(
+  { cors: false, secrets: [GEMINI_API_KEY], timeoutSeconds: 40, memory: '1GiB', invoker: 'public', region: 'asia-northeast3' },
+  async (req, res) => {
+    if (req.method !== 'POST') {
+      res.status(405).json({ ok: false, code: 'METHOD', message: 'POST only' });
+      return;
+    }
+    const parsed = RecognizeRequest.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ ok: false, code: 'BAD_INPUT', message: parsed.error.message });
+      return;
+    }
+    const q = parsed.data;
+
+    const appCheck = await requireAppCheck(req);
+    if (!appCheck.ok) {
+      res.status(appCheck.status).json({ ok: false, code: appCheck.code, message: appCheck.message });
+      return;
+    }
+    const caller = await requireAuthenticatedConsent(req);
+    if (!caller.ok) {
+      res.status(caller.status).json({ ok: false, code: caller.code, message: caller.message });
+      return;
+    }
+
+    let rateAllowed: boolean;
+    try {
+      rateAllowed = await enforceCentralRateLimit(admin.firestore(), caller.uid);
+    } catch (error) {
+      logger.error('recognize.rate_limit_error', { uid: caller.uid, err: (error as Error).message });
+      res.status(503).json({ ok: false, code: 'RATE_LIMIT_UNAVAILABLE', message: '요청 한도를 확인할 수 없습니다' });
+      return;
+    }
+    if (!rateAllowed) {
+      res.status(429).json({ ok: false, code: 'RATE_LIMIT', message: '시간당 요청 한도를 초과했습니다' });
+      return;
+    }
+
+    const traceId = newTraceId();
+    const sys = recognizeSystemPrompt(q.language);
+    const user = '첨부한 제품 이미지를 인식해 JSON 으로 제공.';
+    // NOTE: 이미지 base64 는 로그에 남기지 않는다(개인정보/용량).
+    logger.info('recognize.start', { traceId, uid: caller.uid, lang: q.language, mime: q.mimeType });
+
+    const outcome = await callGemini({
+      apiKey: GEMINI_API_KEY.value(),
+      isProMode: q.isProMode,
+      sys,
+      user,
+      traceId,
+      image: { mimeType: q.mimeType, dataBase64: q.imageBase64 },
+    });
+    if (!outcome.ok) {
+      res.status(outcome.status).json({ ok: false, code: outcome.code, message: outcome.message });
+      return;
+    }
+    const validated = RecognizedMed.safeParse(outcome.candidate);
+    if (!validated.success) {
+      logger.warn('recognize.schema_fail', { traceId, issues: validated.error.issues.slice(0, 3) });
+      res.status(502).json({ ok: false, code: 'SCHEMA', message: validated.error.message });
+      return;
+    }
+    const forbidden = violatesForbidden(JSON.stringify(validated.data));
+    if (forbidden) {
+      logger.warn('recognize.forbidden', { traceId, phrase: forbidden });
+      res.status(422).json({ ok: false, code: 'FORBIDDEN', message: `금지 표현 감지: ${forbidden}` });
+      return;
+    }
+    logger.info('recognize.ok', { traceId, recognized: validated.data.recognized });
+    res.status(200).json({ ok: true, cached: false, data: validated.data });
+  },
+);

@@ -5,7 +5,8 @@ import { InfoIcon, PillIcon, SearchIcon, ShieldCheckIcon } from "./icons";
 import { useI18n, type Lang } from "./i18n";
 import { runInteractionCheck, type CheckResult } from "./interactionRules";
 import { getInteractionFromAI } from "../../services/aiToolsService";
-import type { InteractionAIResultT } from "../../schemas/aiTools";
+import MedCapture from "./MedCapture";
+import type { InteractionAIResultT, RecognizedMedT } from "../../schemas/aiTools";
 
 // AI-section labels kept local (small multilingual map) so the large Dict type in
 // i18n.tsx stays untouched — same pattern as VitaminPairing's `ml()`.
@@ -59,6 +60,12 @@ export default function InteractionCheck() {
     void runAi(q, c);
   }
 
+  // Camera recognition fills the "current" field with the scanned product name.
+  function appendCurrent(rec: RecognizedMedT) {
+    if (!rec.recognized || !rec.name) return;
+    setCurrent((cur) => (cur.trim() ? `${cur.trim()}, ${rec.name}` : rec.name));
+  }
+
   return (
     <div>
       <div className="mb-6 flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3 shadow-sm">
@@ -94,6 +101,7 @@ export default function InteractionCheck() {
               rows={3}
               className="w-full resize-y rounded-xl border border-line-2 bg-surface-soft px-4 py-3 text-sm leading-relaxed text-ink shadow-sm outline-none transition placeholder:text-ink-4 focus:border-brand focus:bg-surface focus:ring-[3px] focus:ring-brand-tint"
             />
+            <MedCapture lang={lang} onRecognized={appendCurrent} compact />
           </label>
 
           <button

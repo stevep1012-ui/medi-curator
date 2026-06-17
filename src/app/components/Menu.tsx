@@ -7,6 +7,7 @@ export type MenuId =
   | "symptom"
   | "interaction"
   | "vitamin"
+  | "mymeds"
   | "pharmacy"
   | "history"
   | "privacy";
@@ -90,6 +91,27 @@ export const CARD: Record<MenuId, CardMeta> = {
       </>
     ),
   },
+  mymeds: {
+    grad: "from-emerald-500 to-green-500",
+    sh: "rgba(16,185,129,0.6)",
+    bg: "from-emerald-400/20 to-green-300/10",
+    csh: "rgba(16,185,129,0.3)",
+    cshH: "rgba(16,185,129,0.5)",
+    label: ml("내 약·비타민", "My meds", "私の薬", "我的药品"),
+    desc: ml(
+      "약·영양제를 촬영하면 성분·효능을 기기에 기록해 다시 확인합니다.",
+      "Scan meds to record ingredients and uses on your device.",
+      "薬やサプリを撮影し、成分・効能を端末に記録。",
+      "拍摄药品，将成分与功效记录在本机。",
+    ),
+    svg: (
+      <>
+        <rect x="3" y="8.5" width="18" height="8" rx="4" />
+        <path d="M12 8.5v8" />
+        <path d="M16 3.5l1.4 1.4-2.6 2.6-1.4-1.4 2.6-2.6Z" />
+      </>
+    ),
+  },
   pharmacy: {
     grad: "from-rose-500 to-red-500",
     sh: "rgba(239,68,68,0.6)",
@@ -146,6 +168,7 @@ export const MENU_ORDER: MenuId[] = [
   "symptom",
   "interaction",
   "vitamin",
+  "mymeds",
   "pharmacy",
   "history",
   "privacy",
@@ -156,6 +179,7 @@ export const ACCENT: Record<MenuId, string> = {
   symptom: "#0a7d6e",
   interaction: "#b5781a",
   vitamin: "#2f9e44",
+  mymeds: "#0e9f6e",
   pharmacy: "#c2452f",
   history: "#5b6ad0",
   privacy: "#5f7079",

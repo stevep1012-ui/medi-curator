@@ -350,5 +350,5 @@ export const curate = onRequest(
 // DSR (정보주체 요구권) — 분리된 모듈에서 export
 export { dsr } from './dsr';
 export { pharmacies } from './pharmacies';
-// AI 보조 엔드포인트 — 자유 입력을 AI 로 판단 (상호작용/영양제 궁합)
-export { interaction, pairing } from './aiTools';
+// AI 보조 엔드포인트 — 자유 입력을 AI 로 판단 (상호작용/영양제 궁합/사진 인식)
+export { interaction, pairing, recognizeMed } from './aiTools';

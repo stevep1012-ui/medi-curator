@@ -96,4 +96,32 @@ export const handlers = [
       },
     });
   }),
+  http.post('/api/recognize-med', async ({ request }) => {
+    const body = (await request.json()) as { imageBase64?: string };
+    const img = body?.imageBase64 ?? '';
+    if (!img) return HttpResponse.json({ ok: false, code: 'BAD_INPUT', message: 'empty' }, { status: 400 });
+    if (img.includes('FORCE_403')) {
+      return HttpResponse.json({ ok: false, code: 'CONSENT_REQUIRED', message: '동의가 필요합니다' }, { status: 403 });
+    }
+    if (img.includes('FORCE_UNREC')) {
+      return HttpResponse.json({
+        ok: true,
+        cached: false,
+        data: { recognized: false, name: '', category: 'unknown', ingredients: [], efficacy: '', cautions: [], disclaimer: '본 정보는 의료 진단 또는 처방을 대체하지 않습니다.' },
+      });
+    }
+    return HttpResponse.json({
+      ok: true,
+      cached: false,
+      data: {
+        recognized: true,
+        name: '타이레놀정 500mg',
+        category: 'medicine',
+        ingredients: ['아세트아미노펜 500mg'],
+        efficacy: '발열 및 통증 완화에 사용되는 해열·진통 성분입니다.',
+        cautions: ['다른 감기약과 함께 복용 시 약사와 상담하세요.'],
+        disclaimer: '본 정보는 의료 진단 또는 처방을 대체하지 않습니다.',
+      },
+    });
+  }),
 ];

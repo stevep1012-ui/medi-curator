@@ -7,8 +7,11 @@ import {
   InteractionQuery,
   PairingAIResult,
   PairingQuery,
+  RecognizeQuery,
+  RecognizedMed,
   type InteractionAIResultT,
   type PairingAIResultT,
+  type RecognizedMedT,
 } from '../schemas/aiTools';
 import { getAppCheckToken, getIdToken } from '../firebase';
 
@@ -113,5 +116,19 @@ export async function getPairingFromAI(
   const validated = PairingAIResult.safeParse(data);
   if (!validated.success) throw new Error('결과를 표시할 수 없습니다. 잠시 후 다시 시도해 주세요.');
   writeCache(key, validated.data);
+  return validated.data;
+}
+
+// 사진 인식 — 이미지는 서버 추론에만 쓰이고 저장되지 않는다. 캐시도 두지 않음(매 이미지 고유).
+export async function getMedFromImageAI(
+  imageBase64: string,
+  mimeType: string,
+  language: string,
+): Promise<RecognizedMedT> {
+  const parsed = RecognizeQuery.safeParse({ imageBase64, mimeType, language, isProMode: false });
+  if (!parsed.success) throw new Error('이미지를 인식할 수 없습니다. 더 선명한 사진으로 다시 시도해 주세요.');
+  const data = await postProxy('/api/recognize-med', parsed.data);
+  const validated = RecognizedMed.safeParse(data);
+  if (!validated.success) throw new Error('결과를 표시할 수 없습니다. 잠시 후 다시 시도해 주세요.');
   return validated.data;
 }

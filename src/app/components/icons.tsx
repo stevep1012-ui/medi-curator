@@ -38,6 +38,13 @@ export const SearchIcon = ({ className }: IconProps) => (
   </Svg>
 );
 
+export const CameraIcon = ({ className }: IconProps) => (
+  <Svg className={className}>
+    <path d="M4 8.5h2.6l1.4-2h8l1.4 2H20a1.5 1.5 0 0 1 1.5 1.5v8A1.5 1.5 0 0 1 20 19.5H4A1.5 1.5 0 0 1 2.5 18v-8A1.5 1.5 0 0 1 4 8.5Z" />
+    <circle cx="12" cy="13.5" r="3.2" />
+  </Svg>
+);
+
 export const InfoIcon = ({ className }: IconProps) => (
   <Svg className={className}>
     <circle cx="12" cy="12" r="9.2" />

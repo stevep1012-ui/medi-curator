@@ -11,6 +11,8 @@ import SymptomAnalysis from "./components/SymptomAnalysis";
 import InteractionCheck from "./components/InteractionCheck";
 import VitaminPairing from "./components/VitaminPairing";
 import { VITAMIN_HEAD } from "./components/vitamin-data";
+import MyMeds from "./components/MyMeds";
+import { MYMEDS_HEAD } from "./components/mymeds-data";
 import NextSteps from "./components/NextSteps";
 import HeroCanvas from "./components/HeroCanvas";
 import PharmacyFinder from "./components/PharmacyFinder";
@@ -86,7 +88,13 @@ function HomeInner() {
       : t.theme.light;
 
   const heading =
-    view === "home" ? HOME_HEAD[lang] : view === "vitamin" ? VITAMIN_HEAD[lang] : t.head[view];
+    view === "home"
+      ? HOME_HEAD[lang]
+      : view === "vitamin"
+        ? VITAMIN_HEAD[lang]
+        : view === "mymeds"
+          ? MYMEDS_HEAD[lang]
+          : t.head[view];
 
   return (
     <main className="min-h-screen bg-paper px-4 pb-12 pt-6 sm:px-6 sm:pb-12 sm:pt-10">
@@ -151,6 +159,7 @@ function HomeInner() {
                 {view === "symptom" && <SymptomAnalysis />}
                 {view === "interaction" && <InteractionCheck />}
                 {view === "vitamin" && <VitaminPairing />}
+                {view === "mymeds" && <MyMeds uid={user?.uid} />}
                 {view === "pharmacy" && <PharmacyFinder />}
                 {view === "history" && <SearchHistory />}
                 {view === "privacy" && <PrivacySettings uid={user?.uid} />}

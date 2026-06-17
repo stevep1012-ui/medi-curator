@@ -12,7 +12,9 @@ import {
 import { useI18n } from "./i18n";
 import { getCurationFromGemini } from "../../services/geminiService";
 import { detectEmergency, HOTLINES } from "../../lib/emergency";
+import MedCapture from "./MedCapture";
 import type { CurationResult } from "../../types";
+import type { RecognizedMedT } from "../../schemas/aiTools";
 
 // Emergency crisis surface (AGENTS.md R-005): self-harm/suicide must lead with
 // 109/1577-0199, not just 119. Detected on BOTH the live input (instant, no
@@ -121,6 +123,14 @@ export default function SymptomAnalysis() {
               placeholder={s.medsPh}
               rows={3}
               className="w-full resize-y rounded-xl border border-line-2 bg-surface-soft px-4 py-3 text-sm leading-relaxed text-ink shadow-sm outline-none transition placeholder:text-ink-4 focus:border-brand focus:bg-surface focus:ring-[3px] focus:ring-brand-tint"
+            />
+            <MedCapture
+              lang={lang}
+              compact
+              onRecognized={(rec: RecognizedMedT) => {
+                if (!rec.recognized || !rec.name) return;
+                setCurrentMedication((cur) => (cur.trim() ? `${cur.trim()}, ${rec.name}` : rec.name));
+              }}
             />
           </label>
 
