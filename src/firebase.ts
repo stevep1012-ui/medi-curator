@@ -1,13 +1,13 @@
 // Firebase client bootstrap.
 // Config is loaded at RUNTIME from '/__/firebase/init.json' (served by Firebase
 // Hosting in prod, by the Vite dev plugin locally) so no VITE_FIREBASE_* keys are
-// embedded in the bundle. App Check uses reCAPTCHA Enterprise; its public site
-// key (VITE_RECAPTCHA_ENTERPRISE_SITE_KEY) is the only client-embedded value and
-// is safe to expose. All initialization is lazy + side-effect-free at import.
+// embedded in the bundle. App Check uses reCAPTCHA v3; its public site key
+// (VITE_RECAPTCHA_ENTERPRISE_SITE_KEY — name kept for env/CI compat) is the only
+// client-embedded value and is safe to expose. All init is lazy + side-effect-free.
 import { initializeApp, type FirebaseApp } from 'firebase/app';
 import {
   initializeAppCheck,
-  ReCaptchaEnterpriseProvider,
+  ReCaptchaV3Provider,
   getToken,
   type AppCheck,
 } from 'firebase/app-check';
@@ -50,7 +50,7 @@ export async function getFirebaseApp(): Promise<FirebaseApp> {
       if (siteKey) {
         try {
           appCheckInstance = initializeAppCheck(app, {
-            provider: new ReCaptchaEnterpriseProvider(siteKey),
+            provider: new ReCaptchaV3Provider(siteKey),
             isTokenAutoRefreshEnabled: true,
           });
         } catch {
