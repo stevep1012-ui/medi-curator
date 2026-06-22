@@ -41,17 +41,17 @@ export const pharmacies = onRequest(
     secrets: [KAKAO_REST_KEY],
   },
   async (req, res) => {
-    // App Check — 무결한 앱에서 온 요청만 허용(Kakao 키 남용 방지).
+    // App Check — best-effort(완화 모드). 토큰이 있으면 검증해 로그를 남기되,
+    // 없거나 유효하지 않아도 차단하지 않는다. 공개 약국 위치 정보이고 reCAPTCHA
+    // 사이트키 미설정 환경에서도 약국 검색이 동작해야 하므로 하드 차단을 풀었다.
+    // (남용 억제는 maxInstances=5 + 8초 타임아웃 + Kakao 키 서버 보관으로 완화.)
     const token = String(req.headers['x-firebase-appcheck'] ?? '');
-    if (!token) {
-      res.status(401).json({ ok: false, code: 'APP_CHECK_REQUIRED', message: '앱 무결성 확인이 필요합니다' });
-      return;
-    }
-    try {
-      await admin.appCheck().verifyToken(token);
-    } catch {
-      res.status(401).json({ ok: false, code: 'APP_CHECK_REQUIRED', message: '앱 무결성 확인에 실패했습니다' });
-      return;
+    if (token) {
+      try {
+        await admin.appCheck().verifyToken(token);
+      } catch {
+        logger.info('pharmacies.appcheck_soft_fail');
+      }
     }
 
     const parsed = Query.safeParse(req.method === 'POST' ? req.body : req.query);
