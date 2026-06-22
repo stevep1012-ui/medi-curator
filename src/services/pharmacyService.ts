@@ -1,5 +1,5 @@
-// 약국 검색 클라이언트 — 서버 프록시(/api/pharmacies, Google Places Nearby)를 호출한다.
-// Places API 키는 서버에만 있고, 여기서는 App Check 토큰만 best-effort로 붙인다.
+// 약국 검색 클라이언트 — 서버 프록시(/api/pharmacies, Kakao Local PM9)를 호출한다.
+// Kakao REST 키는 서버에만 있고, 여기서는 App Check 토큰만 best-effort로 붙인다.
 import { getAppCheckToken } from '../firebase';
 
 export interface Pharmacy {
@@ -9,11 +9,7 @@ export interface Pharmacy {
   distance: number | null; // meters
   lat: number | null;
   lng: number | null;
-  url: string; // Google Maps place page
-  rating?: number | null; // 0–5
-  ratingCount?: number | null; // number of user ratings
-  openNow?: boolean | null; // 현재 영업 중 여부
-  hours?: string[] | null; // 요일별 영업시간 (Google weekdayDescriptions)
+  url: string; // Kakao place page
 }
 
 interface Envelope {

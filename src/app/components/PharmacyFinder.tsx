@@ -107,29 +107,11 @@ export default function PharmacyFinder() {
               <div className="min-w-0 flex-1">
                 <h4 className="text-[15px] font-bold text-ink">{it.name}</h4>
                 {it.addr && <p className="mt-1.5 text-[12.5px] text-ink-3">{it.addr}</p>}
-                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12px] font-medium text-ink-3">
+                <div className="mt-2 flex flex-wrap items-center gap-4 text-[12px] font-medium text-ink-3">
                   {it.distance != null && (
                     <span className="flex items-center gap-1.5">
                       <PinIcon className="h-3.5 w-3.5" />
                       {formatDistance(it.distance)}
-                    </span>
-                  )}
-                  {it.rating != null && (
-                    <span className="flex items-center gap-1 text-ink-2">
-                      <span className="text-amber-500">★</span>
-                      {it.rating.toFixed(1)}
-                      {it.ratingCount != null && <span className="text-ink-4">({it.ratingCount})</span>}
-                    </span>
-                  )}
-                  {it.openNow != null && (
-                    <span
-                      className={
-                        it.openNow
-                          ? "rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700"
-                          : "rounded-full bg-ink-4/10 px-2 py-0.5 text-[11px] font-semibold text-ink-3"
-                      }
-                    >
-                      {it.openNow ? p.open : p.closed}
                     </span>
                   )}
                   {it.phone && (
