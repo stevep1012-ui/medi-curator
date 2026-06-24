@@ -36,18 +36,32 @@ export function violatesForbidden(text: string): string | null {
 }
 
 type HeaderBag = { headers: Record<string, unknown> };
+type GuardResult =
+  | { ok: true }
+  | { ok: false; status: number; code: string; message: string };
 
-export async function requireAppCheck(req: HeaderBag) {
+// App Check — best-effort(완화 모드). reCAPTCHA 사이트키가 설정되기 전까지
+// 토큰이 없거나 유효하지 않아도 차단하지 않는다(토큰이 있으면 검증만 시도).
+// 이 함수를 쓰는 AI 엔드포인트는 뒤에 requireAuthenticatedConsent(로그인+동의)
+// 게이트가 남아 있어 익명 남용은 여전히 차단된다. 사이트키 설정 후 hard 모드로
+// 되돌리려면 토큰 부재/검증실패 시 401을 반환하도록 복구하면 된다.
+export async function requireAppCheck(req: HeaderBag): Promise<GuardResult> {
   const token = String(req.headers['x-firebase-appcheck'] ?? '');
-  if (!token) {
-    return { ok: false as const, status: 401, code: 'APP_CHECK_REQUIRED', message: '앱 무결성 확인이 필요합니다' };
+  const strict = process.env.APP_CHECK_MODE === 'strict';
+  if (!token && strict) {
+    return { ok: false, status: 401, code: 'APP_CHECK_REQUIRED', message: '앱 무결성 확인이 필요합니다' };
   }
-  try {
-    await admin.appCheck().verifyToken(token);
-    return { ok: true as const };
-  } catch {
-    return { ok: false as const, status: 401, code: 'APP_CHECK_REQUIRED', message: '앱 무결성 확인에 실패했습니다' };
+  if (token) {
+    try {
+      await admin.appCheck().verifyToken(token);
+    } catch {
+      if (strict) {
+        return { ok: false, status: 401, code: 'APP_CHECK_REQUIRED', message: '앱 무결성 확인에 실패했습니다' };
+      }
+      /* soft-fail: 사이트키 미설정 환경에서도 동작하도록 통과 */
+    }
   }
+  return { ok: true as const };
 }
 
 export async function requireAuthenticatedConsent(req: HeaderBag) {
