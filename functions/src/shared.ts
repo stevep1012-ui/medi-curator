@@ -125,8 +125,8 @@ export async function callGemini(opts: {
     } finally {
       clearTimeout(to);
     }
-    if (llm.status !== 429 || index === models.length - 1) break;
-    logger.warn('llm.model_fallback', { traceId, from: modelName, to: models[index + 1] });
+    if (llm.ok || index === models.length - 1) break;
+    logger.warn('llm.model_fallback', { traceId, from: modelName, to: models[index + 1], status: llm.status });
   }
 
   if (!llm) return { ok: false, status: 502, code: 'LLM_ERROR', message: 'Gemini request was not attempted' };
