@@ -3,6 +3,8 @@
 import { useId, useRef, useState } from "react";
 import type { Lang } from "./i18n";
 import { CameraIcon } from "./icons";
+import { getAuthInstance } from "../../firebase";
+import { hasConsent } from "../../services/consentService";
 import { getMedFromImageAI } from "../../services/aiToolsService";
 import type { RecognizedMedT } from "../../schemas/aiTools";
 
@@ -15,6 +17,8 @@ const T = {
   tooBig: ml("이미지가 너무 큽니다(최대 5MB).", "Image too large (max 5MB).", "画像が大きすぎます（最大5MB）。", "图片过大（最大5MB）。"),
   badType: ml("지원하지 않는 이미지 형식입니다.", "Unsupported image type.", "未対応の画像形式です。", "不支持的图片格式。"),
   readFail: ml("이미지를 읽지 못했습니다.", "Could not read the image.", "画像を読み込めませんでした。", "无法读取图片。"),
+  loginRequired: ml("처방전·약봉투 판독은 로그인 후 사용할 수 있어요.", "Sign in to scan prescriptions or medication bags.", "処方箋・薬袋の認識はログイン後に利用できます。", "登录后可识别处方或药袋。"),
+  consentRequired: ml("개인정보 화면에서 민감정보 처리 동의를 먼저 저장해 주세요.", "Save sensitive-health consent in Privacy first.", "プライバシー画面で健康情報処理への同意を先に保存してください。", "请先在隐私设置中保存敏感健康信息处理同意。"),
   privacy: ml("사진은 저장하지 않고, 인식된 텍스트만 기기에 저장할 수 있어요.", "Photos are not saved; only recognized text can be stored on this device.", "写真は保存せず、認識したテキストだけを端末に保存できます。", "不保存照片，只可将识别出的文字存储在本机。"),
 } as const;
 
@@ -47,6 +51,33 @@ export default function MedCapture({ lang, onRecognized, compact = false }: Prop
   const libraryInputRef = useRef<HTMLInputElement | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  async function ensureReady(): Promise<boolean> {
+    setError(null);
+    try {
+      const auth = await getAuthInstance();
+      const uid = auth.currentUser?.uid;
+      if (!uid) {
+        setError(T.loginRequired[lang]);
+        return false;
+      }
+      const ok = await hasConsent(uid);
+      if (!ok) {
+        setError(T.consentRequired[lang]);
+        return false;
+      }
+      return true;
+    } catch {
+      setError(T.loginRequired[lang]);
+      return false;
+    }
+  }
+
+  async function openPicker(ref: React.RefObject<HTMLInputElement | null>) {
+    if (loading) return;
+    if (!(await ensureReady())) return;
+    ref.current?.click();
+  }
 
   async function onFile(file: File | undefined) {
     if (!file) return;
@@ -98,7 +129,7 @@ export default function MedCapture({ lang, onRecognized, compact = false }: Prop
         onChange={(e) => void onFile(e.target.files?.[0])}
       />
       <div className={compact ? "flex flex-wrap gap-2" : "flex flex-wrap gap-2.5"}>
-        <button type="button" onClick={() => cameraInputRef.current?.click()} disabled={loading} className={btnCls}>
+        <button type="button" onClick={() => void openPicker(cameraInputRef)} disabled={loading} className={btnCls}>
           {loading ? (
             <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
           ) : (
@@ -106,7 +137,7 @@ export default function MedCapture({ lang, onRecognized, compact = false }: Prop
           )}
           {loading ? T.analyzing[lang] : T.camera[lang]}
         </button>
-        <button type="button" onClick={() => libraryInputRef.current?.click()} disabled={loading} className={btnCls}>
+        <button type="button" onClick={() => void openPicker(libraryInputRef)} disabled={loading} className={btnCls}>
           {loading ? (
             <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
           ) : (
