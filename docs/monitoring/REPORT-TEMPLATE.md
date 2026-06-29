@@ -14,12 +14,14 @@
 | UX | PASS/WATCH/BLOCK |  |  |  |
 | Runtime | PASS/WATCH/BLOCK |  |  |  |
 | Red-Team | PASS/WATCH/BLOCK |  |  |  |
+| Non-Legal Red-Team | PASS/WATCH/BLOCK/LEGAL_HOLD |  |  |  |
 
 ## Remediation Backlog
 - [ ] 
 
 ## Re-test Plan
 - Re-run the same monitors after remediation.
+- For legal-hold exclusions, run `/audit-legal` separately only when 법률 검토를 재개한다.
 
 ## Exit Criteria
 - All findings are PASS.

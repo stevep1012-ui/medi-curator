@@ -29,6 +29,11 @@ monitors:
   - id: redteam
     agent: red-team-monitor
     focus: [harmful_info, abuse, youth_risk, prompt_injection, emergency_priority]
+  - id: redteam_nonlegal
+    agent: nonlegal-red-team-monitor
+    focus: [harmful_info, abuse, youth_risk, prompt_injection, emergency_priority, photo_retention, feature_truth]
+    excludes: [legal_judgment, copyright, licensing, pharmacist_act, medical_service_act, medical_device_act, samd_classification, advertising_law, pipa_legal_interpretation]
+    command: "npm run audit:redteam:nonlegal"
 
 alert_conditions:
   - broken menu tree
@@ -36,6 +41,8 @@ alert_conditions:
   - unclear primary CTA
   - console or network failures
   - misleading or harmful medical phrasing
+  - unsupported camera/photo/map/AI capability claims
+  - original medication photos or base64 persisted after recognition
   - youth-sensitive or unsafe content
   - emergency escalation delay
   - commercial trust regression
@@ -63,3 +70,4 @@ hardening_loop:
 outputs:
   commercial_report: docs/reviews/COMMERCIAL-<YYYY-MM-DD>.md
   redteam_report: docs/reviews/REDTEAM-<YYYY-MM-DD>.md
+  nonlegal_redteam_report: docs/reviews/REDTEAM-NONLEGAL-<YYYY-MM-DD>.md

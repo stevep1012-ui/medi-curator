@@ -6,6 +6,7 @@
 
 - 상업성 리포트: `COMMERCIAL-YYYY-MM-DD.md`
 - red-team 리포트: `REDTEAM-YYYY-MM-DD.md`
+- 비법률 red-team 리포트: `REDTEAM-NONLEGAL-YYYY-MM-DD.md`
 - 필요 시 PR 별 메모를 별도 파일로 남긴다.
 - 표준 작성 형식은 `REPORT-TEMPLATE.md`를 따른다.
 
@@ -15,4 +16,5 @@
 - 메뉴 트리/탭 구조 문제
 - 런타임 오류, 콘솔 오류, 네트워크 실패
 - 유해정보, 오남용, 청소년 리스크
+- 법률 판단을 보류한 제품 안전성, 기능 진실성, 원본 사진/base64 비저장 점검
 - 즉시 수정 필요 항목과 추적 상태

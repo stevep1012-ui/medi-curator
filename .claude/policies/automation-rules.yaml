@@ -45,3 +45,21 @@ rules:
     dispatch: [medical-reviewer, legal-advisor, product-strategist]
     required_gates: [MED, LEGAL]
     product_strategist_veto: true
+
+  - id: R7-nonlegal-redteam-change
+    when:
+      paths_or_keywords:
+        - "src/app/components/MedCapture.tsx"
+        - "src/services/medStore.ts"
+        - "functions/src/aiTools.ts"
+        - "src/lib/emergency.ts"
+        - "src/app/components/PharmacyFinder.tsx"
+        - "camera"
+        - "photo"
+        - "ocr"
+        - "vision"
+        - "map"
+        - "geolocation"
+    dispatch: [nonlegal-red-team-monitor, runtime-reliability-auditor, qa-engineer]
+    required_commands: ["npm run audit:redteam:nonlegal"]
+    excludes: [LEGAL]
