@@ -12,6 +12,7 @@ import {
 import { useI18n } from "./i18n";
 import { getCurationFromGemini } from "../../services/geminiService";
 import { detectEmergency, HOTLINES } from "../../lib/emergency";
+import { addMed, medNamesText } from "../../services/medStore";
 import MedCapture from "./MedCapture";
 import type { CurationResult } from "../../types";
 import type { RecognizedMedT } from "../../schemas/aiTools";
@@ -22,15 +23,35 @@ import type { RecognizedMedT } from "../../schemas/aiTools";
 const MENTAL_DEPT = "정신건강의학과";
 const PHYSICAL_DEPT = "응급의학과";
 
-export default function SymptomAnalysis() {
+const SCAN_T = {
+  save: { ko: "내 목록에 저장", en: "Save to my list", ja: "リストに保存", zh: "保存到我的列表" },
+  saved: { ko: "내 목록에 저장했어요. 다음에도 자동으로 불러옵니다.", en: "Saved to My meds. It will be loaded next time.", ja: "リストに保存しました。次回も自動で読み込みます。", zh: "已保存到我的药品。下次会自动载入。" },
+} as const;
+
+export default function SymptomAnalysis({ uid }: { uid?: string }) {
   const { t, lang } = useI18n();
   const s = t.symptom;
 
   const [symptoms, setSymptoms] = useState(s.symptomsVal);
-  const [currentMedication, setCurrentMedication] = useState(s.medsVal);
+  const [currentMedication, setCurrentMedication] = useState(() => medNamesText(uid) || s.medsVal);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<CurationResult | null>(null);
+  const [scanDraft, setScanDraft] = useState<RecognizedMedT | null>(null);
+  const [scanSaved, setScanSaved] = useState(false);
+
+  function appendMedication(rec: RecognizedMedT) {
+    if (!rec.recognized || !rec.name) return;
+    setScanDraft(rec);
+    setScanSaved(false);
+    setCurrentMedication((cur) => (cur.trim() ? `${cur.trim()}, ${rec.name}` : rec.name));
+  }
+
+  function saveScanDraft() {
+    if (!scanDraft?.recognized) return;
+    addMed(uid, scanDraft);
+    setScanSaved(true);
+  }
 
   // Instant client-side crisis detection — fires as the user types, before any
   // network/auth, so a person in crisis always sees the hotline immediately.
@@ -127,11 +148,24 @@ export default function SymptomAnalysis() {
             <MedCapture
               lang={lang}
               compact
-              onRecognized={(rec: RecognizedMedT) => {
-                if (!rec.recognized || !rec.name) return;
-                setCurrentMedication((cur) => (cur.trim() ? `${cur.trim()}, ${rec.name}` : rec.name));
-              }}
+              onRecognized={appendMedication}
             />
+            {scanDraft?.recognized && (
+              <div className="rounded-xl border border-brand-tint-2 bg-brand-tint/40 px-3 py-2 text-[12.5px] leading-snug text-ink-2">
+                <div className="mb-2 font-bold text-ink">{scanDraft.name}</div>
+                {scanSaved ? (
+                  <p>{SCAN_T.saved[lang]}</p>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={saveScanDraft}
+                    className="inline-flex h-8 items-center justify-center rounded-lg bg-brand px-3 text-[12px] font-bold text-white transition hover:bg-brand-2"
+                  >
+                    {SCAN_T.save[lang]}
+                  </button>
+                )}
+              </div>
+            )}
           </label>
 
           <button

@@ -5,6 +5,7 @@ import { InfoIcon, PillIcon, SearchIcon, ShieldCheckIcon } from "./icons";
 import { useI18n, type Lang } from "./i18n";
 import { runInteractionCheck, type CheckResult } from "./interactionRules";
 import { getInteractionFromAI } from "../../services/aiToolsService";
+import { addMed, medNamesText } from "../../services/medStore";
 import MedCapture from "./MedCapture";
 import type { InteractionAIResultT, RecognizedMedT } from "../../schemas/aiTools";
 
@@ -23,15 +24,19 @@ const AI_T = {
     "未在您的输入中发现额外的相互作用主题。",
   ),
   errorRetry: ml("다시 시도", "Retry", "再試行", "重试"),
+  scanSaved: ml("내 목록에 저장했어요. 다음에도 자동으로 불러옵니다.", "Saved to My meds. It will be loaded next time.", "リストに保存しました。次回も自動で読み込みます。", "已保存到我的药品。下次会自动载入。"),
+  saveScan: ml("내 목록에 저장", "Save to my list", "リストに保存", "保存到我的列表"),
 } as const;
 
-export default function InteractionCheck() {
+export default function InteractionCheck({ uid }: { uid?: string }) {
   const { t, lang } = useI18n();
   const x = t.interaction;
 
   const [query, setQuery] = useState(x.queryVal);
-  const [current, setCurrent] = useState(x.currentVal);
+  const [current, setCurrent] = useState(() => medNamesText(uid) || x.currentVal);
   const [result, setResult] = useState<CheckResult | null>(null);
+  const [scanDraft, setScanDraft] = useState<RecognizedMedT | null>(null);
+  const [scanSaved, setScanSaved] = useState(false);
 
   // Hybrid: deterministic rules give an instant safety net; the AI pass covers any
   // free-text the predefined matrix can't match.
@@ -63,7 +68,15 @@ export default function InteractionCheck() {
   // Camera recognition fills the "current" field with the scanned product name.
   function appendCurrent(rec: RecognizedMedT) {
     if (!rec.recognized || !rec.name) return;
+    setScanDraft(rec);
+    setScanSaved(false);
     setCurrent((cur) => (cur.trim() ? `${cur.trim()}, ${rec.name}` : rec.name));
+  }
+
+  function saveScanDraft() {
+    if (!scanDraft?.recognized) return;
+    addMed(uid, scanDraft);
+    setScanSaved(true);
   }
 
   return (
@@ -102,6 +115,22 @@ export default function InteractionCheck() {
               className="w-full resize-y rounded-xl border border-line-2 bg-surface-soft px-4 py-3 text-sm leading-relaxed text-ink shadow-sm outline-none transition placeholder:text-ink-4 focus:border-brand focus:bg-surface focus:ring-[3px] focus:ring-brand-tint"
             />
             <MedCapture lang={lang} onRecognized={appendCurrent} compact />
+            {scanDraft?.recognized && (
+              <div className="rounded-xl border border-brand-tint-2 bg-brand-tint/40 px-3 py-2 text-[12.5px] leading-snug text-ink-2">
+                <div className="mb-2 font-bold text-ink">{scanDraft.name}</div>
+                {scanSaved ? (
+                  <p>{AI_T.scanSaved[lang]}</p>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={saveScanDraft}
+                    className="inline-flex h-8 items-center justify-center rounded-lg bg-brand px-3 text-[12px] font-bold text-white transition hover:bg-brand-2"
+                  >
+                    {AI_T.saveScan[lang]}
+                  </button>
+                )}
+              </div>
+            )}
           </label>
 
           <button

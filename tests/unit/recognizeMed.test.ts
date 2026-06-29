@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { getMedFromImageAI } from '../../src/services/aiToolsService';
-import { addMed, deleteAllMeds, deleteMed, loadMeds } from '../../src/services/medStore';
+import { addMed, deleteAllMeds, deleteMed, loadMeds, medNamesText } from '../../src/services/medStore';
 import { RecognizedMed } from '../../src/schemas/aiTools';
 
 const IMG = 'aGVsbG8taW1hZ2UtYmFzZTY0LWRhdGE='; // dummy base64 ≥16 chars
@@ -69,5 +69,11 @@ describe('medStore (기기 로컬 저장)', () => {
     addMed(uid, rec);
     const stored = loadMeds(uid)[0] as Record<string, unknown>;
     expect(stored.recognized).toBeUndefined();
+  });
+
+  it('저장된 약 이름을 다음 검사 입력용 텍스트로 다시 불러온다', () => {
+    addMed(uid, rec);
+    addMed(uid, { ...rec, name: '비타민 D' });
+    expect(medNamesText(uid)).toBe('비타민 D, 타이레놀정 500mg');
   });
 });

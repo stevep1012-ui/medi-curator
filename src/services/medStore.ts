@@ -49,6 +49,13 @@ export function addMed(uid: string | undefined, rec: RecognizedMedT, note = ''):
   return entry;
 }
 
+export function medNamesText(uid: string | undefined): string {
+  return loadMeds(uid)
+    .map((m) => m.name.trim())
+    .filter(Boolean)
+    .join(', ');
+}
+
 export function deleteMed(uid: string | undefined, id: string): void {
   persist(uid, loadMeds(uid).filter((m) => m.id !== id));
 }
