@@ -146,7 +146,7 @@ function HomeInner() {
         <TrustStrip />
 
         {view === "home" ? (
-          <MenuCards onPick={setView} />
+          <MenuCards onPick={setView} uid={user?.uid} />
         ) : (
           <div className="mt-6" style={{ ["--tool" as string]: ACCENT[view as MenuId] } as CSSProperties}>
             <ToolNav active={view} onGo={setView} />

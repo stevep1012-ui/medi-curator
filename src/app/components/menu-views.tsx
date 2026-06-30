@@ -6,43 +6,47 @@
 import type { CSSProperties } from "react";
 import { useI18n } from "./i18n";
 import { CARD, MENU_ORDER, ACCENT, HOME_HEAD, NAV_HOME, type MenuId, type ViewId } from "./Menu";
+import ProductGrowthPanel from "./ProductGrowthPanel";
 
-export function MenuCards({ onPick }: { onPick: (id: MenuId) => void }) {
+export function MenuCards({ onPick, uid }: { onPick: (id: MenuId) => void; uid?: string }) {
   const { lang } = useI18n();
   return (
-    <section className="mt-9 sm:mt-12">
-      <h2 className="mb-7 text-center text-[13px] font-semibold tracking-tight text-ink-3">{HOME_HEAD[lang][2]}</h2>
-      <div id="cardGrid" className="flex flex-wrap justify-center gap-x-7 gap-y-8 sm:gap-x-12 sm:gap-y-9">
-        {MENU_ORDER.map((id, i) => {
-          const m = CARD[id];
-          const base = i * 150;
-          return (
-            <button key={id} onClick={() => onPick(id)} className="group flex flex-col items-center" style={{ "--a": ACCENT[id] } as CSSProperties}>
-              <div className="step-badge" style={{ animationDelay: `${base}ms` }}>
-                <div
-                  className="mbadge flex h-[56px] w-[56px] items-center justify-center rounded-[16px] ring-1 ring-black/[0.04]"
-                  style={{ boxShadow: "0 10px 24px -16px var(--a)" }}
-                >
-                  <svg viewBox="0 0 24 24" className="h-[26px] w-[26px]" fill="currentColor">
-                    {m.svg}
-                  </svg>
+    <>
+      <section className="mt-9 sm:mt-12">
+        <h2 className="mb-7 text-center text-[13px] font-semibold tracking-tight text-ink-3">{HOME_HEAD[lang][2]}</h2>
+        <div id="cardGrid" className="flex flex-wrap justify-center gap-x-7 gap-y-8 sm:gap-x-12 sm:gap-y-9">
+          {MENU_ORDER.map((id, i) => {
+            const m = CARD[id];
+            const base = i * 150;
+            return (
+              <button key={id} onClick={() => onPick(id)} className="group flex flex-col items-center" style={{ "--a": ACCENT[id] } as CSSProperties}>
+                <div className="step-badge" style={{ animationDelay: `${base}ms` }}>
+                  <div
+                    className="mbadge flex h-[56px] w-[56px] items-center justify-center rounded-[16px] ring-1 ring-black/[0.04]"
+                    style={{ boxShadow: "0 10px 24px -16px var(--a)" }}
+                  >
+                    <svg viewBox="0 0 24 24" className="h-[26px] w-[26px]" fill="currentColor">
+                      {m.svg}
+                    </svg>
+                  </div>
                 </div>
-              </div>
-              <div
-                className="step-line mline h-5 w-px bg-line-2 transition-colors duration-300"
-                style={{ animationDelay: `${base + 170}ms` }}
-              />
-              <span
-                className="step-label mlabel whitespace-nowrap text-[12.5px] font-semibold tracking-tight text-ink-3 transition-colors duration-300"
-                style={{ animationDelay: `${base + 300}ms` }}
-              >
-                {m.label[lang]}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </section>
+                <div
+                  className="step-line mline h-5 w-px bg-line-2 transition-colors duration-300"
+                  style={{ animationDelay: `${base + 170}ms` }}
+                />
+                <span
+                  className="step-label mlabel whitespace-nowrap text-[12.5px] font-semibold tracking-tight text-ink-3 transition-colors duration-300"
+                  style={{ animationDelay: `${base + 300}ms` }}
+                >
+                  {m.label[lang]}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+      <ProductGrowthPanel uid={uid} onGo={onPick} />
+    </>
   );
 }
 
