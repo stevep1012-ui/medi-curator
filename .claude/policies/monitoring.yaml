@@ -34,6 +34,7 @@ monitors:
     focus: [harmful_info, abuse, youth_risk, prompt_injection, emergency_priority, photo_retention, feature_truth]
     excludes: [legal_judgment, copyright, licensing, pharmacist_act, medical_service_act, medical_device_act, samd_classification, advertising_law, pipa_legal_interpretation]
     command: "npm run audit:redteam:nonlegal"
+    report_command: "npm run audit:redteam:nonlegal:report"
 
 alert_conditions:
   - broken menu tree

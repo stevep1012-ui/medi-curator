@@ -18,6 +18,7 @@
     "gate:static": "npm run lint && npm run build && npm run scan:secrets && npm run scan:bundle",
     "gate:release-readiness": "node scripts/check-release-readiness.mjs",
     "audit:redteam:nonlegal": "node scripts/audit-nonlegal-redteam.mjs",
+    "audit:redteam:nonlegal:report": "node scripts/audit-nonlegal-redteam.mjs --write-report",
     "gate:release": "npm run gate:static && npm --prefix functions run build && npm run test:coverage -- --pool=vmThreads --no-file-parallelism --maxWorkers=1 && npm run test:e2e && npm run gate:release-readiness"
   },
   "dependencies": {

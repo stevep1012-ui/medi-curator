@@ -11,6 +11,8 @@ description: 법률 판단을 보류하고 제품 안전성·오남용·응급·
    - 제외: 법률/저작권/라이선스/약사법/의료법/의료기기법/SaMD/광고법/PIPA 법률 해석.
 2. 자동 점검 실행:
    - `npm run audit:redteam:nonlegal`
+   리포트 파일까지 갱신할 때:
+   - `npm run audit:redteam:nonlegal:report`
 3. 변경된 기능 경로를 코드에서 직접 인벤토리한다.
    - 사진/처방전: `MedCapture.tsx`, `aiTools.ts`, `aiToolsService.ts`, `medStore.ts`
    - 응급: `src/lib/emergency.ts`, `SymptomInput.tsx`

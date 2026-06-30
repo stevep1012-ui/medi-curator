@@ -28,12 +28,15 @@ tools: Read, Grep, Glob, Bash
 
 1. 정적 자동 점검:
    `npm run audit:redteam:nonlegal`
+   리포트까지 갱신할 때:
+   `npm run audit:redteam:nonlegal:report`
 2. 변경 범위에 따라 추가 확인:
    - 사진/처방전 인식: `MedCapture.tsx`, `aiTools.ts`, `aiToolsService.ts`, `medStore.ts`, 관련 테스트
    - 응급/자해: `src/lib/emergency.ts`, `SymptomInput.tsx`, E2E/유닛 테스트
    - 지도/약국: `PharmacyFinder.tsx`, `pharmacyService.ts`, `functions/src/pharmacies.ts`, Firebase headers
    - AI 출력: Zod schema, `violatesForbidden`, 모델 프롬프트, fallback/error path
-3. 법률성 판단이 필요한 항목은 결론 내리지 말고 `LEGAL_HOLD`로 분리.
+3. 자동 리포트는 `docs/reviews/REDTEAM-NONLEGAL-YYYY-MM-DD.md`에 저장한다.
+4. 법률성 판단이 필요한 항목은 결론 내리지 말고 `LEGAL_HOLD`로 분리.
 
 ## 판단
 
@@ -59,3 +62,4 @@ tools: Read, Grep, Glob, Bash
 ```
 
 `WATCH` 또는 `BLOCK`이 있으면 remediation backlog를 만들고, 같은 검사 셋을 재실행한다.
+`LEGAL_HOLD`는 비법률 agent가 통과/차단으로 재해석하지 않는다.
