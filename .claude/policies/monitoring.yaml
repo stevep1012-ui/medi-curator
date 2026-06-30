@@ -4,7 +4,11 @@
 version: 1
 owner_agent: commercial-strategist
 co_owners:
+  - program-director
+  - coding-quality-auditor
+  - design-quality-auditor
   - workflow-integrity-auditor
+  - usability-auditor
   - ux-navigation-auditor
   - runtime-reliability-auditor
   - red-team-monitor
@@ -14,6 +18,16 @@ cadence:
   production: daily
 
 monitors:
+  - id: product_quality
+    agent: program-director
+    focus: [coding, design, workflow, usability, ux, runtime, redteam_nonlegal]
+    policy: ".claude/policies/product-quality.yaml"
+  - id: coding_quality
+    agent: coding-quality-auditor
+    focus: [type_safety, error_handling, endpoint_guards, tests]
+  - id: design_quality
+    agent: design-quality-auditor
+    focus: [visual_hierarchy, trust_surface, tone, accessibility]
   - id: commercial
     agent: commercial-strategist
     focus: [jtbd, conversion, trust, packaging, app_store_fit]
@@ -23,6 +37,9 @@ monitors:
   - id: ux
     agent: ux-navigation-auditor
     focus: [visibility, hierarchy, mobile_navigation, accessibility]
+  - id: usability
+    agent: usability-auditor
+    focus: [first_use_clarity, error_recovery, mobile_controls, saved_state_reuse]
   - id: runtime
     agent: runtime-reliability-auditor
     focus: [click_path, console_errors, network_errors, performance]
@@ -40,6 +57,9 @@ alert_conditions:
   - broken menu tree
   - dead-end user flow
   - unclear primary CTA
+  - coding quality regression affecting product completion
+  - design trust-surface regression
+  - usability dead end or unclear recovery action
   - console or network failures
   - misleading or harmful medical phrasing
   - unsupported camera/photo/map/AI capability claims
@@ -56,6 +76,10 @@ hardening_loop:
     - "ux-navigation-auditor verdict is PASS"
     - "runtime-reliability-auditor verdict is PASS"
     - "red-team-monitor verdict is PASS"
+    - "program-director verdict is PASS"
+    - "coding-quality-auditor verdict is PASS"
+    - "design-quality-auditor verdict is PASS"
+    - "usability-auditor verdict is PASS"
     - "no open WATCH or BLOCK finding remains"
   loop:
     - "run monitors"
@@ -72,3 +96,4 @@ outputs:
   commercial_report: docs/reviews/COMMERCIAL-<YYYY-MM-DD>.md
   redteam_report: docs/reviews/REDTEAM-<YYYY-MM-DD>.md
   nonlegal_redteam_report: docs/reviews/REDTEAM-NONLEGAL-<YYYY-MM-DD>.md
+  product_quality_report: docs/reviews/PRODUCT-QUALITY-<YYYY-MM-DD>.md

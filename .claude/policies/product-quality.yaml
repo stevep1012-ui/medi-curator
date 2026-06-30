@@ -1,0 +1,92 @@
+# Product Quality Agent Policy
+version: 1
+owner_agent: program-director
+
+objective: >
+  Raise medi-curator's product completeness across coding, design, workflow,
+  usability, UX, runtime reliability, and non-legal red-team safety without
+  bypassing Health-AI legal/privacy/medical gates.
+
+quality_axes:
+  - id: coding
+    owner: coding-quality-auditor
+    support: [frontend-architect, code-reviewer, api-engineer, qa-engineer]
+    focus: [type_safety, runtime_safety, endpoint_guards, error_handling, testability, secret_safety]
+    required_evidence:
+      - "lint/build/test output or explicit blocker"
+      - "file:line findings for code risks"
+
+  - id: design
+    owner: design-quality-auditor
+    support: [ux-designer, commercial-strategist]
+    focus: [visual_hierarchy, trust_surface, tone, accessibility, localization]
+    required_evidence:
+      - "screen path or component path"
+      - "copy/visual mismatch evidence"
+
+  - id: workflow
+    owner: workflow-integrity-auditor
+    support: [workflow-manager, product-strategist]
+    focus: [menu_tree, task_flow, state_transition, dead_end_removal]
+    required_evidence:
+      - "task path from start to completion"
+      - "next-step availability"
+
+  - id: usability
+    owner: usability-auditor
+    support: [ux-navigation-auditor, runtime-reliability-auditor]
+    focus: [first_use_clarity, mobile_controls, error_recovery, saved_state_reuse]
+    required_evidence:
+      - "browser smoke path or component evidence"
+      - "user-facing recovery message"
+
+  - id: ux
+    owner: ux-navigation-auditor
+    support: [ux-designer, product-strategist]
+    focus: [information_architecture, primary_cta, navigation, cognitive_load]
+    required_evidence:
+      - "route/screen and CTA evidence"
+
+  - id: runtime
+    owner: runtime-reliability-auditor
+    support: [qa-engineer]
+    focus: [console_errors, network_errors, click_path, performance_warnings]
+    required_evidence:
+      - "browser console output"
+      - "HTTP or build output"
+
+  - id: redteam_nonlegal
+    owner: nonlegal-red-team-monitor
+    support: [red-team-monitor, medical-reviewer]
+    focus: [harmful_info, abuse, youth_risk, prompt_injection, photo_retention, feature_truth]
+    command: "npm run audit:redteam:nonlegal:report"
+    legal_hold: true
+
+verdicts: [PASS, WATCH, BLOCK, LEGAL_HOLD]
+
+pass_criteria:
+  - "All non-legal product quality axes are PASS"
+  - "No coding/design/workflow/usability/UX/runtime BLOCK remains"
+  - "Non-legal red-team verdict is PASS"
+  - "LEGAL_HOLD items are explicitly listed and not reinterpreted as PASS"
+
+blocking_conditions:
+  - "core user task cannot be completed"
+  - "user-facing copy claims unsupported AI/map/camera/medical capability"
+  - "original medication photo/base64 is persisted"
+  - "auth/consent guard is missing before sensitive-health processing"
+  - "runtime console/network error breaks a core path"
+  - "emergency/self-harm path lacks immediate crisis contact surface"
+
+loop:
+  - "program-director identifies affected axes"
+  - "dispatch owner subagents"
+  - "collect PASS/WATCH/BLOCK/LEGAL_HOLD findings"
+  - "convert WATCH/BLOCK into remediation backlog"
+  - "assign implementation owner"
+  - "run verification commands"
+  - "rerun same monitors until PASS or external HOLD"
+
+report_paths:
+  product_quality: "docs/reviews/PRODUCT-QUALITY-<YYYY-MM-DD>.md"
+  nonlegal_redteam: "docs/reviews/REDTEAM-NONLEGAL-<YYYY-MM-DD>.md"

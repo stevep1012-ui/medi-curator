@@ -27,6 +27,7 @@ Health-AI 고규제 도메인에서 출시 가능한 제품 상태를 만든다.
    - T4-ENGINEERING: API, 프론트, 타입, 스키마, 관측성
    - T5-QA-RELEASE: 테스트, 카나리, 롤백, 릴리스 노트
    - T6-COMMERCIAL: 상업성, 메뉴 트리, UX, runtime, red-team
+   - T7-PRODUCT-QUALITY: coding, design, workflow, usability, UX 제품성 완성도
 3. 각 트랙의 산출물, 담당 에이전트, 완료 기준을 표로 만든다.
 4. 차단 항목은 `P0`, 출시 전 필수는 `P1`, 출시 후 개선은 `P2`로 나눈다.
 5. 담당 subagent를 Task tool로 호출한다.
@@ -45,6 +46,7 @@ Health-AI 고규제 도메인에서 출시 가능한 제품 상태를 만든다.
 | React/타입/UI 구조 | frontend-architect | code-reviewer |
 | 테스트/회귀/E2E | qa-engineer | medical-reviewer |
 | 상업성/흐름/UX/runtime/red-team | commercial-strategist | workflow-integrity-auditor |
+| 제품성 통합 지휘 | program-director | coding-quality-auditor, design-quality-auditor, usability-auditor |
 | 릴리스/롤백 | release-manager | security-auditor |
 
 ## 출력 형식

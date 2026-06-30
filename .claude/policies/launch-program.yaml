@@ -4,6 +4,7 @@ owner_agent: program-manager
 orchestrator_agent: orchestrator
 workflow_agent: workflow-manager
 release_agent: release-manager
+product_quality_agent: program-director
 
 launch_objective: "Firebase 기반 출시 가능 구조로 전환하고 Health-AI 규제 게이트를 통과한다."
 
@@ -148,6 +149,30 @@ tracks:
       - "No critical runtime errors or broken navigation"
       - "Red-team issues are either PASS or have explicit remediation"
 
+  - id: T7-PRODUCT-QUALITY
+    name: "Product quality completion"
+    owner: program-director
+    support:
+      - coding-quality-auditor
+      - design-quality-auditor
+      - workflow-integrity-auditor
+      - usability-auditor
+      - ux-navigation-auditor
+      - runtime-reliability-auditor
+      - nonlegal-red-team-monitor
+    deliverables:
+      - "Product quality direction report"
+      - "Coding/design/workflow/usability/UX remediation backlog"
+      - "Non-legal product safety report"
+    exit_criteria:
+      - "Coding quality verdict PASS"
+      - "Design quality verdict PASS"
+      - "Workflow quality verdict PASS"
+      - "Usability quality verdict PASS"
+      - "UX/navigation verdict PASS"
+      - "Runtime reliability verdict PASS"
+      - "Non-legal red-team verdict PASS or explicit LEGAL_HOLD only"
+
 milestones:
   - id: M0
     name: "Launch audit baseline"
@@ -170,6 +195,11 @@ milestones:
     name: "Commercial monitoring loop"
     required_tracks: [T6-COMMERCIAL]
     output: "docs/reviews/COMMERCIAL-<YYYY-MM-DD>.md"
+
+  - id: M5
+    name: "Product quality hardening loop"
+    required_tracks: [T7-PRODUCT-QUALITY]
+    output: "docs/reviews/PRODUCT-QUALITY-<YYYY-MM-DD>.md"
 
 initial_p0_backlog:
   - id: P0-001
@@ -210,12 +240,17 @@ monitoring:
   report_paths:
     - "docs/reviews/COMMERCIAL-<YYYY-MM-DD>.md"
     - "docs/reviews/REDTEAM-<YYYY-MM-DD>.md"
+    - "docs/reviews/PRODUCT-QUALITY-<YYYY-MM-DD>.md"
   default_agents:
     - commercial-strategist
     - workflow-integrity-auditor
     - ux-navigation-auditor
     - runtime-reliability-auditor
     - red-team-monitor
+    - program-director
+    - coding-quality-auditor
+    - design-quality-auditor
+    - usability-auditor
   alert_conditions:
     - "broken menu tree"
     - "dead-end user flow"
