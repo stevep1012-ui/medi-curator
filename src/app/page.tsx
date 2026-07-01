@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties } from "react";
+import { lazy, Suspense, useEffect, useState, type CSSProperties } from "react";
 import { AutoIcon, MoonIcon, PulseIcon, SunIcon } from "./components/icons";
 import { useI18n } from "./components/i18n";
 import { I18nProvider } from "./components/I18nProvider";
@@ -14,7 +14,6 @@ import { VITAMIN_HEAD } from "./components/vitamin-data";
 import MyMeds from "./components/MyMeds";
 import { MYMEDS_HEAD } from "./components/mymeds-data";
 import NextSteps from "./components/NextSteps";
-import HeroCanvas from "./components/HeroCanvas";
 import PharmacyFinder from "./components/PharmacyFinder";
 import SearchHistory from "./components/SearchHistory";
 import PrivacySettings from "./components/PrivacySettings";
@@ -26,6 +25,10 @@ import {
   TrustStrip,
 } from "./components/Chrome";
 import { toast, useAuth, ACCT_TOASTS } from "./components/chrome-helpers";
+
+// Three.js is visually valuable but heavy. Keep it out of the first app chunk so
+// text, login, and core tools become interactive before the hero ornament loads.
+const HeroCanvas = lazy(() => import("./components/HeroCanvas"));
 
 type ThemeMode = "auto" | "light" | "dark";
 
@@ -102,7 +105,9 @@ function HomeInner() {
         {/* HERO: calm editorial surface (refined, minimal) */}
         <header className="hero hero-3d-entrance relative mb-2 overflow-hidden rounded-[20px] px-5 pb-9 pt-5 sm:px-9 sm:pb-12 sm:pt-7">
           <div className="hero-bg" />
-          <HeroCanvas />
+          <Suspense fallback={null}>
+            <HeroCanvas />
+          </Suspense>
 
           <div className="relative z-[3]">
             {/* Brand row */}
