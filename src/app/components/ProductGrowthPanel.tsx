@@ -183,7 +183,7 @@ export default function ProductGrowthPanel({ uid, onGo }: { uid?: string; onGo: 
   }
 
   return (
-    <section className="mt-8 grid gap-4 lg:grid-cols-[1.25fr_0.75fr]">
+    <section className="growth-3d-entrance mt-8 grid gap-4 lg:grid-cols-[1.25fr_0.75fr]">
       <div className="rounded-[24px] border border-line bg-surface p-5 shadow-sm sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="max-w-xl">
@@ -217,7 +217,8 @@ export default function ProductGrowthPanel({ uid, onGo }: { uid?: string; onGo: 
                 type="button"
                 key={item.key}
                 onClick={() => markAndGo(item)}
-                className="group flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3 text-left transition hover:-translate-y-0.5 hover:border-brand-tint-2 hover:shadow-md active:translate-y-0"
+                className="group routine-card-3d flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3 text-left transition hover:-translate-y-0.5 hover:border-brand-tint-2 hover:shadow-md active:translate-y-0"
+                style={{ animationDelay: `${120 + ROUTINE.indexOf(item) * 70}ms` }}
               >
                 <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${checked ? "bg-brand text-white" : "bg-brand-tint text-brand"}`}>
                   {checked ? <CheckIcon className="h-[18px] w-[18px]" /> : iconFor(item, "h-[18px] w-[18px]")}
@@ -232,7 +233,7 @@ export default function ProductGrowthPanel({ uid, onGo }: { uid?: string; onGo: 
         </div>
       </div>
 
-      <aside className="rounded-[24px] border border-brand-tint-2 bg-brand-tint/45 p-5 shadow-sm sm:p-6">
+      <aside className="growth-aside-3d rounded-[24px] border border-brand-tint-2 bg-brand-tint/45 p-5 shadow-sm sm:p-6">
         <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand text-white shadow-sm">
           <StarIcon className="h-[18px] w-[18px]" />
         </div>

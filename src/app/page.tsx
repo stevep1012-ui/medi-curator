@@ -100,13 +100,13 @@ function HomeInner() {
     <main className="min-h-screen bg-paper px-4 pb-12 pt-6 sm:px-6 sm:pb-12 sm:pt-10">
       <section className="mx-auto w-full max-w-5xl">
         {/* HERO: calm editorial surface (refined, minimal) */}
-        <header className="hero relative mb-2 overflow-hidden rounded-[20px] px-5 pb-9 pt-5 sm:px-9 sm:pb-12 sm:pt-7">
+        <header className="hero hero-3d-entrance relative mb-2 overflow-hidden rounded-[20px] px-5 pb-9 pt-5 sm:px-9 sm:pb-12 sm:pt-7">
           <div className="hero-bg" />
           <HeroCanvas />
 
           <div className="relative z-[3]">
             {/* Brand row */}
-            <div className="flex items-center justify-between gap-3">
+            <div className="entrance-layer flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <span className="flex h-10 w-10 items-center justify-center rounded-[11px] bg-ink text-surface ring-1 ring-black/5">
                   <PulseIcon className="h-[18px] w-[18px]" />
@@ -130,7 +130,7 @@ function HomeInner() {
               </div>
             </div>
 
-            <div className="mt-10 sm:mt-14">
+            <div className="entrance-layer mt-10 sm:mt-14" style={{ animationDelay: "110ms" }}>
               <div className="mb-3.5 flex items-center gap-2 whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.2em] text-brand">
                 <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand" />
                 <span>{t.brand.tag}</span>

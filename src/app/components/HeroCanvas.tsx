@@ -132,6 +132,8 @@ export default function HeroCanvas() {
     }
     function render(now: number) {
       const t = (now - t0) / 1000;
+      const intro = reduce ? 1 : Math.min(1, t / 1.15);
+      const easeIntro = 1 - Math.pow(1 - intro, 3);
       mx += (tx - mx) * 0.05;
       my += (ty - my) * 0.05;
       for (const { object: m, motion: u } of pills) {
@@ -139,8 +141,10 @@ export default function HeroCanvas() {
         m.position.y = u.baseY + Math.sin(t * u.spd + u.fy) * u.amp;
         m.position.x += Math.sin(t * 0.2 + u.fx) * 0.0012;
       }
-      group.rotation.y += (mx * 0.5 - group.rotation.y) * 0.04;
-      group.rotation.x += (-my * 0.4 - group.rotation.x) * 0.04;
+      group.scale.setScalar(0.82 + easeIntro * 0.18);
+      group.position.z = -4.8 + easeIntro * 4.8;
+      group.rotation.y += (mx * 0.5 + (1 - easeIntro) * -0.34 - group.rotation.y) * 0.04;
+      group.rotation.x += (-my * 0.4 + (1 - easeIntro) * 0.2 - group.rotation.x) * 0.04;
       camera.position.x += (mx * 2.2 - camera.position.x) * 0.04;
       camera.position.y += (-my * 1.6 - camera.position.y) * 0.04;
       camera.lookAt(0, 0, 0);

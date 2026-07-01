@@ -12,14 +12,14 @@ export function MenuCards({ onPick, uid }: { onPick: (id: MenuId) => void; uid?:
   const { lang } = useI18n();
   return (
     <>
-      <section className="mt-9 sm:mt-12">
+      <section className="home-tools-3d mt-9 sm:mt-12">
         <h2 className="mb-7 text-center text-[13px] font-semibold tracking-tight text-ink-3">{HOME_HEAD[lang][2]}</h2>
         <div id="cardGrid" className="flex flex-wrap justify-center gap-x-7 gap-y-8 sm:gap-x-12 sm:gap-y-9">
           {MENU_ORDER.map((id, i) => {
             const m = CARD[id];
             const base = i * 150;
             return (
-              <button key={id} onClick={() => onPick(id)} className="group flex flex-col items-center" style={{ "--a": ACCENT[id] } as CSSProperties}>
+              <button key={id} onClick={() => onPick(id)} className="group menu-card-3d flex flex-col items-center" style={{ "--a": ACCENT[id], animationDelay: `${base}ms` } as CSSProperties}>
                 <div className="step-badge" style={{ animationDelay: `${base}ms` }}>
                   <div
                     className="mbadge flex h-[56px] w-[56px] items-center justify-center rounded-[16px] ring-1 ring-black/[0.04]"

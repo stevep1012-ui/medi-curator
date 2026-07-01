@@ -196,6 +196,50 @@ button:active {
   }
 }
 
+/* 3D entrance: premium but restrained. Used for hierarchy, not decoration. */
+@keyframes hero3dIn {
+  from {
+    opacity: 0;
+    transform: perspective(1600px) translate3d(0, 20px, -42px) rotateX(8deg) scale(0.985);
+    filter: blur(7px);
+  }
+  to {
+    opacity: 1;
+    transform: perspective(1600px) translate3d(0, 0, 0) rotateX(0) scale(1);
+    filter: blur(0);
+  }
+}
+@keyframes layer3dIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, -28px) rotateX(7deg);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotateX(0);
+  }
+}
+@keyframes menu3dIn {
+  from {
+    opacity: 0;
+    transform: perspective(1100px) translate3d(0, 18px, -70px) rotateX(18deg) rotateY(-6deg) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: perspective(1100px) translate3d(0, 0, 0) rotateX(0) rotateY(0) scale(1);
+  }
+}
+@keyframes growth3dIn {
+  from {
+    opacity: 0;
+    transform: perspective(1300px) translate3d(0, 24px, -58px) rotateX(10deg);
+  }
+  to {
+    opacity: 1;
+    transform: perspective(1300px) translate3d(0, 0, 0) rotateX(0);
+  }
+}
+
 /* paper-flip panel transition */
 @keyframes pageflip {
   from {
@@ -229,6 +273,11 @@ button:active {
 /* ---------- hero — calm editorial surface (refined, minimal; no photo) ---------- */
 .hero {
   isolation: isolate;
+  transform-style: preserve-3d;
+  transform-origin: center top;
+}
+.entrance-layer {
+  transform-style: preserve-3d;
 }
 .hero-bg {
   position: absolute;
@@ -314,7 +363,53 @@ button:active {
   to { opacity: 1; transform: none; }
 }
 @media (prefers-reduced-motion: no-preference) {
+  .hero-3d-entrance {
+    animation: hero3dIn 0.72s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .entrance-layer {
+    opacity: 0;
+    animation: layer3dIn 0.64s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .home-tools-3d,
+  .growth-3d-entrance {
+    perspective: 1200px;
+  }
+  .menu-card-3d {
+    opacity: 0;
+    transform-origin: center top;
+    transform-style: preserve-3d;
+    animation: menu3dIn 0.62s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .growth-3d-entrance > div,
+  .growth-aside-3d {
+    opacity: 0;
+    transform-origin: center top;
+    animation: growth3dIn 0.68s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .growth-aside-3d {
+    animation-delay: 120ms;
+  }
+  .routine-card-3d {
+    opacity: 0;
+    transform-origin: center top;
+    transform-style: preserve-3d;
+    animation: menu3dIn 0.48s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
   .step-badge { opacity: 0; animation: cardin 0.42s cubic-bezier(0.2, 0.7, 0.2, 1) forwards; }
   .step-line { transform-origin: top; transform: scaleY(0); animation: growline 0.26s ease-out forwards; }
   .step-label { opacity: 0; animation: labelin 0.3s ease-out forwards; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-3d-entrance,
+  .entrance-layer,
+  .menu-card-3d,
+  .growth-3d-entrance > div,
+  .growth-aside-3d,
+  .routine-card-3d {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
 }
