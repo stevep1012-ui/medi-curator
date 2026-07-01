@@ -23,7 +23,7 @@ interface ProxyError {
 
 function mapError(status: number, body: ProxyError | null): Error {
   const code = body?.code;
-  if (code === 'APP_CHECK_REQUIRED') return new Error('앱 무결성 확인에 실패했습니다. 페이지를 새로고침해 주세요.');
+  if (code === 'APP_CHECK_REQUIRED') return new Error('브라우저 보안 확인이 완료되지 않았습니다. 새로고침 후 다시 시도해 주세요.');
   if (code === 'NO_TOKEN' || code === 'BAD_TOKEN') return new Error('로그인이 필요합니다.');
   if (code === 'CONSENT_REQUIRED') return new Error('민감정보 동의가 필요합니다.');
   if (code === 'RATE_LIMIT') return new Error('시간당 요청 한도를 초과했습니다. 잠시 후 다시 시도해 주세요.');

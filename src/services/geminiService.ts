@@ -28,7 +28,7 @@ interface CurateError {
 function mapError(status: number, body: CurateError | null): Error {
   const code = body?.code;
   if (code === 'APP_CHECK_REQUIRED') {
-    return new Error('앱 무결성 확인에 실패했습니다. 페이지를 새로고침해 주세요.');
+    return new Error('브라우저 보안 확인이 완료되지 않았습니다. 새로고침 후 다시 시도해 주세요.');
   }
   if (code === 'NO_TOKEN' || code === 'BAD_TOKEN') {
     return new Error('로그인이 필요합니다.');

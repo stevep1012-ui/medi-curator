@@ -146,15 +146,21 @@ async function requireAuthenticatedConsent(req: { headers: Record<string, unknow
 
 async function requireAppCheck(req: { headers: Record<string, unknown> }) {
   const token = String(req.headers['x-firebase-appcheck'] ?? '');
-  if (!token) {
+  const strict = process.env.APP_CHECK_MODE === 'strict';
+  if (!token && strict) {
     return { ok: false as const, status: 401, code: 'APP_CHECK_REQUIRED', message: '앱 무결성 확인이 필요합니다' };
   }
-  try {
-    await admin.appCheck().verifyToken(token);
-    return { ok: true as const };
-  } catch {
-    return { ok: false as const, status: 401, code: 'APP_CHECK_REQUIRED', message: '앱 무결성 확인에 실패했습니다' };
+  if (token) {
+    try {
+      await admin.appCheck().verifyToken(token);
+    } catch {
+      if (strict) {
+        return { ok: false as const, status: 401, code: 'APP_CHECK_REQUIRED', message: '앱 무결성 확인에 실패했습니다' };
+      }
+      logger.info('curate.appcheck_soft_fail');
+    }
   }
+  return { ok: true as const };
 }
 
 const LANGUAGE_NAMES: Record<string, string> = {

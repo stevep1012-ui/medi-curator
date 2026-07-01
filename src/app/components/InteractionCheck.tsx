@@ -24,6 +24,12 @@ const AI_T = {
     "未在您的输入中发现额外的相互作用主题。",
   ),
   errorRetry: ml("다시 시도", "Retry", "再試行", "重试"),
+  signInRequired: ml(
+    "AI 추가 점검은 로그인 후 사용할 수 있습니다. 일반 상호작용 안내는 아래에서 계속 확인할 수 있어요.",
+    "Sign in to use the AI extended check. You can still review the general interaction guidance below.",
+    "AIによる追加チェックはログイン後に利用できます。一般的な相互作用案内は下で確認できます。",
+    "登录后可使用 AI 额外检查。您仍可在下方查看一般相互作用提示。",
+  ),
   scanSaved: ml("내 목록에 저장했어요. 다음에도 자동으로 불러옵니다.", "Saved to My meds. It will be loaded next time.", "リストに保存しました。次回も自動で読み込みます。", "已保存到我的药品。下次会自动载入。"),
   saveScan: ml("내 목록에 저장", "Save to my list", "リストに保存", "保存到我的列表"),
 } as const;
@@ -48,6 +54,11 @@ export default function InteractionCheck({ uid }: { uid?: string }) {
     setAiLoading(true);
     setAiError(null);
     setAi(null);
+    if (!uid) {
+      setAiError(AI_T.signInRequired[lang]);
+      setAiLoading(false);
+      return;
+    }
     try {
       setAi(await getInteractionFromAI(q, c, false, lang));
     } catch (e) {
