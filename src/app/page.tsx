@@ -32,6 +32,39 @@ const HeroCanvas = lazy(() => import("./components/HeroCanvas"));
 
 type ThemeMode = "auto" | "light" | "dark";
 
+function LockedFeature({ onSignIn }: { onSignIn: (provider: string) => void }) {
+  return (
+    <section className="rounded-[22px] border border-brand-tint-2 bg-brand-tint/45 p-6 text-center shadow-sm sm:p-8">
+      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-brand text-white shadow-sm">
+        <PulseIcon className="h-5 w-5" />
+      </div>
+      <h2 className="mt-4 text-[22px] font-extrabold tracking-[-0.03em] text-ink">로그인 후 이용할 수 있어요</h2>
+      <p className="mx-auto mt-2 max-w-md text-[13.5px] leading-relaxed text-ink-2">
+        게스트는 메뉴와 제품 흐름을 둘러볼 수 있습니다. 증상 분석, 약 사진 판독, 복용 검사, 기록 저장은 무료 회원으로 로그인한 뒤 사용할 수 있어요.
+      </p>
+      <div className="mx-auto mt-5 grid max-w-sm gap-2 sm:grid-cols-2">
+        <button
+          type="button"
+          onClick={() => onSignIn("google")}
+          className="inline-flex h-11 items-center justify-center rounded-xl bg-ink px-4 text-[13.5px] font-extrabold text-surface transition hover:opacity-90 active:scale-[0.98]"
+        >
+          Google로 시작
+        </button>
+        <button
+          type="button"
+          onClick={() => onSignIn("naver")}
+          className="inline-flex h-11 items-center justify-center rounded-xl border border-line bg-surface px-4 text-[13.5px] font-extrabold text-ink-2 transition hover:border-brand-tint-2 hover:text-brand active:scale-[0.98]"
+        >
+          Naver로 시작
+        </button>
+      </div>
+      <p className="mt-4 text-[12px] leading-relaxed text-ink-4">
+        무료 회원은 월 30회까지 AI 기능을 사용할 수 있고, 이후에는 Plus 플랜 안내를 확인하게 됩니다.
+      </p>
+    </section>
+  );
+}
+
 // Night window: 18:00 — 06:00 local time
 function isNightNow() {
   const h = new Date().getHours();
@@ -42,6 +75,7 @@ function HomeInner() {
   const { t, lang } = useI18n();
   const { provider, user, signIn, signOut } = useAuth();
   const [view, setView] = useState<ViewId>("home");
+  const isGuest = provider === "guest";
   const [mode, setMode] = useState<ThemeMode>(() => {
     const saved = localStorage.getItem("mc-theme") as ThemeMode | null;
     return saved === "auto" || saved === "light" || saved === "dark" ? saved : "auto";
@@ -179,14 +213,20 @@ function HomeInner() {
                 key={view}
                 className="p-5 pt-6 sm:p-7 motion-safe:animate-[pageflip_0.42s_cubic-bezier(0.2,0.7,0.2,1)] [transform-origin:left_center]"
               >
-                {view === "symptom" && <SymptomAnalysis uid={user?.uid} />}
-                {view === "interaction" && <InteractionCheck uid={user?.uid} />}
-                {view === "vitamin" && <VitaminPairing />}
-                {view === "mymeds" && <MyMeds uid={user?.uid} />}
-                {view === "pharmacy" && <PharmacyFinder />}
-                {view === "history" && <SearchHistory />}
-                {view === "privacy" && <PrivacySettings uid={user?.uid} />}
-                <NextSteps active={view as MenuId} onGo={(id) => setView(id)} />
+                {isGuest ? (
+                  <LockedFeature onSignIn={onSignIn} />
+                ) : (
+                  <>
+                    {view === "symptom" && <SymptomAnalysis uid={user?.uid} />}
+                    {view === "interaction" && <InteractionCheck uid={user?.uid} />}
+                    {view === "vitamin" && <VitaminPairing />}
+                    {view === "mymeds" && <MyMeds uid={user?.uid} />}
+                    {view === "pharmacy" && <PharmacyFinder />}
+                    {view === "history" && <SearchHistory />}
+                    {view === "privacy" && <PrivacySettings uid={user?.uid} />}
+                    <NextSteps active={view as MenuId} onGo={(id) => setView(id)} />
+                  </>
+                )}
               </div>
             </div>
           </div>

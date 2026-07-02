@@ -106,7 +106,7 @@ export const interaction = onRequest(
       return;
     }
     if (!rateAllowed) {
-      res.status(429).json({ ok: false, code: 'RATE_LIMIT', message: '시간당 요청 한도를 초과했습니다' });
+      res.status(429).json({ ok: false, code: 'RATE_LIMIT', message: '무료 사용 한도를 초과했습니다. 다음 달에 다시 이용하거나 Plus를 확인해 주세요.' });
       return;
     }
 
@@ -212,7 +212,7 @@ export const pairing = onRequest(
       return;
     }
     if (!rateAllowed) {
-      res.status(429).json({ ok: false, code: 'RATE_LIMIT', message: '시간당 요청 한도를 초과했습니다' });
+      res.status(429).json({ ok: false, code: 'RATE_LIMIT', message: '무료 사용 한도를 초과했습니다. 다음 달에 다시 이용하거나 Plus를 확인해 주세요.' });
       return;
     }
 
@@ -324,7 +324,7 @@ export const recognizeMed = onRequest(
       return;
     }
     if (!rateAllowed) {
-      res.status(429).json({ ok: false, code: 'RATE_LIMIT', message: '시간당 요청 한도를 초과했습니다' });
+      res.status(429).json({ ok: false, code: 'RATE_LIMIT', message: '무료 사용 한도를 초과했습니다. 다음 달에 다시 이용하거나 Plus를 확인해 주세요.' });
       return;
     }
 
