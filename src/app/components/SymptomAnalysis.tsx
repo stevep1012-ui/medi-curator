@@ -251,6 +251,61 @@ export default function SymptomAnalysis({ uid }: { uid?: string }) {
             </ResultBlock>
           )}
 
+          {!isCrisis && result.otcMedications.length > 0 && (
+            <ResultBlock title={s.otcTitle} tone="brand" icon={<PillIcon className="h-[15px] w-[15px]" />}>
+              <div className="grid gap-3">
+                {result.otcMedications.map((med) => (
+                  <div key={`${med.name}-${med.purpose}`} className="rounded-2xl border border-line bg-surface-soft p-3.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h4 className="text-[13.5px] font-extrabold text-ink">{med.name}</h4>
+                      <span className="rounded-full bg-brand-tint px-2 py-[2px] text-[10.5px] font-extrabold text-brand">
+                        {med.riskLevel}
+                      </span>
+                    </div>
+                    <p className="mt-1.5 text-[13px] leading-relaxed text-ink-2">{med.purpose}</p>
+                    <p className="mt-1 text-[12.5px] leading-relaxed text-ink-3">{med.dosage}</p>
+                    {med.warnings.length > 0 && (
+                      <ul className="mt-2 space-y-1 text-[12.5px] leading-snug text-ink-3">
+                        {med.warnings.slice(0, 3).map((warning) => (
+                          <li key={warning} className="flex gap-2">
+                            <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-brand" />
+                            {warning}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </ResultBlock>
+          )}
+
+          {!isCrisis && result.lifestyleTips.length > 0 && (
+            <ResultBlock title={s.exerciseTitle} tone="brand" icon={<InfoIcon className="h-[15px] w-[15px]" />}>
+              <ul className="space-y-2.5 text-[13.5px] leading-snug text-ink-2">
+                {result.lifestyleTips.map((tip) => (
+                  <li key={tip} className="flex gap-2.5">
+                    <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-brand" />
+                    {tip}
+                  </li>
+                ))}
+              </ul>
+            </ResultBlock>
+          )}
+
+          {!isCrisis && result.recoveryTimeline.length > 0 && (
+            <ResultBlock title={s.recoveryTitle} tone="brand" icon={<InfoIcon className="h-[15px] w-[15px]" />}>
+              <div className="grid gap-2.5">
+                {result.recoveryTimeline.map((item) => (
+                  <div key={`${item.ageGroup}-${item.expectedDays}`} className="rounded-xl border border-line bg-surface-soft px-3 py-2.5">
+                    <p className="text-[12px] font-extrabold text-ink">{item.ageGroup} · {item.expectedDays}</p>
+                    <p className="mt-1 text-[12.5px] leading-relaxed text-ink-3">{item.notes}</p>
+                  </div>
+                ))}
+              </div>
+            </ResultBlock>
+          )}
+
           {result.redFlags.length > 0 && (
             <ResultBlock title={s.redFlagTitle} tone="danger" icon={<ShieldIcon className="h-[15px] w-[15px]" />}>
               <ul className="space-y-2.5 text-[13.5px] leading-snug text-ink-2">

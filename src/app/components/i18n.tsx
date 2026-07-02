@@ -56,6 +56,7 @@ export type Dict = {
     otcTitle: string;
     interactionTitle: string;
     exerciseTitle: string;
+    recoveryTitle: string;
     herbalTitle: string;
     redFlagTitle: string;
     otc: string[];
@@ -142,7 +143,7 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
     head: {
       symptom: [
         "증상을 알려주세요 — 명확하고 신중한 다음 단계를 안내합니다.",
-        "증상 정리, 상담 질문, 위험 신호 확인을 돕습니다. 진단이나 약품 추천이 아닌, 차분한 출발점입니다.",
+        "증상 정리, 일반의약품 선택지, 생활관리, 위험 신호를 한 번에 확인합니다.",
       ],
       interaction: [
         "복용 안전성을 먼저 확인하세요.",
@@ -152,9 +153,9 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
       history: ["지난 검색을 한곳에서.", "이 기기에만 저장됩니다. 언제든 다시 보고, 검토하고, 삭제하세요."],
       privacy: ["건강 데이터는 당신이 관리합니다.", "민감정보는 동의가 있을 때만 처리됩니다. 모든 권한을 여기서 관리하세요."],
     },
-    footer: "본 정보는 교육용이며 의학적 진단이 아닙니다. 응급 상황에서는 지역 응급번호로 전화하거나 가까운 응급실을 방문하세요.",
+    footer: "일반 건강정보입니다. 증상이 심하거나 오래가면 의사·약사와 상담하고, 응급 상황에서는 119 또는 응급실을 이용하세요.",
     symptom: {
-      disclaimer: "본 도구는 일반 건강 정보를 제공하며 전문 의료 상담을 대체하지 않습니다. 증상이 지속되거나 악화되면 의사나 약사와 상담하세요.",
+      disclaimer: "증상에 따라 흔히 확인하는 일반 건강정보와 일반의약품 선택지를 정리합니다. 복용 전 라벨과 주의사항을 확인하세요.",
       symptomsLabel: "증상",
       symptomsPh: "예: 두통, 가벼운 기침, 인후통",
       symptomsVal: "두통, 가벼운 기침, 인후통",
@@ -174,11 +175,12 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
       callMentalCrisis: "정신건강 위기상담 1577-0199",
       callEmergency: "응급 119",
       resultsOverview: "결과 요약",
-      educationalSummary: "교육용 요약",
+      educationalSummary: "일반 건강정보",
       findPharmacy: "약국 찾기 열기",
-      otcTitle: "상담 전 정리할 정보",
+      otcTitle: "일반의약품 선택지",
       interactionTitle: "복용 정보 확인",
-      exerciseTitle: "일반 생활관리",
+      exerciseTitle: "생활관리",
+      recoveryTitle: "예상 경과",
       herbalTitle: "피해야 할 행동",
       redFlagTitle: "위험 신호 — 즉시 도움 받기",
       otc: [
@@ -187,7 +189,7 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
         "열, 통증 정도, 호흡 곤란, 발진, 구토 등 동반 증상을 함께 기록하세요.",
         "의사·약사에게 물어볼 질문을 미리 정리하세요.",
       ],
-      interaction: "새 약이나 보충제를 시작하기 전에는 현재 복용 중인 모든 제품 목록을 약사 또는 의사에게 보여 주세요. 이 화면은 특정 약품명, 용량, 상호작용 판단을 제공하지 않습니다.",
+      interaction: "새 약이나 보충제를 시작하기 전에는 현재 복용 중인 모든 제품 목록을 약사 또는 의사에게 보여 주세요.",
       exercise: "충분한 휴식, 수분 섭취, 증상 변화 관찰처럼 일반적인 생활관리만 참고하세요. 증상이 지속되거나 악화되면 전문 의료진과 상담하세요.",
       herbal: [
         "스스로 약을 추가하거나 용량을 조절하지 마세요.",
@@ -326,6 +328,7 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
       otcTitle: "Information to prepare before consultation",
       interactionTitle: "Medication information check",
       exerciseTitle: "General self-care",
+      recoveryTitle: "Expected course",
       herbalTitle: "Actions to avoid",
       redFlagTitle: "Red flags — get help now",
       otc: [
@@ -473,6 +476,7 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
       otcTitle: "相談前に整理する情報",
       interactionTitle: "服用情報の確認",
       exerciseTitle: "一般的なセルフケア",
+      recoveryTitle: "予想される経過",
       herbalTitle: "避けるべき行動",
       redFlagTitle: "危険な兆候 — すぐに助けを求める",
       otc: [
@@ -618,8 +622,9 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
       educationalSummary: "教育性摘要",
       findPharmacy: "打开药房查找",
       otcTitle: "咨询前需要整理的信息",
-      interactionTitle: "用药信息确认",
-      exerciseTitle: "一般自我护理",
+      interactionTitle: "用药信息检查",
+      exerciseTitle: "一般生活管理",
+      recoveryTitle: "预计过程",
       herbalTitle: "应避免的行为",
       redFlagTitle: "危险信号 — 立即求助",
       otc: [
