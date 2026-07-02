@@ -144,6 +144,24 @@ function HomeInner() {
                 {heading[0]}
               </h1>
               <p className="mt-4 max-w-lg text-[14px] leading-relaxed text-ink-2 sm:text-[15.5px]">{heading[1]}</p>
+              {view === "home" && (
+                <div className="mt-5 flex flex-wrap gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setView("mymeds")}
+                    className="inline-flex h-10 items-center justify-center rounded-xl bg-ink px-4 text-[13px] font-extrabold text-surface shadow-sm transition hover:opacity-90 active:scale-[0.98]"
+                  >
+                    3분 점검 시작
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setView("interaction")}
+                    className="inline-flex h-10 items-center justify-center rounded-xl border border-line bg-surface/85 px-4 text-[13px] font-extrabold text-ink-2 backdrop-blur transition hover:border-brand-tint-2 hover:text-brand active:scale-[0.98]"
+                  >
+                    상담 준비하기
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </header>

@@ -42,11 +42,20 @@ const COPY = {
   exported: ml("상담용 요약 파일을 만들었어요.", "Consultation brief created.", "相談用サマリーを作成しました。", "已创建咨询摘要。"),
   premiumTitle: ml("사용자가 지갑을 열 만한 가치", "Value worth paying for", "支払う価値", "值得付费的价值"),
   premiumBody: ml(
-    "반복 루틴, 상담 준비, 로컬 약 목록 재사용은 유료 전환의 핵심 근거입니다. 먼저 무료 경험에서 신뢰를 쌓습니다.",
-    "Recurring routines, consultation prep, and reusable local med lists create the paid-value foundation after trust is earned.",
+    "무료로 신뢰를 쌓고, 상담 준비·가족 관리·반복 리포트를 Plus 가치로 전환합니다.",
+    "Earn trust for free, then convert consultation prep, family care, and recurring reports into Plus value.",
     "反復ルーティン、相談準備、ローカル薬リスト再利用が有料価値の土台です。まず無料体験で信頼を作ります。",
     "重复流程、咨询准备和本地药品列表复用，是付费价值基础。先用免费体验建立信任。",
   ),
+  planTitle: ml("Plus로 열릴 기능", "What Plus unlocks", "Plusで使える機能", "Plus 解锁功能"),
+  planBody: ml(
+    "결제는 아직 연결하지 않았습니다. 대신 사용 의향을 로컬에 표시해 다음 출시 판단에 반영합니다.",
+    "Payment is not connected yet. Mark interest locally so the next release decision can use the signal.",
+    "決済はまだ接続していません。利用意向を端末に保存し、次のリリース判断に使います。",
+    "尚未连接支付。可在本机标记意向，用于下一次发布判断。",
+  ),
+  planCta: ml("Plus 관심 등록", "Register interest", "関心を登録", "登记兴趣"),
+  planSaved: ml("관심 등록됨", "Interest saved", "登録済み", "已登记"),
   disclaimer: ml(
     "본 기능은 상담 준비용 정리 도구이며 진단이나 처방을 제공하지 않습니다.",
     "This is a consultation-prep tool and does not provide diagnosis or prescriptions.",
@@ -54,6 +63,12 @@ const COPY = {
     "此功能用于咨询前整理，不提供诊断或处方。",
   ),
 } as const;
+
+const PLUS_FEATURES: ML[] = [
+  ml("상담용 요약 PDF와 공유 링크", "Consultation PDF and share link", "相談用PDFと共有リンク", "咨询 PDF 与分享链接"),
+  ml("가족·보호자 약 목록 분리 관리", "Separate family and caregiver med lists", "家族・介護者の薬リスト管理", "家庭/照护者药品列表管理"),
+  ml("주간 점검 리포트와 리마인더", "Weekly check-in reports and reminders", "週次レポートとリマインダー", "每周检查报告与提醒"),
+];
 
 const ROUTINE: RoutineItem[] = [
   {
@@ -142,6 +157,7 @@ export default function ProductGrowthPanel({ uid, onGo }: { uid?: string; onGo: 
   const { lang } = useI18n();
   const [doneByDate, setDoneByDate] = useState<Record<string, RoutineKey[]>>(() => readDone(uid));
   const [exported, setExported] = useState(false);
+  const [plusInterest, setPlusInterest] = useState(() => localStorage.getItem("medi-curator:plus-interest") === "yes");
   const today = todayKey();
   const done = doneByDate[today] ?? [];
   const meds = useMemo(() => loadMeds(uid), [uid]);
@@ -182,9 +198,14 @@ export default function ProductGrowthPanel({ uid, onGo }: { uid?: string; onGo: 
     setExported(true);
   }
 
+  function savePlusInterest() {
+    localStorage.setItem("medi-curator:plus-interest", "yes");
+    setPlusInterest(true);
+  }
+
   return (
     <section className="growth-3d-entrance mt-8 grid gap-4 lg:grid-cols-[1.25fr_0.75fr]">
-      <div className="rounded-[24px] border border-line bg-surface p-5 shadow-sm sm:p-6">
+      <div className="self-start rounded-[24px] border border-line bg-surface p-5 shadow-sm sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="max-w-xl">
             <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-brand">{COPY.eyebrow[lang]}</p>
@@ -233,12 +254,32 @@ export default function ProductGrowthPanel({ uid, onGo }: { uid?: string; onGo: 
         </div>
       </div>
 
-      <aside className="growth-aside-3d rounded-[24px] border border-brand-tint-2 bg-brand-tint/45 p-5 shadow-sm sm:p-6">
+      <aside className="growth-aside-3d self-start rounded-[24px] border border-brand-tint-2 bg-brand-tint/45 p-5 shadow-sm sm:p-6">
         <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand text-white shadow-sm">
           <StarIcon className="h-[18px] w-[18px]" />
         </div>
         <h3 className="mt-4 text-[18px] font-extrabold tracking-[-0.02em] text-ink">{COPY.premiumTitle[lang]}</h3>
         <p className="mt-2 text-[13px] leading-relaxed text-ink-2">{COPY.premiumBody[lang]}</p>
+        <div className="mt-4 rounded-2xl border border-line bg-surface p-4">
+          <h4 className="text-[13px] font-extrabold text-ink">{COPY.planTitle[lang]}</h4>
+          <div className="mt-3 grid gap-2">
+            {PLUS_FEATURES.map((feature) => (
+              <div key={feature[lang]} className="flex items-start gap-2 text-[12.5px] leading-snug text-ink-2">
+                <CheckIcon className="mt-0.5 h-[14px] w-[14px] shrink-0 text-brand" />
+                <span>{feature[lang]}</span>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-[11.5px] leading-relaxed text-ink-4">{COPY.planBody[lang]}</p>
+          <button
+            type="button"
+            onClick={savePlusInterest}
+            disabled={plusInterest}
+            className="mt-3 inline-flex h-9 items-center justify-center rounded-lg bg-brand px-4 text-[12.5px] font-extrabold text-white transition hover:bg-brand-2 active:scale-[0.98] disabled:bg-ink-4"
+          >
+            {plusInterest ? COPY.planSaved[lang] : COPY.planCta[lang]}
+          </button>
+        </div>
         <div className="mt-4 rounded-2xl border border-line bg-surface p-4">
           <h4 className="text-[13px] font-extrabold text-ink">{COPY.exportTitle[lang]}</h4>
           <p className="mt-1.5 text-[12px] leading-relaxed text-ink-3">{COPY.exportBody[lang]}</p>
