@@ -1,15 +1,13 @@
 import { Timestamp, type Firestore } from 'firebase-admin/firestore';
 import { hourBucket, monthBucket, nextRateLimitCount } from './rateLimitPolicy';
-
-const DEFAULT_HOURLY_LIMIT = 30;
-const DEFAULT_MONTHLY_LIMIT = 30;
+import { FREE_USAGE_LIMITS } from './usageLimits';
 
 export async function enforceCentralRateLimit(
   db: Firestore,
   uid: string,
   now = new Date(),
-  hourlyLimit = DEFAULT_HOURLY_LIMIT,
-  monthlyLimit = DEFAULT_MONTHLY_LIMIT,
+  hourlyLimit = FREE_USAGE_LIMITS.hourlyAiRequests,
+  monthlyLimit = FREE_USAGE_LIMITS.monthlyAiRequests,
 ): Promise<boolean> {
   const encodedUid = encodeURIComponent(uid);
   const hour = hourBucket(now);

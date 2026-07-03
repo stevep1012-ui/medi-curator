@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { CurationResult as CurationResultSchema, SymptomQuery } from '../schemas/curation';
 import type { CurationResult } from '../types';
 import { getAppCheckToken, getIdToken } from '../firebase';
+import { FREE_USAGE_COPY } from '../config/usageLimits';
 
 // In-memory cache: identical queries within a session reuse the result and make
 // no further network calls. Bounded with insertion-order (LRU-ish) eviction and a
@@ -37,7 +38,7 @@ function mapError(status: number, body: CurateError | null): Error {
     return new Error('민감정보 동의가 필요합니다.');
   }
   if (code === 'RATE_LIMIT') {
-    return new Error('무료 사용 한도를 초과했습니다. 다음 달에 다시 이용하거나 Plus를 확인해 주세요.');
+    return new Error(FREE_USAGE_COPY.exceededKo);
   }
   if (code === 'FORBIDDEN') {
     return new Error(body?.message || '금지 표현이 감지되어 결과를 표시할 수 없습니다.');

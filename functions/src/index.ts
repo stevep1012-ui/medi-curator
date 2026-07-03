@@ -11,6 +11,7 @@ import * as admin from 'firebase-admin';
 import { z } from 'zod';
 import { modelCandidates } from './modelSelection';
 import { enforceCentralRateLimit } from './rateLimit';
+import { USAGE_LIMIT_MESSAGES } from './usageLimits';
 
 // === 글로벌 옵션 (한국 사용자 지연 최소화) ===
 setGlobalOptions({ region: 'asia-northeast3', maxInstances: 10 });
@@ -243,12 +244,12 @@ export const curate = onRequest(
       res.status(503).json({
         ok: false,
         code: 'RATE_LIMIT_UNAVAILABLE',
-        message: '요청 한도를 확인할 수 없습니다',
+        message: USAGE_LIMIT_MESSAGES.unavailable,
       });
       return;
     }
     if (!rateAllowed) {
-      res.status(429).json({ ok: false, code: 'RATE_LIMIT', message: '무료 사용 한도를 초과했습니다. 다음 달에 다시 이용하거나 Plus를 확인해 주세요.' });
+      res.status(429).json({ ok: false, code: 'RATE_LIMIT', message: USAGE_LIMIT_MESSAGES.exceeded });
       return;
     }
 

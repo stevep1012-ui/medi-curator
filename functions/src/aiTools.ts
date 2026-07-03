@@ -14,6 +14,7 @@ import * as logger from 'firebase-functions/logger';
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
 import { enforceCentralRateLimit } from './rateLimit';
+import { USAGE_LIMIT_MESSAGES } from './usageLimits';
 import {
   LANGUAGE_NAMES,
   callGemini,
@@ -102,11 +103,11 @@ export const interaction = onRequest(
       rateAllowed = await enforceCentralRateLimit(admin.firestore(), caller.uid);
     } catch (error) {
       logger.error('interaction.rate_limit_error', { uid: caller.uid, err: (error as Error).message });
-      res.status(503).json({ ok: false, code: 'RATE_LIMIT_UNAVAILABLE', message: '요청 한도를 확인할 수 없습니다' });
+      res.status(503).json({ ok: false, code: 'RATE_LIMIT_UNAVAILABLE', message: USAGE_LIMIT_MESSAGES.unavailable });
       return;
     }
     if (!rateAllowed) {
-      res.status(429).json({ ok: false, code: 'RATE_LIMIT', message: '무료 사용 한도를 초과했습니다. 다음 달에 다시 이용하거나 Plus를 확인해 주세요.' });
+      res.status(429).json({ ok: false, code: 'RATE_LIMIT', message: USAGE_LIMIT_MESSAGES.exceeded });
       return;
     }
 
@@ -208,11 +209,11 @@ export const pairing = onRequest(
       rateAllowed = await enforceCentralRateLimit(admin.firestore(), caller.uid);
     } catch (error) {
       logger.error('pairing.rate_limit_error', { uid: caller.uid, err: (error as Error).message });
-      res.status(503).json({ ok: false, code: 'RATE_LIMIT_UNAVAILABLE', message: '요청 한도를 확인할 수 없습니다' });
+      res.status(503).json({ ok: false, code: 'RATE_LIMIT_UNAVAILABLE', message: USAGE_LIMIT_MESSAGES.unavailable });
       return;
     }
     if (!rateAllowed) {
-      res.status(429).json({ ok: false, code: 'RATE_LIMIT', message: '무료 사용 한도를 초과했습니다. 다음 달에 다시 이용하거나 Plus를 확인해 주세요.' });
+      res.status(429).json({ ok: false, code: 'RATE_LIMIT', message: USAGE_LIMIT_MESSAGES.exceeded });
       return;
     }
 
@@ -320,11 +321,11 @@ export const recognizeMed = onRequest(
       rateAllowed = await enforceCentralRateLimit(admin.firestore(), caller.uid);
     } catch (error) {
       logger.error('recognize.rate_limit_error', { uid: caller.uid, err: (error as Error).message });
-      res.status(503).json({ ok: false, code: 'RATE_LIMIT_UNAVAILABLE', message: '요청 한도를 확인할 수 없습니다' });
+      res.status(503).json({ ok: false, code: 'RATE_LIMIT_UNAVAILABLE', message: USAGE_LIMIT_MESSAGES.unavailable });
       return;
     }
     if (!rateAllowed) {
-      res.status(429).json({ ok: false, code: 'RATE_LIMIT', message: '무료 사용 한도를 초과했습니다. 다음 달에 다시 이용하거나 Plus를 확인해 주세요.' });
+      res.status(429).json({ ok: false, code: 'RATE_LIMIT', message: USAGE_LIMIT_MESSAGES.exceeded });
       return;
     }
 

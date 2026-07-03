@@ -25,6 +25,7 @@ import {
   TrustStrip,
 } from "./components/Chrome";
 import { toast, useAuth, ACCT_TOASTS } from "./components/chrome-helpers";
+import { FREE_USAGE_COPY } from "../config/usageLimits";
 
 // Three.js is visually valuable but heavy. Keep it out of the first app chunk so
 // text, login, and core tools become interactive before the hero ornament loads.
@@ -59,7 +60,7 @@ function LockedFeature({ onSignIn }: { onSignIn: (provider: string) => void }) {
         </button>
       </div>
       <p className="mt-4 text-[12px] leading-relaxed text-ink-4">
-        무료 회원은 월 30회까지 AI 기능을 사용할 수 있고, 이후에는 Plus 플랜 안내를 확인하게 됩니다.
+        무료 회원은 {FREE_USAGE_COPY.monthlyLabelKo}까지 AI 기능을 사용할 수 있고, 이후에는 Plus 플랜 안내를 확인하게 됩니다.
       </p>
     </section>
   );
