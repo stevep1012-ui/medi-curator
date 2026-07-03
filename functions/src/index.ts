@@ -12,6 +12,7 @@ import { z } from 'zod';
 import { modelCandidates } from './modelSelection';
 import { enforceCentralRateLimit } from './rateLimit';
 import { USAGE_LIMIT_MESSAGES } from './usageLimits';
+export { adminUsageSettings } from './adminApi';
 
 // === 글로벌 옵션 (한국 사용자 지연 최소화) ===
 setGlobalOptions({ region: 'asia-northeast3', maxInstances: 10 });

@@ -9,6 +9,7 @@
       { "source": "/api/interaction", "function": { "functionId": "interaction", "region": "asia-northeast3" } },
       { "source": "/api/pairing", "function": { "functionId": "pairing", "region": "asia-northeast3" } },
       { "source": "/api/recognize-med", "function": { "functionId": "recognizeMed", "region": "asia-northeast3" } },
+      { "source": "/api/admin/usage-settings", "function": { "functionId": "adminUsageSettings", "region": "asia-northeast3" } },
       { "source": "**", "destination": "/index.html" }
     ],
     "headers": [

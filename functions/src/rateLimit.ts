@@ -1,14 +1,15 @@
 import { Timestamp, type Firestore } from 'firebase-admin/firestore';
 import { hourBucket, monthBucket, nextRateLimitCount } from './rateLimitPolicy';
-import { FREE_USAGE_LIMITS } from './usageLimits';
+import { getEffectiveUsageLimits } from './usageSettings';
 
 export async function enforceCentralRateLimit(
   db: Firestore,
   uid: string,
   now = new Date(),
-  hourlyLimit = FREE_USAGE_LIMITS.hourlyAiRequests,
-  monthlyLimit = FREE_USAGE_LIMITS.monthlyAiRequests,
 ): Promise<boolean> {
+  const limits = await getEffectiveUsageLimits(db);
+  const hourlyLimit = limits.hourlyAiRequests;
+  const monthlyLimit = limits.monthlyAiRequests;
   const encodedUid = encodeURIComponent(uid);
   const hour = hourBucket(now);
   const month = monthBucket(now);

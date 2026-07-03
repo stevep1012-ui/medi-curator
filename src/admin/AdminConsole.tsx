@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ADMIN_ACCESS, ADMIN_REVENUE_PLANS, ADMIN_SNAPSHOT } from "../config/admin";
 import { FREE_USAGE_COPY } from "../config/usageLimits";
 import { useAuth } from "../app/components/chrome-helpers";
+import { fetchAdminUsageSettings, saveAdminUsageSettings, type AdminUsageLimits } from "../services/adminService";
 
 function krw(value: number) {
   return new Intl.NumberFormat("ko-KR", { style: "currency", currency: "KRW", maximumFractionDigits: 0 }).format(value);
@@ -65,7 +66,50 @@ function AccessNotice({ email }: { email: string | null }) {
   );
 }
 
-function AdminDashboard({ email, onSignOut }: { email: string | null; onSignOut: () => Promise<void> }) {
+function AdminDashboard({ email, canAttemptAdminApi, onSignOut }: { email: string | null; canAttemptAdminApi: boolean; onSignOut: () => Promise<void> }) {
+  const [limits, setLimits] = useState<AdminUsageLimits>({
+    hourlyAiRequests: 30,
+    monthlyAiRequests: ADMIN_SNAPSHOT.monthlyAiLimitPerFreeUser,
+  });
+  const [loadingLimits, setLoadingLimits] = useState(false);
+  const [savingLimits, setSavingLimits] = useState(false);
+  const [usageMessage, setUsageMessage] = useState("운영 권한 연결 전에는 화면 구조만 표시됩니다.");
+
+  useEffect(() => {
+    if (!canAttemptAdminApi) return;
+    let alive = true;
+    setLoadingLimits(true);
+    fetchAdminUsageSettings()
+      .then((next) => {
+        if (!alive) return;
+        setLimits(next);
+        setUsageMessage("서버 사용량 설정을 불러왔습니다.");
+      })
+      .catch((error: Error) => {
+        if (!alive) return;
+        setUsageMessage(error.message);
+      })
+      .finally(() => {
+        if (alive) setLoadingLimits(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [canAttemptAdminApi]);
+
+  async function saveLimits() {
+    setSavingLimits(true);
+    try {
+      const saved = await saveAdminUsageSettings(limits);
+      setLimits(saved);
+      setUsageMessage("서버 사용량 설정을 저장했습니다.");
+    } catch (error) {
+      setUsageMessage((error as Error).message);
+    } finally {
+      setSavingLimits(false);
+    }
+  }
+
   const rows = useMemo(
     () => [
       { name: "슈퍼유저", scope: "관리자 권한", status: "설정 대기", owner: email ?? "미지정" },
@@ -167,6 +211,54 @@ function AdminDashboard({ email, onSignOut }: { email: string | null; onSignOut:
         </div>
 
         <section className="mt-5 rounded-[24px] border border-line bg-white p-5 shadow-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-[12px] font-black uppercase tracking-[0.18em] text-brand">Usage policy</p>
+              <h2 className="mt-1 text-[22px] font-black tracking-[-0.03em]">무료 사용량 운영 설정</h2>
+              <p className="mt-2 text-[12.5px] leading-relaxed text-ink-3">
+                이 값은 /api/admin/usage-settings를 통해 Firestore adminConfig/usageLimits에 저장되고, AI 호출 제한에서 즉시 읽습니다.
+              </p>
+            </div>
+            <span className="rounded-full bg-ink-1 px-3 py-1.5 text-[11.5px] font-bold text-ink-3">
+              {loadingLimits ? "불러오는 중" : canAttemptAdminApi ? "관리 API 연결" : "권한 연결 필요"}
+            </span>
+          </div>
+          <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+            <label className="block">
+              <span className="text-[12px] font-extrabold text-ink-3">시간당 AI 사용량</span>
+              <input
+                type="number"
+                min={1}
+                max={10000}
+                value={limits.hourlyAiRequests}
+                onChange={(event) => setLimits((prev) => ({ ...prev, hourlyAiRequests: Number(event.target.value) }))}
+                className="mt-2 h-12 w-full rounded-xl border border-line bg-surface px-3 text-[15px] font-bold text-ink outline-none focus:border-brand"
+              />
+            </label>
+            <label className="block">
+              <span className="text-[12px] font-extrabold text-ink-3">월간 무료 AI 사용량</span>
+              <input
+                type="number"
+                min={1}
+                max={1000000}
+                value={limits.monthlyAiRequests}
+                onChange={(event) => setLimits((prev) => ({ ...prev, monthlyAiRequests: Number(event.target.value) }))}
+                className="mt-2 h-12 w-full rounded-xl border border-line bg-surface px-3 text-[15px] font-bold text-ink outline-none focus:border-brand"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => void saveLimits()}
+              disabled={!canAttemptAdminApi || savingLimits}
+              className="h-12 rounded-xl bg-ink px-5 text-[13px] font-extrabold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:bg-ink-4"
+            >
+              {savingLimits ? "저장 중" : "설정 저장"}
+            </button>
+          </div>
+          <p className="mt-3 text-[12.5px] font-semibold text-ink-4">{usageMessage}</p>
+        </section>
+
+        <section className="mt-5 rounded-[24px] border border-line bg-white p-5 shadow-sm">
           <p className="text-[12px] font-black uppercase tracking-[0.18em] text-brand">Operations checklist</p>
           <h2 className="mt-1 text-[22px] font-black tracking-[-0.03em]">다음 연동 순서</h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -230,5 +322,5 @@ export default function AdminConsole() {
     );
   }
 
-  return <AdminDashboard email={email} onSignOut={handleSignOut} />;
+  return <AdminDashboard email={email} canAttemptAdminApi={Boolean(user && provider !== "guest")} onSignOut={handleSignOut} />;
 }
