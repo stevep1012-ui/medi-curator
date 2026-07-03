@@ -17,6 +17,7 @@ import NextSteps from "./components/NextSteps";
 import PharmacyFinder from "./components/PharmacyFinder";
 import SearchHistory from "./components/SearchHistory";
 import PrivacySettings from "./components/PrivacySettings";
+import MemberOnboarding from "./components/MemberOnboarding";
 import {
   AccountMenu,
   LoginGate,
@@ -26,6 +27,7 @@ import {
 } from "./components/Chrome";
 import { toast, useAuth, ACCT_TOASTS } from "./components/chrome-helpers";
 import { FREE_USAGE_COPY } from "../config/usageLimits";
+import { loadMemberProfile, type MemberProfileT } from "../services/memberProfileService";
 
 // Three.js is visually valuable but heavy. Keep it out of the first app chunk so
 // text, login, and core tools become interactive before the hero ornament loads.
@@ -77,6 +79,7 @@ function HomeInner() {
   const { provider, user, signIn, signOut } = useAuth();
   const [view, setView] = useState<ViewId>("home");
   const isGuest = provider === "guest";
+  const [memberProfile, setMemberProfile] = useState<MemberProfileT | null | undefined>(undefined);
   const [mode, setMode] = useState<ThemeMode>(() => {
     const saved = localStorage.getItem("mc-theme") as ThemeMode | null;
     return saved === "auto" || saved === "light" || saved === "dark" ? saved : "auto";
@@ -106,6 +109,7 @@ function HomeInner() {
   };
 
   const onSignIn = async (p: string) => {
+    setMemberProfile(undefined);
     const ok = await signIn(p);
     if (!ok) return; // failed/cancelled login: no "welcome" toast
     const name = p === "guest" ? ACCT_TOASTS[lang].welcome : `${ACCT_TOASTS[lang].welcome} · ${p[0].toUpperCase() + p.slice(1)}`;
@@ -113,8 +117,23 @@ function HomeInner() {
   };
   const onSignOut = () => {
     signOut();
+    setMemberProfile(undefined);
     toast(ACCT_TOASTS[lang].bye);
   };
+
+  useEffect(() => {
+    if (!user || provider === "guest") {
+      return;
+    }
+    let alive = true;
+    loadMemberProfile(user.uid)
+      .then((profile) => {
+        if (alive) setMemberProfile(profile);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [provider, user]);
 
   const themeIcon =
     mode === "auto" ? <AutoIcon className="h-4 w-4" /> : dark ? <MoonIcon className="h-4 w-4" /> : <SunIcon className="h-4 w-4" />;
@@ -203,7 +222,15 @@ function HomeInner() {
 
         <TrustStrip />
 
-        {view === "home" ? (
+        {provider && provider !== "guest" && user && memberProfile === undefined ? (
+          <div className="mt-6">
+            <section className="rounded-[18px] border border-line bg-surface p-6 text-[13px] font-bold text-ink-3">회원 정보를 확인하는 중입니다…</section>
+          </div>
+        ) : provider && provider !== "guest" && user && !memberProfile ? (
+          <div className="mt-6">
+            <MemberOnboarding user={user} onComplete={setMemberProfile} />
+          </div>
+        ) : view === "home" ? (
           <MenuCards onPick={setView} uid={user?.uid} />
         ) : (
           <div className="mt-6" style={{ ["--tool" as string]: ACCENT[view as MenuId] } as CSSProperties}>

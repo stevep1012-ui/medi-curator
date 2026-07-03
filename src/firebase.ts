@@ -17,6 +17,7 @@ import {
   OAuthProvider,
   signInWithPopup,
   signOut,
+  sendEmailVerification,
   onAuthStateChanged,
   type Auth,
   type AuthProvider,
@@ -132,6 +133,12 @@ export async function signInWithGoogle(): Promise<User> {
 export async function signOutUser(): Promise<void> {
   const auth = await getAuthInstance();
   await signOut(auth);
+}
+
+export async function sendCurrentUserEmailVerification(): Promise<void> {
+  const auth = await getAuthInstance();
+  if (!auth.currentUser) throw new Error('로그인이 필요합니다.');
+  await sendEmailVerification(auth.currentUser);
 }
 
 export async function watchAuth(cb: (user: User | null) => void): Promise<() => void> {

@@ -22,6 +22,25 @@ service cloud.firestore {
       allow delete: if request.auth != null && request.auth.uid == uid;
     }
 
+    // === 회원가입 프로필 ===
+    // 닉네임과 답변 받을 이메일만 저장한다. 증상/약물 등 민감 건강정보는 저장 금지.
+    match /users/{uid}/profile/main {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.data.nickname is string
+        && request.resource.data.nickname.size() > 0
+        && request.resource.data.nickname.size() <= 40
+        && (request.resource.data.loginEmail == null || request.resource.data.loginEmail is string)
+        && request.resource.data.answerEmail is string
+        && request.resource.data.answerEmail.size() <= 254
+        && request.resource.data.answerEmailSource in ['login', 'custom']
+        && request.resource.data.answerEmailVerified is bool
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.onboardingCompletedAt == request.time;
+      allow delete: if request.auth != null && request.auth.uid == uid;
+    }
+
     // === 민감정보(증상·약물·검색이력) ===
     // 출시 1차에서는 서버 저장 금지. 검색 이력은 사용자 디바이스 로컬 저장소에만 보관.
     match /users/{uid}/symptomHistory/{docId} {
