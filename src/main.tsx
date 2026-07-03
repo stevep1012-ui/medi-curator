@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './app/globals.css';
 import Home from './app/page';
+import AdminConsole from './admin/AdminConsole';
 import { ErrorBoundary } from './app/components/ErrorBoundary';
 
 // Vite 진입점: react-handoff 셸(app/page.tsx)을 마운트한다.
@@ -10,7 +11,7 @@ import { ErrorBoundary } from './app/components/ErrorBoundary';
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
-      <Home />
+      {window.location.pathname.startsWith('/admin') ? <AdminConsole /> : <Home />}
     </ErrorBoundary>
   </StrictMode>,
 );
