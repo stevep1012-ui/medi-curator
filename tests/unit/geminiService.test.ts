@@ -45,6 +45,6 @@ describe('geminiService (서버 프록시 호출)', () => {
   it('App Check 실패를 앱 무결성 안내로 변환한다', async () => {
     await expect(
       getCurationFromGemini('FORCE_APPCHECK token', '', false, 'ko'),
-    ).rejects.toThrow('앱 무결성 확인에 실패했습니다. 페이지를 새로고침해 주세요.');
+    ).rejects.toThrow('브라우저 보안 확인이 완료되지 않았습니다. 새로고침 후 다시 시도해 주세요.');
   });
 });

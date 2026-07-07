@@ -10,6 +10,7 @@ import { type LegalKey } from "./Legal";
 import MemberOnboarding from "./MemberOnboarding";
 import type { User as FbUser } from "firebase/auth";
 import type { MemberProfileT } from "../../services/memberProfileService";
+import { deleteAccountData } from "../../services/accountDataService";
 
 export default function PrivacySettings({
   uid,
@@ -20,7 +21,7 @@ export default function PrivacySettings({
   uid?: string;
   user?: FbUser | null;
   memberProfile?: MemberProfileT | null;
-  onProfileSaved?: (profile: MemberProfileT) => void;
+  onProfileSaved?: (profile: MemberProfileT | null) => void;
 }) {
   const { t } = useI18n();
   const pv = t.privacy;
@@ -29,6 +30,7 @@ export default function PrivacySettings({
   const toggle = (i: number) => setOn((cur) => cur.map((v, idx) => (idx === i ? !v : v)));
 
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [legalDoc, setLegalDoc] = useState<LegalKey | null>(null);
   // Persist the PIPA sensitive-info consent record (required by /api/curate).
   // NOTE (legal gate): the consent items, copy, and adult verification (isAdult)
@@ -58,6 +60,32 @@ export default function PrivacySettings({
       toast("동의 저장에 실패했어요. 잠시 후 다시 시도해 주세요.");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function deleteMyData() {
+    if (!uid) {
+      toast("로그인 후 데이터를 삭제할 수 있어요.");
+      return;
+    }
+    const confirmed = window.confirm(
+      "이 기기의 검색 기록·저장한 약 목록과 서버의 회원 프로필/동의 기록을 삭제합니다. 계정 로그인 자체는 유지됩니다. 계속할까요?",
+    );
+    if (!confirmed) return;
+
+    setDeleting(true);
+    try {
+      const result = await deleteAccountData(uid);
+      onProfileSaved?.(null);
+      if (result.remoteError) {
+        toast("기기 데이터는 삭제했고, 서버 데이터 일부는 다시 시도해야 합니다.");
+      } else {
+        toast("회원 데이터와 기기 저장 기록을 삭제했어요.");
+      }
+    } catch {
+      toast("데이터 삭제에 실패했어요. 잠시 후 다시 시도해 주세요.");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -130,9 +158,14 @@ export default function PrivacySettings({
         {saving ? "저장 중…" : uid ? "민감정보 처리에 동의하고 저장" : "로그인 후 동의할 수 있어요"}
       </button>
 
-      <button className="mt-3 inline-flex h-11 items-center gap-2 rounded-[14px] border border-danger-line bg-danger-tint px-[18px] text-[13.5px] font-bold text-danger transition hover:bg-surface">
+      <button
+        type="button"
+        onClick={() => void deleteMyData()}
+        disabled={deleting || !uid}
+        className="mt-3 inline-flex h-11 items-center gap-2 rounded-[14px] border border-danger-line bg-danger-tint px-[18px] text-[13.5px] font-bold text-danger transition hover:bg-surface disabled:cursor-not-allowed disabled:opacity-60"
+      >
         <TrashIcon className="h-[15px] w-[15px]" />
-        {pv.deleteAll}
+        {deleting ? "삭제 중…" : pv.deleteAll}
       </button>
     </div>
   );
