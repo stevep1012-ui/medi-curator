@@ -207,22 +207,37 @@ function HomeInner() {
               </h1>
               <p className="mt-4 max-w-lg text-[14px] leading-relaxed text-ink-2 sm:text-[15.5px]">{heading[1]}</p>
               {view === "home" && (
-                <div className="mt-5 flex flex-wrap gap-2.5">
-                  <button
-                    type="button"
-                    onClick={() => setView("mymeds")}
-                    className="inline-flex h-10 items-center justify-center rounded-xl bg-ink px-4 text-[13px] font-extrabold text-surface shadow-sm transition hover:opacity-90 active:scale-[0.98]"
-                  >
-                    3분 점검 시작
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setView("interaction")}
-                    className="inline-flex h-10 items-center justify-center rounded-xl border border-line bg-surface/85 px-4 text-[13px] font-extrabold text-ink-2 backdrop-blur transition hover:border-brand-tint-2 hover:text-brand active:scale-[0.98]"
-                  >
-                    상담 준비하기
-                  </button>
-                </div>
+                <>
+                  <div className="mt-5 grid max-w-xl gap-2.5 sm:grid-cols-3">
+                    {[
+                      ["사진 인식", "처방전·약봉투"],
+                      ["로컬 약 목록", "원본 사진 저장 없음"],
+                      ["상담 요약", "내보내기 가능"],
+                    ].map(([title, body]) => (
+                      <div key={title} className="premium-chip rounded-2xl px-3.5 py-3">
+                        <p className="text-[12.5px] font-black tracking-[-0.02em] text-ink">{title}</p>
+                        <p className="mt-1 text-[11px] font-semibold leading-snug text-ink-3">{body}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-5 flex flex-wrap gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setView("mymeds")}
+                      className="group inline-flex h-12 items-center justify-center gap-2 rounded-full bg-ink pl-5 pr-2 text-[13.5px] font-extrabold text-surface shadow-[0_20px_54px_-28px_rgba(0,0,0,.85)] transition hover:-translate-y-0.5 hover:bg-brand active:scale-[0.98]"
+                    >
+                      약 사진으로 시작
+                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/12 transition group-hover:translate-x-0.5">›</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setView("interaction")}
+                      className="inline-flex h-12 items-center justify-center rounded-full border border-line bg-surface/85 px-5 text-[13.5px] font-extrabold text-ink-2 shadow-sm backdrop-blur transition hover:-translate-y-0.5 hover:border-brand-tint-2 hover:text-brand active:scale-[0.98]"
+                    >
+                      상담 준비하기
+                    </button>
+                  </div>
+                </>
               )}
             </div>
           </div>

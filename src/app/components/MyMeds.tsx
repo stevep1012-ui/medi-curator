@@ -11,7 +11,8 @@ type ML = Record<Lang, string>;
 const ml = (ko: string, en: string, ja: string, zh: string): ML => ({ ko, en, ja, zh });
 
 const T = {
-  add: ml("사진으로 추가", "Add by photo", "写真で追加", "拍照添加"),
+  add: ml("처방전·약봉투 사진으로 추가", "Add from prescription or med-bag photo", "処方箋・薬袋写真で追加", "用处方或药袋照片添加"),
+  addBody: ml("모바일 카메라 또는 앨범 사진을 선택하면 약 이름과 성분 텍스트를 추출합니다. 저장은 확인 후에만 됩니다.", "Use the mobile camera or photo library to extract medicine names and ingredient text. Nothing is saved until you confirm.", "モバイルカメラまたはアルバム写真から薬名と成分テキストを抽出します。確認するまで保存しません。", "可用手机拍照或相册照片提取药名和成分文字。确认前不会保存。"),
   save: ml("내 목록에 저장", "Save to my list", "リストに保存", "保存到我的列表"),
   discard: ml("취소", "Discard", "取り消し", "放弃"),
   notRecognized: ml("제품을 식별하지 못했어요. 라벨이 잘 보이는 사진으로 다시 시도해 주세요.", "Couldn't identify the product. Try a clearer photo of the label.", "製品を識別できませんでした。ラベルが見える写真で再試行してください。", "未能识别产品。请用标签清晰的照片重试。"),
@@ -61,7 +62,12 @@ export default function MyMeds({ uid }: { uid?: string }) {
         <p className="text-[12.5px] leading-snug text-ink-2">{T.localOnly[lang]}</p>
       </div>
 
-      <div className="rounded-[22px] border border-line bg-surface p-5 shadow-sm sm:p-6">
+      <div className="rounded-[26px] border border-line bg-surface p-1.5 shadow-[0_24px_80px_-56px_rgba(0,0,0,.55)]">
+        <div className="rounded-[22px] bg-surface-soft p-5 sm:p-6">
+          <div className="mb-4 max-w-xl">
+            <h2 className="text-[20px] font-black tracking-[-0.04em] text-ink">{T.add[lang]}</h2>
+            <p className="mt-2 text-[13px] leading-relaxed text-ink-3">{T.addBody[lang]}</p>
+          </div>
         <MedCapture lang={lang} onRecognized={setDraft} />
 
         {draft && (
@@ -114,6 +120,7 @@ export default function MyMeds({ uid }: { uid?: string }) {
             </div>
           </div>
         )}
+        </div>
       </div>
 
       {meds.length === 0 ? (

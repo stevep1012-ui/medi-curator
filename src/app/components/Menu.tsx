@@ -188,24 +188,24 @@ export const ACCENT: Record<MenuId, string> = {
 /** Home hero head [title, sub] + grid section label, per language */
 export const HOME_HEAD: Record<Lang, [string, string, string]> = {
   ko: [
-    "무엇을 도와드릴까요?",
-    "필요한 도구를 선택하세요. 증상 분석부터 비타민 궁합까지 차분하게 안내합니다.",
-    "어떤 도움이 필요하신가요?",
+    "약과 증상을 매일 관리하는 AI 건강 노트",
+    "촬영, 저장, 상담 준비까지 한 흐름으로 묶어 반복해서 쓸 이유를 만듭니다.",
+    "오늘 할 일을 선택하세요",
   ],
   en: [
-    "How can we help?",
-    "Pick a tool below — from symptom analysis to vitamin pairing, a calm starting point.",
-    "What do you need help with?",
+    "An AI health notebook for meds and symptoms",
+    "Capture, save, and prepare for consultation in one repeatable daily flow.",
+    "Choose today's task",
   ],
   ja: [
-    "何をお手伝いしますか？",
-    "下のツールを選んでください。症状分析からビタミンの相性まで、落ち着いて案内します。",
-    "どんなサポートが必要ですか？",
+    "薬と症状を毎日管理するAI健康ノート",
+    "撮影、保存、相談準備までを一つの流れにします。",
+    "今日のタスクを選択",
   ],
   zh: [
-    "需要什么帮助？",
-    "请选择下方工具，从症状分析到维生素搭配，从容开始。",
-    "您需要哪方面的帮助？",
+    "管理药品和症状的 AI 健康笔记",
+    "把拍照、保存和咨询准备整合为可重复的日常流程。",
+    "选择今天要做的事",
   ],
 };
 

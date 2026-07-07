@@ -19,13 +19,13 @@ type RoutineItem = {
 };
 
 const COPY = {
-  eyebrow: ml("지속 사용 루틴", "Retention routine", "継続利用ルーティン", "持续使用流程"),
-  title: ml("3분 건강 점검을 매일 이어가세요", "Keep a 3-minute health check-in", "3分の健康チェックを続けましょう", "坚持 3 分钟健康检查"),
+  eyebrow: ml("구독 가치 루프", "Subscription value loop", "継続価値ループ", "订阅价值流程"),
+  title: ml("돈 내고 쓰는 이유는 반복 사용에서 나옵니다", "Paid value comes from repeat use", "有料価値は反復利用から生まれます", "付费价值来自重复使用"),
   body: ml(
-    "약 목록을 저장하고, 증상을 정리하고, 상담 전 확인할 항목을 남기면 앱을 다시 열 이유가 생깁니다.",
-    "Save meds, organize symptoms, and keep consultation-ready notes so the app stays useful every day.",
-    "薬リスト、症状整理、相談前メモを続けると、毎日使う理由が生まれます。",
-    "保存药品、整理症状并保留咨询前要点，让应用每天都有用。",
+    "약 사진을 저장 가능한 텍스트로 바꾸고, 증상과 복용 확인을 상담용 요약으로 이어줍니다.",
+    "Turn med photos into reusable text, then connect symptoms and safety checks into a consultation brief.",
+    "薬写真を再利用できるテキストに変え、症状と服用確認を相談用要約につなげます。",
+    "把药品照片变成可复用文字，并把症状和用药检查整理为咨询摘要。",
   ),
   progress: ml("오늘 진행률", "Today's progress", "今日の進捗", "今日进度"),
   streak: ml("연속 점검", "Check-in streak", "連続チェック", "连续检查"),
@@ -40,12 +40,12 @@ const COPY = {
   ),
   exportCta: ml("요약 내보내기", "Export brief", "書き出す", "导出摘要"),
   exported: ml("상담용 요약 파일을 만들었어요.", "Consultation brief created.", "相談用サマリーを作成しました。", "已创建咨询摘要。"),
-  premiumTitle: ml("사용자가 지갑을 열 만한 가치", "Value worth paying for", "支払う価値", "值得付费的价值"),
+  premiumTitle: ml("Plus가 팔아야 할 것", "What Plus should sell", "Plusが売るべき価値", "Plus 应销售的价值"),
   premiumBody: ml(
-    "무료로 신뢰를 쌓고, 상담 준비·가족 관리·반복 리포트를 Plus 가치로 전환합니다.",
-    "Earn trust for free, then convert consultation prep, family care, and recurring reports into Plus value.",
-    "反復ルーティン、相談準備、ローカル薬リスト再利用が有料価値の土台です。まず無料体験で信頼を作ります。",
-    "重复流程、咨询准备和本地药品列表复用，是付费价值基础。先用免费体验建立信任。",
+    "진단이 아니라 내 건강 메모를 잃어버리지 않게 해주는 개인 보관함과 상담 준비 기능입니다.",
+    "Not diagnosis. Plus should sell a private health notebook and consultation prep that users do not want to lose.",
+    "診断ではなく、失いたくない個人健康ノートと相談準備です。",
+    "不是诊断，而是不想丢失的个人健康笔记和咨询准备。",
   ),
   planTitle: ml("Plus로 열릴 기능", "What Plus unlocks", "Plusで使える機能", "Plus 解锁功能"),
   planBody: ml(
@@ -65,9 +65,9 @@ const COPY = {
 } as const;
 
 const PLUS_FEATURES: ML[] = [
-  ml("상담용 요약 PDF와 공유 링크", "Consultation PDF and share link", "相談用PDFと共有リンク", "咨询 PDF 与分享链接"),
-  ml("가족·보호자 약 목록 분리 관리", "Separate family and caregiver med lists", "家族・介護者の薬リスト管理", "家庭/照护者药品列表管理"),
-  ml("주간 점검 리포트와 리마인더", "Weekly check-in reports and reminders", "週次レポートとリマインダー", "每周检查报告与提醒"),
+  ml("처방전·약봉투 사진을 약 목록으로 빠르게 정리", "Turn prescription and med-bag photos into a reusable med list", "処方箋・薬袋写真を薬リストに整理", "把处方和药袋照片整理成药品列表"),
+  ml("상담 전 요약 파일과 확인 질문 자동 구성", "Create a consultation brief with questions to verify", "相談前要約と確認質問を作成", "生成咨询摘要和确认问题"),
+  ml("가족·보호자별 약 목록과 주간 점검 리포트", "Family med lists and weekly check-in reports", "家族別薬リストと週次レポート", "家庭药品列表和每周报告"),
 ];
 
 const ROUTINE: RoutineItem[] = [
