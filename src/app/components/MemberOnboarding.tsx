@@ -9,11 +9,25 @@ function isEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 }
 
-export default function MemberOnboarding({ user, onComplete }: { user: FbUser; onComplete: (profile: MemberProfileT) => void }) {
+export default function MemberOnboarding({
+  user,
+  initialProfile,
+  title = "회원가입 정보를 확인해 주세요",
+  subtitle = "기능 사용 전에 닉네임과 답변 받을 이메일을 정합니다. Google 로그인 이메일을 기본으로 쓰거나, 다른 이메일을 등록할 수 있어요.",
+  submitLabel = "회원가입 완료",
+  onComplete,
+}: {
+  user: FbUser;
+  initialProfile?: MemberProfileT | null;
+  title?: string;
+  subtitle?: string;
+  submitLabel?: string;
+  onComplete: (profile: MemberProfileT) => void;
+}) {
   const loginEmail = user.email ?? "";
-  const [nickname, setNickname] = useState(user.displayName?.split(" ")[0] ?? "");
-  const [emailMode, setEmailMode] = useState<'login' | 'custom'>('login');
-  const [customEmail, setCustomEmail] = useState("");
+  const [nickname, setNickname] = useState(initialProfile?.nickname ?? user.displayName?.split(" ")[0] ?? "");
+  const [emailMode, setEmailMode] = useState<'login' | 'custom'>(initialProfile?.answerEmailSource ?? 'login');
+  const [customEmail, setCustomEmail] = useState(initialProfile?.answerEmailSource === 'custom' ? initialProfile.answerEmail : "");
   const [saving, setSaving] = useState(false);
   const [verifySending, setVerifySending] = useState(false);
   const [message, setMessage] = useState("");
@@ -61,9 +75,9 @@ export default function MemberOnboarding({ user, onComplete }: { user: FbUser; o
   return (
     <section className="rounded-[24px] border border-brand-tint-2 bg-white p-6 shadow-[0_24px_80px_-56px_rgba(0,0,0,.65)] sm:p-8">
       <p className="text-[12px] font-black uppercase tracking-[0.2em] text-brand">Member setup</p>
-      <h2 className="mt-2 text-[28px] font-black tracking-[-0.04em] text-ink">회원가입 정보를 확인해 주세요</h2>
+      <h2 className="mt-2 text-[28px] font-black tracking-[-0.04em] text-ink">{title}</h2>
       <p className="mt-2 max-w-2xl text-[13.5px] leading-relaxed text-ink-3">
-        기능 사용 전에 닉네임과 답변 받을 이메일을 정합니다. Google 로그인 이메일을 기본으로 쓰거나, 다른 이메일을 등록할 수 있어요.
+        {subtitle}
       </p>
 
       <div className="mt-6 grid gap-4">
@@ -136,7 +150,7 @@ export default function MemberOnboarding({ user, onComplete }: { user: FbUser; o
           disabled={!canSave || saving}
           className="h-12 rounded-xl bg-ink px-6 text-[14px] font-extrabold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:bg-ink-4"
         >
-          {saving ? "저장 중" : "회원가입 완료"}
+          {saving ? "저장 중" : submitLabel}
         </button>
       </div>
     </section>

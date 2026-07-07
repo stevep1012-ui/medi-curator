@@ -7,8 +7,21 @@ import { toast } from "./chrome-helpers";
 import { saveConsent } from "../../services/consentService";
 import { LegalModal } from "./LegalModal";
 import { type LegalKey } from "./Legal";
+import MemberOnboarding from "./MemberOnboarding";
+import type { User as FbUser } from "firebase/auth";
+import type { MemberProfileT } from "../../services/memberProfileService";
 
-export default function PrivacySettings({ uid }: { uid?: string }) {
+export default function PrivacySettings({
+  uid,
+  user,
+  memberProfile,
+  onProfileSaved,
+}: {
+  uid?: string;
+  user?: FbUser | null;
+  memberProfile?: MemberProfileT | null;
+  onProfileSaved?: (profile: MemberProfileT) => void;
+}) {
   const { t } = useI18n();
   const pv = t.privacy;
 
@@ -50,6 +63,19 @@ export default function PrivacySettings({ uid }: { uid?: string }) {
 
   return (
     <div>
+      {user && onProfileSaved && (
+        <div className="mb-5">
+          <MemberOnboarding
+            user={user}
+            initialProfile={memberProfile}
+            title="회원 정보를 수정하세요"
+            subtitle="닉네임과 답변 받을 이메일을 언제든 바꿀 수 있습니다. 로그인 이메일은 인증 상태만 확인하고, 답변 이메일은 별도로 선택합니다."
+            submitLabel="회원 정보 저장"
+            onComplete={onProfileSaved}
+          />
+        </div>
+      )}
+
       <div className="overflow-hidden rounded-[18px] border border-line bg-surface shadow-sm">
         {pv.items.map((s, i) => (
           <div

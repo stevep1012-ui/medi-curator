@@ -185,7 +185,15 @@ function HomeInner() {
                   {themeIcon}
                   <span className="hidden sm:inline">{themeLabel}</span>
                 </button>
-                {provider && <AccountMenu provider={provider} onSignOut={onSignOut} />}
+                {provider && (
+                  <AccountMenu
+                    provider={provider}
+                    displayName={memberProfile?.nickname ?? user?.displayName?.split(" ")[0]}
+                    answerEmail={memberProfile?.answerEmail ?? user?.email ?? undefined}
+                    onEditProfile={provider !== "guest" && user ? () => setView("privacy") : undefined}
+                    onSignOut={onSignOut}
+                  />
+                )}
               </div>
             </div>
 
@@ -251,7 +259,7 @@ function HomeInner() {
                     {view === "mymeds" && <MyMeds uid={user?.uid} />}
                     {view === "pharmacy" && <PharmacyFinder />}
                     {view === "history" && <SearchHistory />}
-                    {view === "privacy" && <PrivacySettings uid={user?.uid} />}
+                    {view === "privacy" && <PrivacySettings uid={user?.uid} user={user} memberProfile={memberProfile} onProfileSaved={setMemberProfile} />}
                     <NextSteps active={view as MenuId} onGo={(id) => setView(id)} />
                   </>
                 )}

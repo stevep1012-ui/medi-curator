@@ -152,11 +152,23 @@ function providerMeta(p: string, guestLabel: string) {
   };
   return m[p] || { name: guestLabel, bg: "var(--brand)", fg: "#ffffff" };
 }
-export function AccountMenu({ provider, onSignOut }: { provider: string; onSignOut: () => void }) {
+export function AccountMenu({
+  provider,
+  displayName,
+  answerEmail,
+  onEditProfile,
+  onSignOut,
+}: {
+  provider: string;
+  displayName?: string;
+  answerEmail?: string;
+  onEditProfile?: () => void;
+  onSignOut: () => void;
+}) {
   const { lang } = useI18n();
   const ac = ACCT[lang];
   const pm = providerMeta(provider, ac.guest);
-  const initial = (pm.name[0] || "·").toUpperCase();
+  const initial = (displayName?.[0] || pm.name[0] || "·").toUpperCase();
   const [open, setOpen] = useState(false);
   const [legal, setLegal] = useState<LegalKey | null>(null);
   const ref = useRef<HTMLDivElement>(null);
@@ -180,7 +192,7 @@ export function AccountMenu({ provider, onSignOut }: { provider: string; onSignO
         aria-haspopup="true"
       >
         {avatar("h-6 w-6 text-[11px]")}
-        <span className="hidden sm:inline">{ac.account}</span>
+        <span className="hidden sm:inline">{displayName || ac.account}</span>
         <svg viewBox="0 0 24 24" className="h-3 w-3 text-ink-4" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
           <path d="m6 9 6 6 6-6" />
         </svg>
@@ -189,9 +201,23 @@ export function AccountMenu({ provider, onSignOut }: { provider: string; onSignO
         <div className="absolute right-0 z-50 mt-1.5 w-52 overflow-hidden rounded-xl border border-line bg-surface p-1 shadow-[0_18px_40px_-18px_rgba(0,0,0,0.4)]">
           <div className="px-3 py-2.5">
             <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink-4">{ac.account}</p>
-            <p className="mt-1.5 flex items-center gap-2 text-[13px] font-bold text-ink">{avatar("h-5 w-5 text-[10px]")}{pm.name}</p>
+            <p className="mt-1.5 flex items-center gap-2 text-[13px] font-bold text-ink">{avatar("h-5 w-5 text-[10px]")}{displayName || pm.name}</p>
+            {answerEmail && <p className="mt-1 truncate text-[11.5px] font-semibold text-ink-4">{answerEmail}</p>}
           </div>
           <div className="my-1 h-px bg-line" />
+          {onEditProfile && (
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                onEditProfile();
+              }}
+              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[13px] font-semibold text-ink-2 transition hover:bg-surface-soft"
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4 text-ink-3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+              프로필 수정
+            </button>
+          )}
           <button
             type="button"
             onClick={() => {
