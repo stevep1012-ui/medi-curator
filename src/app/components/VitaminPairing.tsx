@@ -55,6 +55,50 @@ type Goal = {
 
 const GOALS: Goal[] = [
   {
+    id: "ice-bacchus",
+    tone: "amber",
+    kw: ["박사", "얼박사", "박카스", "사이다", "bacchus", "cider", "ice bac", "energy drink"],
+    label: ml("얼박사 · 박카스+사이다", "Ice Bacchus soda", "アイスバッカスソーダ", "冰力保健苏打"),
+    summary: ml(
+      "인터넷·편의점에서 유행한 청량 음료 조합입니다. 건강 효과가 아니라 맛 조합으로 안내합니다.",
+      "A viral convenience-store drink combo. This is framed as taste, not a health effect.",
+      "ネットやコンビニで流行した清涼ドリンクの組み合わせ。健康効果ではなく味の提案です。",
+      "网络和便利店流行的清爽饮品搭配。仅作为口味组合，不表示健康功效。",
+    ),
+    items: [
+      [ml("박카스 1병", "1 Bacchus bottle", "バッカス1本", "力保健 1 瓶"), ml("특유의 비타민·타우린 향이 베이스가 됩니다", "Gives the vitamin/taurine-style base note", "ビタミン・タウリン系の風味がベース", "提供维生素/牛磺酸风味基底")],
+      [ml("사이다 1~1.5배", "Soda 1–1.5×", "サイダー1〜1.5倍", "苏打 1–1.5 倍"), ml("단맛과 탄산을 더해 여름철 청량감을 올립니다", "Adds sweetness and fizz for a summer-cool taste", "甘さと炭酸で夏らしい爽快感", "增加甜味和气泡感")],
+      [ml("얼음컵", "Ice cup", "氷カップ", "冰杯"), ml("진하게 마시려면 1:1, 가볍게 마시려면 1:1.5가 무난합니다", "Try 1:1 for stronger taste or 1:1.5 for lighter fizz", "濃いめは1:1、軽めは1:1.5", "浓一点 1:1，清爽一点 1:1.5")],
+    ],
+    tip: ml("카페인·당이 있을 수 있어 늦은 밤, 어린이, 임신 중, 심장이 두근거리는 분은 피하거나 디카페인/제로 제품을 확인하세요.", "May contain caffeine and sugar; avoid late night and check decaf/zero options if sensitive, pregnant, young, or with palpitations.", "カフェイン・糖分に注意。夜遅く、子ども、妊娠中、動悸がある方は避けるかデカフェ/ゼロを確認。", "可能含咖啡因和糖；夜间、儿童、孕期或心悸者应避免或选择无咖啡因/零糖产品。"),
+  },
+  {
+    id: "cal-mag-d",
+    tone: "brand",
+    kw: ["칼마디", "칼슘", "마그네슘", "비타민 d", "비타민d", "calcium", "magnesium", "vitamin d", "bone"],
+    label: ml("칼마디 · 칼슘+마그네슘+D", "Cal-Mag-D", "カルマグD", "钙镁D"),
+    summary: ml("뼈·근육 건강에서 자주 묶이는 기본 조합입니다.", "A common baseline combo for bone and muscle support.", "骨・筋肉サポートでよく使われる基本セットです。", "骨骼和肌肉支持中常见的基础组合。"),
+    items: [
+      [ml("비타민 D", "Vitamin D", "ビタミンD", "维生素D"), ml("칼슘 이용과 면역 균형을 도와요", "Supports calcium use and immune balance", "カルシウム利用と免疫バランスを支える", "帮助钙利用和免疫平衡")],
+      [ml("칼슘", "Calcium", "カルシウム", "钙"), ml("뼈·치아 건강의 기본 미네랄", "Core mineral for bones and teeth", "骨・歯の基本ミネラル", "骨骼和牙齿基础矿物质")],
+      [ml("마그네슘", "Magnesium", "マグネシウム", "镁"), ml("근육 이완과 신경 기능을 도와요", "Supports muscle relaxation and nerve function", "筋肉の緩和と神経機能を支える", "支持肌肉放松和神经功能")],
+    ],
+    tip: ml("지용성인 D는 식후, 마그네슘은 저녁 식후가 무난합니다. 신장질환·결석 병력이 있으면 전문가와 확인하세요.", "Vitamin D is fine after meals; magnesium often fits evening. Check with a professional for kidney disease or stone history.", "Dは食後、Mgは夕食後が無難。腎疾患・結石歴があれば専門家へ。", "D 宜餐后，镁常适合晚餐后。有肾病或结石史请咨询专业人员。"),
+  },
+  {
+    id: "omega-c-mag",
+    tone: "brand",
+    kw: ["오메가", "오메가3", "비타민c", "마그네슘", "omega", "vitamin c", "fish oil"],
+    label: ml("오메가3+C+마그네슘", "Omega-3 + C + Magnesium", "オメガ3+C+Mg", "欧米伽3+C+镁"),
+    summary: ml("인터넷에서 많이 묻는 ‘같이 먹어도 되는지’ 조합입니다. 일반적으로는 시간대만 나누면 무난한 편입니다.", "A commonly searched combo. Usually acceptable when timed sensibly.", "よく検索される組み合わせ。時間帯を分ければ一般的には無難です。", "常被搜索的搭配。合理安排时间通常较容易接受。"),
+    items: [
+      [ml("비타민 C", "Vitamin C", "ビタミンC", "维生素C"), ml("공복 속쓰림이 있으면 식후가 편합니다", "Take after meals if it upsets your stomach", "胃が荒れるなら食後に", "胃不适则餐后服用")],
+      [ml("오메가-3", "Omega-3", "オメガ3", "欧米伽-3"), ml("지용성이라 식사 후가 흡수에 유리합니다", "Fat-soluble, so after meals helps absorption", "脂溶性なので食後が向きます", "脂溶性，餐后更利吸收")],
+      [ml("마그네슘", "Magnesium", "マグネシウム", "镁"), ml("저녁 식후에 두면 수면 루틴과 맞추기 좋습니다", "Often fits well after dinner as part of a sleep routine", "夕食後に置くと睡眠ルーティンに合う", "晚餐后较适合作为睡眠流程")],
+    ],
+    tip: ml("항응고제·아스피린 복용 중이면 오메가3는 약사와 먼저 확인하세요.", "If taking anticoagulants or aspirin, check omega-3 with a pharmacist first.", "抗凝固薬・アスピリン服用中はオメガ3を薬剤師に確認。", "服用抗凝药或阿司匹林时，欧米伽3请先咨询药师。"),
+  },
+  {
     id: "fatigue",
     tone: "amber",
     kw: ["피로", "피곤", "기운", "지침", "fatigue", "tired", "energy", "疲れ", "疲労", "疲劳", "累", "乏力"],
@@ -151,7 +195,7 @@ const CARD_CLS = "rounded-[18px] border border-line bg-surface p-5 shadow-sm";
 export default function VitaminPairing() {
   const { lang } = useI18n();
   const v = VT[lang];
-  const [goalId, setGoalId] = useState<string | null>("fatigue");
+  const [goalId, setGoalId] = useState<string | null>("ice-bacchus");
   const [text, setText] = useState("");
 
   // Hybrid: predefined goal chips answer instantly; any free-text the chips can't
@@ -181,6 +225,7 @@ export default function VitaminPairing() {
 
   function selectGoal(id: string) {
     setGoalId(id);
+    setText("");
     clearAi();
   }
 
