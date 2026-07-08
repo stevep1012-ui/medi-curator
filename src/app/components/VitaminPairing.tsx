@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useI18n, type Lang } from "./i18n";
 import { VT } from "./vitamin-data";
 import { getPairingFromAI } from "../../services/aiToolsService";
+import { deleteCombo, exportCombosText, loadSavedCombos, saveCombo, type ComboVaultInput } from "../../services/comboVaultService";
 import type { PairingAIResultT } from "../../schemas/aiTools";
 
 type ML = Record<Lang, string>;
@@ -15,6 +16,12 @@ const AI_T = {
   loading: ml("AI가 목표에 맞는 조합을 찾는 중…", "AI is finding a combo for your goal…", "AIが目標に合う組み合わせを探索中…", "AI 正在为你的目标寻找组合…"),
   errorRetry: ml("다시 시도", "Retry", "再試行", "重试"),
   multiBadge: ml("추천 꿀조합", "Combo picks", "おすすめ組み合わせ", "推荐搭配"),
+  saveCombo: ml("내 꿀조합 보관함에 저장", "Save to my combo vault", "組み合わせ保管庫に保存", "保存到我的搭配库"),
+  savedCombo: ml("저장됨", "Saved", "保存済み", "已保存"),
+  vaultTitle: ml("내 꿀조합 보관함", "My combo vault", "私の組み合わせ保管庫", "我的搭配库"),
+  vaultBody: ml("마음에 드는 조합을 저장해 루틴·쇼핑리스트·상담 전 메모로 다시 씁니다.", "Save good combos and reuse them as routines, shopping lists, or pre-consult notes.", "気に入った組み合わせをルーティン・買い物リスト・相談前メモに再利用できます。", "保存喜欢的搭配，用作流程、购物清单或咨询前笔记。"),
+  exportVault: ml("보관함 내보내기", "Export vault", "保管庫を書き出す", "导出搭配库"),
+  deleteSaved: ml("삭제", "Delete", "削除", "删除"),
 } as const;
 
 const InfoIcon = ({ className }: { className?: string }) => (
@@ -214,6 +221,18 @@ const TONE = {
 
 const CARD_CLS = "rounded-[18px] border border-line bg-surface p-5 shadow-sm";
 
+function downloadText(filename: string, text: string) {
+  const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 export default function VitaminPairing() {
   const { lang } = useI18n();
   const v = VT[lang];
@@ -221,6 +240,7 @@ export default function VitaminPairing() {
   const [goalId, setGoalId] = useState<string | null>("ice-bacchus");
   const [text, setText] = useState("");
   const [recommendedIds, setRecommendedIds] = useState<string[]>([]);
+  const [savedCombos, setSavedCombos] = useState(() => loadSavedCombos());
 
   // Hybrid: predefined goal chips answer instantly; any free-text the chips can't
   // match is judged by the AI so every input gets a real answer.
@@ -310,7 +330,43 @@ export default function VitaminPairing() {
     else void runAi(q);
   }
 
+  function currentCombo(): ComboVaultInput | null {
+    if (ai) {
+      return {
+        title: ai.goalLabel,
+        category: AI_T.badge[lang],
+        summary: ai.summary,
+        items: ai.items.map((item) => ({ name: item.name, why: item.why })),
+        tip: ai.tip,
+        disclaimer: ai.disclaimer,
+      };
+    }
+    const goal = GOALS.find((g) => g.id === goalId);
+    if (!goal) return null;
+    const category = CATEGORIES.find((cat) => cat.id === goal.category)?.label[lang] ?? goal.category;
+    return {
+      title: goal.label[lang],
+      category,
+      summary: goal.summary[lang],
+      items: goal.items.map(([name, why]) => ({ name: name[lang], why: why[lang] })),
+      tip: goal.tip[lang],
+      disclaimer: v.disclaimer,
+    };
+  }
+
+  function saveCurrentCombo() {
+    const combo = currentCombo();
+    if (!combo) return;
+    setSavedCombos(saveCombo(combo));
+  }
+
+  function exportVault() {
+    const textOut = exportCombosText(savedCombos, lang);
+    downloadText(`mediq-combo-vault-${new Date().toISOString().slice(0, 10)}.txt`, textOut);
+  }
+
   const sel = GOALS.find((g) => g.id === goalId) || null;
+  const currentSaved = Boolean(currentCombo() && savedCombos.some((item) => item.title === currentCombo()?.title));
   const visibleGoals = categoryId === "popular"
     ? GOALS.filter((g) => ["ice-bacchus", "cal-mag-d", "omega-c-mag", "fatigue", "sleep"].includes(g.id))
     : GOALS.filter((g) => g.category === categoryId);
@@ -507,6 +563,68 @@ export default function VitaminPairing() {
           <p className="text-[13px] leading-relaxed text-ink-2">{v.noMatch}</p>
         </div>
       )}
+
+      <section className="mt-6 grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
+        <div className="rounded-[22px] border border-brand-tint-2 bg-brand-tint/45 p-5 shadow-sm">
+          <div className="flex items-start gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-brand text-white">
+              <LeafIcon className="h-[18px] w-[18px]" />
+            </span>
+            <div className="min-w-0">
+              <h3 className="text-[16px] font-black tracking-[-0.02em] text-ink">{AI_T.vaultTitle[lang]}</h3>
+              <p className="mt-1.5 text-[12.5px] leading-relaxed text-ink-3">{AI_T.vaultBody[lang]}</p>
+            </div>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={saveCurrentCombo}
+              disabled={!currentCombo() || currentSaved}
+              className="inline-flex h-10 items-center justify-center rounded-xl bg-ink px-4 text-[12.5px] font-extrabold text-surface transition hover:bg-brand disabled:bg-ink-4"
+            >
+              {currentSaved ? AI_T.savedCombo[lang] : AI_T.saveCombo[lang]}
+            </button>
+            <button
+              type="button"
+              onClick={exportVault}
+              disabled={savedCombos.length === 0}
+              className="inline-flex h-10 items-center justify-center rounded-xl border border-line bg-surface px-4 text-[12.5px] font-extrabold text-ink-2 transition hover:border-brand-tint-2 hover:text-brand disabled:opacity-50"
+            >
+              {AI_T.exportVault[lang]}
+            </button>
+          </div>
+        </div>
+
+        <div className="rounded-[22px] border border-line bg-surface p-5 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-[15px] font-black tracking-[-0.02em] text-ink">{AI_T.vaultTitle[lang]}</h3>
+            <span className="rounded-full bg-surface-soft px-2.5 py-1 text-[11px] font-black text-ink-3">{savedCombos.length}/30</span>
+          </div>
+          <div className="mt-3 grid gap-2.5">
+            {savedCombos.length === 0 ? (
+              <p className="rounded-2xl bg-surface-soft px-4 py-4 text-[12.5px] leading-relaxed text-ink-3">{AI_T.vaultBody[lang]}</p>
+            ) : (
+              savedCombos.slice(0, 4).map((combo) => (
+                <div key={combo.id} className="rounded-2xl border border-line bg-surface-soft px-4 py-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-[13.5px] font-black text-ink">{combo.title}</p>
+                      <p className="mt-1 line-clamp-2 text-[11.5px] leading-snug text-ink-3">{combo.summary}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSavedCombos(deleteCombo(combo.id))}
+                      className="shrink-0 rounded-lg border border-line bg-surface px-2.5 py-1 text-[11px] font-extrabold text-ink-4 transition hover:border-danger-line hover:text-danger"
+                    >
+                      {AI_T.deleteSaved[lang]}
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </section>
     </>
   );
 }
