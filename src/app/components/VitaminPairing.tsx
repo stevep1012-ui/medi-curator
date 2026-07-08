@@ -14,6 +14,7 @@ const AI_T = {
   badge: ml("AI 추천", "AI pick", "AIおすすめ", "AI 推荐"),
   loading: ml("AI가 목표에 맞는 조합을 찾는 중…", "AI is finding a combo for your goal…", "AIが目標に合う組み合わせを探索中…", "AI 正在为你的目标寻找组合…"),
   errorRetry: ml("다시 시도", "Retry", "再試行", "重试"),
+  multiBadge: ml("추천 꿀조합", "Combo picks", "おすすめ組み合わせ", "推荐搭配"),
 } as const;
 
 const InfoIcon = ({ className }: { className?: string }) => (
@@ -42,8 +43,10 @@ const PillIcon = ({ className }: { className?: string }) => (
 );
 
 type GoalTone = "amber" | "brand" | "danger";
+type CategoryId = "popular" | "taste" | "nutrition" | "beauty" | "sleep" | "fitness" | "immune";
 type Goal = {
   id: string;
+  category: CategoryId;
   tone: GoalTone;
   kw: string[];
   label: ML;
@@ -52,10 +55,21 @@ type Goal = {
   tip: ML;
 };
 
+const CATEGORIES: { id: CategoryId; label: ML; desc: ML }[] = [
+  { id: "popular", label: ml("전체 인기", "Popular", "人気", "热门"), desc: ml("가장 많이 찾는 조합", "Most searched combos", "よく検索される組み合わせ", "最常搜索搭配") },
+  { id: "taste", label: ml("편의점 맛조합", "Taste combos", "コンビニ味組み", "便利店口味"), desc: ml("건강효능이 아닌 맛·청량감", "Taste and refreshment, not health claims", "健康効果ではなく味・爽快感", "口味与清爽感，不是健康功效") },
+  { id: "nutrition", label: ml("기본 영양제", "Nutrition basics", "栄養基本", "基础营养"), desc: ml("같이 먹는 질문이 많은 조합", "Common together-or-not questions", "一緒に摂る質問が多い", "常见同服问题") },
+  { id: "beauty", label: ml("피부·미용", "Skin & beauty", "肌・美容", "皮肤美容"), desc: ml("콜라겐·항산화 중심", "Collagen and antioxidant focus", "コラーゲン・抗酸化中心", "胶原与抗氧化") },
+  { id: "sleep", label: ml("수면·긴장", "Sleep & calm", "睡眠・リラックス", "睡眠放松"), desc: ml("저녁 루틴에 맞는 조합", "Evening-routine friendly", "夜の習慣向け", "适合晚间流程") },
+  { id: "fitness", label: ml("운동·회복", "Fitness recovery", "運動・回復", "运动恢复"), desc: ml("운동 전후 회복 조합", "Workout recovery combos", "運動前後の回復", "运动前后恢复") },
+  { id: "immune", label: ml("면역·환절기", "Immune support", "免疫・季節", "免疫换季"), desc: ml("비타민 C·D·아연 중심", "Vitamin C, D, and zinc focus", "C・D・亜鉛中心", "C、D、锌为主") },
+];
+
 
 const GOALS: Goal[] = [
   {
     id: "ice-bacchus",
+    category: "taste",
     tone: "amber",
     kw: ["박사", "얼박사", "박카스", "사이다", "bacchus", "cider", "ice bac", "energy drink"],
     label: ml("얼박사 · 박카스+사이다", "Ice Bacchus soda", "アイスバッカスソーダ", "冰力保健苏打"),
@@ -74,6 +88,7 @@ const GOALS: Goal[] = [
   },
   {
     id: "cal-mag-d",
+    category: "nutrition",
     tone: "brand",
     kw: ["칼마디", "칼슘", "마그네슘", "비타민 d", "비타민d", "calcium", "magnesium", "vitamin d", "bone"],
     label: ml("칼마디 · 칼슘+마그네슘+D", "Cal-Mag-D", "カルマグD", "钙镁D"),
@@ -87,6 +102,7 @@ const GOALS: Goal[] = [
   },
   {
     id: "omega-c-mag",
+    category: "nutrition",
     tone: "brand",
     kw: ["오메가", "오메가3", "비타민c", "마그네슘", "omega", "vitamin c", "fish oil"],
     label: ml("오메가3+C+마그네슘", "Omega-3 + C + Magnesium", "オメガ3+C+Mg", "欧米伽3+C+镁"),
@@ -100,6 +116,7 @@ const GOALS: Goal[] = [
   },
   {
     id: "fatigue",
+    category: "popular",
     tone: "amber",
     kw: ["피로", "피곤", "기운", "지침", "fatigue", "tired", "energy", "疲れ", "疲労", "疲劳", "累", "乏力"],
     label: ml("피로 회복", "Fatigue recovery", "疲労回復", "缓解疲劳"),
@@ -114,6 +131,7 @@ const GOALS: Goal[] = [
   },
   {
     id: "skin",
+    category: "beauty",
     tone: "brand",
     kw: ["피부", "미용", "생기", "skin", "beauty", "美容", "肌", "皮肤", "美肌"],
     label: ml("피부 생기", "Skin vitality", "肌のハリ", "皮肤活力"),
@@ -128,6 +146,7 @@ const GOALS: Goal[] = [
   },
   {
     id: "sleep",
+    category: "sleep",
     tone: "brand",
     kw: ["수면", "잠", "불면", "숙면", "sleep", "insomnia", "rest", "睡眠", "眠", "失眠", "睡"],
     label: ml("편한 수면", "Restful sleep", "快眠サポート", "舒适睡眠"),
@@ -142,6 +161,7 @@ const GOALS: Goal[] = [
   },
   {
     id: "recovery",
+    category: "fitness",
     tone: "brand",
     kw: ["근육", "운동", "회복", "muscle", "workout", "recovery", "exercise", "筋", "運動", "回復", "肌肉", "运动", "恢复"],
     label: ml("운동 후 근육 회복", "Post-workout recovery", "運動後の筋回復", "运动后肌肉恢复"),
@@ -156,6 +176,7 @@ const GOALS: Goal[] = [
   },
   {
     id: "training",
+    category: "fitness",
     tone: "danger",
     kw: ["훈련", "강도", "고강도", "training", "intense", "endurance", "トレ", "高強度", "训练", "高强度"],
     label: ml("강도 높은 훈련 후", "After intense training", "高強度トレ後", "高强度训练后"),
@@ -170,6 +191,7 @@ const GOALS: Goal[] = [
   },
   {
     id: "immune",
+    category: "immune",
     tone: "brand",
     kw: ["면역", "감기", "환절기", "immune", "immunity", "cold", "免疫", "感冒", "免疫力"],
     label: ml("면역 강화", "Immune support", "免疫サポート", "增强免疫"),
@@ -195,8 +217,10 @@ const CARD_CLS = "rounded-[18px] border border-line bg-surface p-5 shadow-sm";
 export default function VitaminPairing() {
   const { lang } = useI18n();
   const v = VT[lang];
+  const [categoryId, setCategoryId] = useState<CategoryId>("popular");
   const [goalId, setGoalId] = useState<string | null>("ice-bacchus");
   const [text, setText] = useState("");
+  const [recommendedIds, setRecommendedIds] = useState<string[]>([]);
 
   // Hybrid: predefined goal chips answer instantly; any free-text the chips can't
   // match is judged by the AI so every input gets a real answer.
@@ -217,6 +241,22 @@ export default function VitaminPairing() {
     );
   };
 
+  const recommendGoals = (q: string): Goal[] => {
+    const tx = q.toLowerCase().trim();
+    if (!tx) return [];
+    const direct = GOALS.filter(
+      (g) =>
+        g.label[lang].toLowerCase().includes(tx) ||
+        tx.includes(g.label[lang].toLowerCase()) ||
+        g.kw.some((k) => tx.includes(k.toLowerCase()) || k.toLowerCase().includes(tx)),
+    );
+    const siblingCategory = direct[0]?.category;
+    const siblings = siblingCategory ? GOALS.filter((g) => g.category === siblingCategory) : [];
+    const popular = GOALS.filter((g) => ["ice-bacchus", "cal-mag-d", "omega-c-mag", "fatigue", "sleep"].includes(g.id));
+    const merged = [...direct, ...siblings, ...popular];
+    return merged.filter((g, index) => merged.findIndex((x) => x.id === g.id) === index).slice(0, 6);
+  };
+
   function clearAi() {
     setAi(null);
     setAiError(null);
@@ -225,8 +265,19 @@ export default function VitaminPairing() {
 
   function selectGoal(id: string) {
     setGoalId(id);
+    const goal = GOALS.find((g) => g.id === id);
+    if (goal) setCategoryId(goal.category);
     setText("");
+    setRecommendedIds([]);
     clearAi();
+  }
+
+  function selectCategory(id: CategoryId) {
+    setCategoryId(id);
+    setRecommendedIds([]);
+    clearAi();
+    const first = GOALS.find((g) => (id === "popular" ? ["ice-bacchus", "cal-mag-d", "omega-c-mag", "fatigue", "sleep"].includes(g.id) : g.category === id));
+    if (first) setGoalId(first.id);
   }
 
   async function runAi(goal: string) {
@@ -246,12 +297,24 @@ export default function VitaminPairing() {
   function onSubmit() {
     const q = text.trim();
     if (!q) return;
+    const picks = recommendGoals(q);
+    if (picks.length) {
+      setRecommendedIds(picks.map((g) => g.id));
+      setGoalId(picks[0].id);
+      setCategoryId(picks[0].category);
+      clearAi();
+      return;
+    }
     const m = matchGoal(q);
     if (m) selectGoal(m.id);
     else void runAi(q);
   }
 
   const sel = GOALS.find((g) => g.id === goalId) || null;
+  const visibleGoals = categoryId === "popular"
+    ? GOALS.filter((g) => ["ice-bacchus", "cal-mag-d", "omega-c-mag", "fatigue", "sleep"].includes(g.id))
+    : GOALS.filter((g) => g.category === categoryId);
+  const recommendedGoals = recommendedIds.map((id) => GOALS.find((g) => g.id === id)).filter(Boolean) as Goal[];
 
   return (
     <>
@@ -262,8 +325,24 @@ export default function VitaminPairing() {
 
       <div className="rounded-[22px] border border-line bg-surface p-5 shadow-sm sm:p-6">
         <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink-3">{v.pick}</div>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {GOALS.map((g) => {
+        <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          {CATEGORIES.map((cat) => {
+            const on = cat.id === categoryId;
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => selectCategory(cat.id)}
+                className={`rounded-2xl border px-4 py-3 text-left transition ${on ? "border-brand bg-brand text-white shadow-[0_14px_26px_-18px_rgba(11,110,97,0.85)]" : "border-line bg-surface-soft text-ink-2 hover:border-brand-tint-2 hover:bg-surface"}`}
+              >
+                <span className="block text-[13px] font-extrabold">{cat.label[lang]}</span>
+                <span className={`mt-1 block text-[11px] leading-snug ${on ? "text-white/75" : "text-ink-4"}`}>{cat.desc[lang]}</span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {visibleGoals.map((g) => {
             const on = g.id === goalId;
             const cls = on
               ? "border-brand bg-brand text-white shadow-[0_8px_18px_-10px_rgba(11,110,97,0.8)]"
@@ -300,6 +379,31 @@ export default function VitaminPairing() {
           </button>
         </div>
       </div>
+
+      {recommendedGoals.length > 1 && (
+        <section className="mt-6 rounded-[22px] border border-brand-tint-2 bg-brand-tint/45 p-5 shadow-sm sm:p-6">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="rounded-full bg-brand px-2.5 py-1 text-[10.5px] font-black uppercase tracking-[0.12em] text-white">{AI_T.multiBadge[lang]}</span>
+            <h3 className="text-[16px] font-black tracking-[-0.02em] text-ink">{text.trim()}</h3>
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {recommendedGoals.map((g) => (
+              <button
+                key={g.id}
+                type="button"
+                onClick={() => selectGoal(g.id)}
+                className={`rounded-2xl border bg-surface p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md ${g.id === goalId ? "border-brand" : "border-line"}`}
+              >
+                <span className={`mb-3 inline-flex h-8 w-8 items-center justify-center rounded-xl text-white ${TONE[g.tone]}`}>
+                  <LeafIcon className="h-[16px] w-[16px]" />
+                </span>
+                <span className="block text-[14px] font-black tracking-[-0.02em] text-ink">{g.label[lang]}</span>
+                <span className="mt-1.5 block text-[12px] leading-relaxed text-ink-3">{g.summary[lang]}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       {aiLoading ? (
         <div className="mt-6 flex items-center gap-3 rounded-[16px] border border-brand-tint-2 bg-brand-tint/40 px-4 py-3.5">
