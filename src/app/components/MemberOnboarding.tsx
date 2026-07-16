@@ -12,8 +12,8 @@ function isEmail(value: string) {
 export default function MemberOnboarding({
   user,
   initialProfile,
-  title = "회원가입 정보를 확인해 주세요",
-  subtitle = "기능 사용 전에 닉네임과 답변 받을 이메일을 정합니다. Google 로그인 이메일을 기본으로 쓰거나, 다른 이메일을 등록할 수 있어요.",
+  title = "로그인 후 보여줄 닉네임을 정해 주세요",
+  subtitle = "닉네임과 이메일만 회원 식별용으로 저장합니다. 같은 이메일로 다른 로그인 방식을 써도 저장된 닉네임을 먼저 찾아 보여줍니다.",
   submitLabel = "회원가입 완료",
   onComplete,
 }: {
@@ -90,6 +90,9 @@ export default function MemberOnboarding({
             placeholder="예: Steve"
             className="mt-2 h-12 w-full rounded-xl border border-line bg-surface px-3 text-[15px] font-bold text-ink outline-none focus:border-brand"
           />
+          <span className="mt-2 block rounded-xl bg-brand-tint/45 px-3 py-2 text-[12px] font-bold text-brand">
+            저장 후 상단 계정 버튼에 {nickname.trim() || "닉네임"}님으로 표시됩니다.
+          </span>
         </label>
 
         <div className="rounded-2xl border border-line bg-ink-1/40 p-4">
@@ -143,7 +146,7 @@ export default function MemberOnboarding({
       {message && <p className="mt-4 rounded-xl bg-ink-1/60 px-4 py-3 text-[12.5px] font-semibold text-ink-3">{message}</p>}
 
       <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-[12px] leading-relaxed text-ink-4">이 정보는 회원 식별과 안내 발송 목적에만 사용합니다.</p>
+        <p className="text-[12px] leading-relaxed text-ink-4">이 정보는 회원 식별, 로그인 방식 연결, 안내 발송 목적에만 사용합니다.</p>
         <button
           type="button"
           onClick={() => void submit()}

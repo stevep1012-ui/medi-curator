@@ -1,21 +1,25 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { CheckIcon, HistoryIcon, PillIcon, SearchIcon, ShieldCheckIcon, StarIcon } from "./icons";
 import { useI18n, type Lang } from "./i18n";
 import type { MenuId } from "./Menu";
 import { loadMeds } from "../../services/medStore";
+import { loadSavedCombos } from "../../services/comboVaultService";
+import { buildConsultationBrief } from "../../services/consultationBriefService";
+import { loadPlusInterest, savePlusInterest } from "../../services/plusInterestService";
+import { loadRoutineProgress, saveRoutineProgress, type RoutineProgressByDate, type RoutineProgressKey } from "../../services/routineProgressService";
+import { loadRoutineReminder, reminderSummary, saveRoutineReminder, type RoutineReminderFrequency } from "../../services/routineReminderService";
 
 type ML = Record<Lang, string>;
 const ml = (ko: string, en: string, ja: string, zh: string): ML => ({ ko, en, ja, zh });
 
-type RoutineKey = "meds" | "symptoms" | "interaction" | "pharmacy";
 type RoutineItem = {
-  key: RoutineKey;
+  key: RoutineProgressKey;
   target: MenuId;
   label: ML;
   value: ML;
-  icon: "pill" | "search" | "shield" | "history";
+  icon: "pill" | "combo" | "search" | "shield" | "history";
 };
 
 const COPY = {
@@ -31,15 +35,27 @@ const COPY = {
   streak: ml("연속 점검", "Check-in streak", "連続チェック", "连续检查"),
   dayUnit: ml("일", "days", "日", "天"),
   medsSaved: ml("저장된 약", "Saved meds", "保存済みの薬", "已保存药品"),
+  combosSaved: ml("저장된 꿀조합", "Saved combos", "保存済み組み合わせ", "已保存搭配"),
   exportTitle: ml("상담용 요약", "Consultation brief", "相談用サマリー", "咨询摘要"),
   exportBody: ml(
-    "기기에 저장된 약 이름과 오늘 루틴을 텍스트 파일로 내보냅니다. 사진과 원문 증상은 포함하지 않습니다.",
-    "Export saved medicine names and today's routine as a text file. Photos and raw symptoms are not included.",
-    "保存済みの薬名と今日のルーティンをテキストで書き出します。写真や症状原文は含めません。",
-    "将已保存药名和今日流程导出为文本文件。不包含照片和原始症状。",
+    "기기에 저장된 약 이름, 꿀조합, 오늘 루틴을 텍스트 파일로 내보냅니다. 사진과 원문 증상은 포함하지 않습니다.",
+    "Export saved medicine names, combos, and today's routine as a text file. Photos and raw symptoms are not included.",
+    "保存済みの薬名・組み合わせ・今日のルーティンをテキストで書き出します。写真や症状原文は含めません。",
+    "将已保存药名、搭配和今日流程导出为文本文件。不包含照片和原始症状。",
   ),
   exportCta: ml("요약 내보내기", "Export brief", "書き出す", "导出摘要"),
   exported: ml("상담용 요약 파일을 만들었어요.", "Consultation brief created.", "相談用サマリーを作成しました。", "已创建咨询摘要。"),
+  reminderTitle: ml("점검 리마인더", "Check-in reminder", "チェックリマインダー", "检查提醒"),
+  reminderBody: ml(
+    "브라우저 알림을 보내지는 않고, 이 기기에 점검 선호 시간을 저장해 다음 방문 때 이어서 보여줍니다.",
+    "No push notification is sent; this device stores your preferred check-in time and shows it on return.",
+    "プッシュ通知は送らず、この端末に希望時間を保存して次回表示します。",
+    "不会发送推送通知；仅在本机保存检查偏好时间，下次访问时显示。",
+  ),
+  reminderDaily: ml("매일", "Daily", "毎日", "每天"),
+  reminderWeekly: ml("매주", "Weekly", "毎週", "每周"),
+  reminderSave: ml("리마인더 저장", "Save reminder", "保存", "保存提醒"),
+  reminderSaved: ml("저장됨", "Saved", "保存済み", "已保存"),
   premiumTitle: ml("Plus가 팔아야 할 것", "What Plus should sell", "Plusが売るべき価値", "Plus 应销售的价值"),
   premiumBody: ml(
     "진단이 아니라 내 건강 메모를 잃어버리지 않게 해주는 개인 보관함과 상담 준비 기능입니다.",
@@ -66,6 +82,7 @@ const COPY = {
 
 const PLUS_FEATURES: ML[] = [
   ml("처방전·약봉투 사진을 약 목록으로 빠르게 정리", "Turn prescription and med-bag photos into a reusable med list", "処方箋・薬袋写真を薬リストに整理", "把处方和药袋照片整理成药品列表"),
+  ml("비타민·편의점 꿀조합 보관함과 쇼핑 메모", "Vitamin/taste combo vault and shopping memo", "サプリ・味組み合わせ保管庫と買い物メモ", "维生素/口味搭配库和购物备忘"),
   ml("상담 전 요약 파일과 확인 질문 자동 구성", "Create a consultation brief with questions to verify", "相談前要約と確認質問を作成", "生成咨询摘要和确认问题"),
   ml("가족·보호자별 약 목록과 주간 점검 리포트", "Family med lists and weekly check-in reports", "家族別薬リストと週次レポート", "家庭药品列表和每周报告"),
 ];
@@ -77,6 +94,13 @@ const ROUTINE: RoutineItem[] = [
     label: ml("약 목록 정리", "Build med list", "薬リスト整理", "整理药品列表"),
     value: ml("사진 인식 후 저장", "Scan and save", "撮影して保存", "拍照并保存"),
     icon: "pill",
+  },
+  {
+    key: "combo",
+    target: "vitamin",
+    label: ml("꿀조합 저장", "Save a combo", "組み合わせ保存", "保存搭配"),
+    value: ml("쇼핑·루틴으로 재사용", "Reuse for shopping/routine", "買い物・習慣に再利用", "用于购物/流程"),
+    icon: "combo",
   },
   {
     key: "symptoms",
@@ -105,31 +129,15 @@ function todayKey(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-function storageKey(uid: string | undefined): string {
-  return `medi-curator:growth:${uid ?? "local"}`;
-}
-
 function iconFor(item: RoutineItem, className: string) {
   if (item.icon === "pill") return <PillIcon className={className} />;
+  if (item.icon === "combo") return <StarIcon className={className} />;
   if (item.icon === "search") return <SearchIcon className={className} />;
   if (item.icon === "shield") return <ShieldCheckIcon className={className} />;
   return <HistoryIcon className={className} />;
 }
 
-function readDone(uid: string | undefined): Record<string, RoutineKey[]> {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(storageKey(uid)) || "{}");
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-
-function writeDone(uid: string | undefined, data: Record<string, RoutineKey[]>) {
-  localStorage.setItem(storageKey(uid), JSON.stringify(data));
-}
-
-function streakFrom(data: Record<string, RoutineKey[]>): number {
+function streakFrom(data: RoutineProgressByDate): number {
   let streak = 0;
   const cursor = new Date();
   for (;;) {
@@ -155,52 +163,48 @@ function downloadText(filename: string, text: string) {
 
 export default function ProductGrowthPanel({ uid, onGo }: { uid?: string; onGo: (id: MenuId) => void }) {
   const { lang } = useI18n();
-  const [doneByDate, setDoneByDate] = useState<Record<string, RoutineKey[]>>(() => readDone(uid));
+  const [doneByDate, setDoneByDate] = useState<RoutineProgressByDate>(() => loadRoutineProgress(uid));
   const [exported, setExported] = useState(false);
-  const [plusInterest, setPlusInterest] = useState(() => localStorage.getItem("medi-curator:plus-interest") === "yes");
+  const [plusInterest, setPlusInterest] = useState(() => loadPlusInterest(uid).interested);
+  const [reminder, setReminder] = useState(() => loadRoutineReminder(uid));
+  const [reminderSaved, setReminderSaved] = useState(false);
   const today = todayKey();
   const done = doneByDate[today] ?? [];
   const meds = useMemo(() => loadMeds(uid), [uid]);
+  const savedCombos = useMemo(() => loadSavedCombos(uid), [uid]);
   const progress = Math.round((done.length / ROUTINE.length) * 100);
   const streak = streakFrom(doneByDate);
-
-  useEffect(() => {
-    setDoneByDate(readDone(uid));
-  }, [uid]);
 
   function markAndGo(item: RoutineItem) {
     setDoneByDate((cur) => {
       const todayDone = new Set(cur[today] ?? []);
       todayDone.add(item.key);
-      const next = { ...cur, [today]: Array.from(todayDone) as RoutineKey[] };
-      writeDone(uid, next);
+      const next = { ...cur, [today]: Array.from(todayDone) };
+      saveRoutineProgress(uid, next);
       return next;
     });
     onGo(item.target);
   }
 
   function exportBrief() {
-    const medNames = meds.map((m) => m.name).filter(Boolean);
-    const routineLines = ROUTINE.map((item) => `- ${item.label[lang]}: ${done.includes(item.key) ? "done" : "pending"}`);
-    const text = [
-      "MediQ consultation brief",
-      `Date: ${today}`,
-      "",
-      "Saved medicines on this device:",
-      medNames.length ? medNames.map((name) => `- ${name}`).join("\n") : "- none saved",
-      "",
-      "Today's routine:",
-      routineLines.join("\n"),
-      "",
-      COPY.disclaimer[lang],
-    ].join("\n");
+    const text = buildConsultationBrief({
+      date: today,
+      meds,
+      combos: savedCombos,
+      routine: ROUTINE.map((item) => ({ label: item.label[lang], done: done.includes(item.key) })),
+      disclaimer: COPY.disclaimer[lang],
+    });
     downloadText(`mediq-consult-brief-${today}.txt`, text);
     setExported(true);
   }
 
-  function savePlusInterest() {
-    localStorage.setItem("medi-curator:plus-interest", "yes");
-    setPlusInterest(true);
+  function registerPlusInterest() {
+    setPlusInterest(savePlusInterest(uid).interested);
+  }
+
+  function saveReminder() {
+    setReminder(saveRoutineReminder(uid, reminder));
+    setReminderSaved(true);
   }
 
   return (
@@ -214,7 +218,7 @@ export default function ProductGrowthPanel({ uid, onGo }: { uid?: string; onGo: 
             </h2>
             <p className="mt-3 text-[13.5px] leading-relaxed text-ink-2">{COPY.body[lang]}</p>
           </div>
-          <div className="grid min-w-[180px] grid-cols-3 gap-2 rounded-2xl border border-line bg-surface-soft p-2 text-center">
+          <div className="grid min-w-[220px] grid-cols-4 gap-2 rounded-2xl border border-line bg-surface-soft p-2 text-center">
             <div className="rounded-xl bg-surface px-2 py-3">
               <p className="text-[18px] font-black text-brand">{progress}%</p>
               <p className="mt-1 text-[10.5px] font-bold text-ink-4">{COPY.progress[lang]}</p>
@@ -226,6 +230,10 @@ export default function ProductGrowthPanel({ uid, onGo }: { uid?: string; onGo: 
             <div className="rounded-xl bg-surface px-2 py-3">
               <p className="text-[18px] font-black text-ink">{meds.length}</p>
               <p className="mt-1 text-[10.5px] font-bold text-ink-4">{COPY.medsSaved[lang]}</p>
+            </div>
+            <div className="rounded-xl bg-surface px-2 py-3">
+              <p className="text-[18px] font-black text-ink">{savedCombos.length}</p>
+              <p className="mt-1 text-[10.5px] font-bold text-ink-4">{COPY.combosSaved[lang]}</p>
             </div>
           </div>
         </div>
@@ -273,7 +281,7 @@ export default function ProductGrowthPanel({ uid, onGo }: { uid?: string; onGo: 
           <p className="mt-3 text-[11.5px] leading-relaxed text-ink-4">{COPY.planBody[lang]}</p>
           <button
             type="button"
-            onClick={savePlusInterest}
+            onClick={registerPlusInterest}
             disabled={plusInterest}
             className="mt-3 inline-flex h-9 items-center justify-center rounded-lg bg-brand px-4 text-[12.5px] font-extrabold text-white transition hover:bg-brand-2 active:scale-[0.98] disabled:bg-ink-4"
           >
@@ -291,6 +299,50 @@ export default function ProductGrowthPanel({ uid, onGo }: { uid?: string; onGo: 
             {COPY.exportCta[lang]}
           </button>
           {exported && <p className="mt-2 text-[11.5px] font-bold text-brand">{COPY.exported[lang]}</p>}
+        </div>
+        <div className="mt-4 rounded-2xl border border-line bg-surface p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h4 className="text-[13px] font-extrabold text-ink">{COPY.reminderTitle[lang]}</h4>
+              <p className="mt-1.5 text-[12px] leading-relaxed text-ink-3">{COPY.reminderBody[lang]}</p>
+            </div>
+            <label className="relative inline-flex cursor-pointer items-center">
+              <input
+                type="checkbox"
+                checked={reminder.enabled}
+                onChange={(event) => setReminder((prev) => ({ ...prev, enabled: event.target.checked }))}
+                className="peer sr-only"
+              />
+              <span className="h-6 w-11 rounded-full bg-ink-2 transition peer-checked:bg-brand" />
+              <span className="absolute left-1 h-4 w-4 rounded-full bg-white transition peer-checked:translate-x-5" />
+            </label>
+          </div>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <select
+              value={reminder.frequency}
+              onChange={(event) => setReminder((prev) => ({ ...prev, frequency: event.target.value as RoutineReminderFrequency }))}
+              className="h-10 rounded-xl border border-line bg-surface-soft px-3 text-[12.5px] font-bold text-ink outline-none focus:border-brand"
+            >
+              <option value="daily">{COPY.reminderDaily[lang]}</option>
+              <option value="weekly">{COPY.reminderWeekly[lang]}</option>
+            </select>
+            <input
+              type="time"
+              value={reminder.time}
+              onChange={(event) => setReminder((prev) => ({ ...prev, time: event.target.value }))}
+              className="h-10 rounded-xl border border-line bg-surface-soft px-3 text-[12.5px] font-bold text-ink outline-none focus:border-brand"
+            />
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={saveReminder}
+              className="inline-flex h-9 items-center justify-center rounded-lg border border-line bg-surface-soft px-4 text-[12.5px] font-extrabold text-ink-2 transition hover:border-brand-tint-2 hover:text-brand active:scale-[0.98]"
+            >
+              {COPY.reminderSave[lang]}
+            </button>
+            <span className="text-[11.5px] font-bold text-ink-4">{reminderSaved ? COPY.reminderSaved[lang] : reminderSummary(reminder, lang)}</span>
+          </div>
         </div>
         <p className="mt-3 text-[11.5px] leading-relaxed text-ink-4">{COPY.disclaimer[lang]}</p>
       </aside>

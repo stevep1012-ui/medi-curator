@@ -45,39 +45,41 @@ export function MenuCards({ onPick, uid }: { onPick: (id: MenuId) => void; uid?:
           })}
         </div>
       </section>
-      <ProductGrowthPanel uid={uid} onGo={onPick} />
+      <ProductGrowthPanel key={uid ?? "local"} uid={uid} onGo={onPick} />
     </>
   );
 }
 
-/** Tool-screen nav bar: home / prev / next (cards-only navigation, Option B). */
+/** Tool-screen nav bar: direct access to every tool without returning home. */
 export function ToolNav({ active, onGo }: { active: MenuId; onGo: (id: ViewId) => void }) {
   const { lang } = useI18n();
-  const idx = MENU_ORDER.indexOf(active);
-  const prev = MENU_ORDER[(idx - 1 + MENU_ORDER.length) % MENU_ORDER.length];
-  const next = MENU_ORDER[(idx + 1) % MENU_ORDER.length];
-  const arrow =
-    "flex h-10 w-10 items-center justify-center rounded-[12px] border border-line bg-surface text-[18px] font-bold text-ink-3 transition hover:border-brand-tint-2 hover:text-brand";
   return (
-    <div className="mb-4 flex items-center justify-between gap-3">
+    <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <button
         onClick={() => onGo("home")}
-        className="inline-flex h-10 items-center gap-2 rounded-[12px] border border-line bg-surface px-4 text-[13.5px] font-semibold text-ink-2 transition hover:border-brand-tint-2 hover:text-brand"
+        className="inline-flex h-10 w-fit items-center gap-2 rounded-[12px] border border-line bg-surface px-4 text-[13.5px] font-semibold text-ink-2 transition hover:border-brand-tint-2 hover:text-brand"
       >
         <span className="text-[16px] leading-none">←</span>
         {NAV_HOME[lang]}
       </button>
-      <div className="flex items-center gap-1.5">
-        <button onClick={() => onGo(prev)} title={CARD[prev].label[lang]} className={arrow}>
-          ‹
-        </button>
-        <span className="flex items-center gap-1.5 whitespace-nowrap px-2 text-[13.5px] font-bold" style={{ color: ACCENT[active] }}>
-          <span className="h-1.5 w-1.5 rounded-full" style={{ background: ACCENT[active] }} />
-          {CARD[active].label[lang]}
-        </span>
-        <button onClick={() => onGo(next)} title={CARD[next].label[lang]} className={arrow}>
-          ›
-        </button>
+      <div className="flex max-w-full gap-1.5 overflow-x-auto rounded-2xl border border-line bg-surface-soft p-1">
+        {MENU_ORDER.map((id) => {
+          const current = id === active;
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={() => onGo(id)}
+              className={`whitespace-nowrap rounded-xl px-3 py-2 text-[12.5px] font-extrabold transition ${
+                current ? "bg-surface text-ink shadow-sm" : "text-ink-3 hover:bg-surface hover:text-ink"
+              }`}
+              style={current ? { color: ACCENT[id] } : undefined}
+              aria-current={current ? "page" : undefined}
+            >
+              {CARD[id].label[lang]}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

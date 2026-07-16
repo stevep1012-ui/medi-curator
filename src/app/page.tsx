@@ -126,7 +126,7 @@ function HomeInner() {
       return;
     }
     let alive = true;
-    loadMemberProfile(user.uid)
+    loadMemberProfile(user.uid, user.email)
       .then((profile) => {
         if (alive) setMemberProfile(profile);
       });
@@ -270,11 +270,19 @@ function HomeInner() {
                   <>
                     {view === "symptom" && <SymptomAnalysis uid={user?.uid} />}
                     {view === "interaction" && <InteractionCheck uid={user?.uid} />}
-                    {view === "vitamin" && <VitaminPairing />}
+                    {view === "vitamin" && <VitaminPairing uid={user?.uid} />}
                     {view === "mymeds" && <MyMeds uid={user?.uid} />}
                     {view === "pharmacy" && <PharmacyFinder />}
                     {view === "history" && <SearchHistory />}
-                    {view === "privacy" && <PrivacySettings uid={user?.uid} user={user} memberProfile={memberProfile} onProfileSaved={setMemberProfile} />}
+                    {view === "privacy" && (
+                      <PrivacySettings
+                        uid={user?.uid}
+                        user={user}
+                        memberProfile={memberProfile}
+                        onProfileSaved={setMemberProfile}
+                        onGoToMeds={() => setView("mymeds")}
+                      />
+                    )}
                     <NextSteps active={view as MenuId} onGo={(id) => setView(id)} />
                   </>
                 )}

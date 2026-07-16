@@ -11,7 +11,7 @@ export type ComboVaultItem = {
 
 export type ComboVaultInput = Omit<ComboVaultItem, 'id' | 'savedAt'>;
 
-const KEY = 'medi-curator:combo-vault:v1';
+const keyFor = (uid: string | undefined) => `medi-curator:combo-vault:v1:${uid ?? 'local'}`;
 const MAX_ITEMS = 30;
 
 function safeParse(raw: string | null): ComboVaultItem[] {
@@ -43,16 +43,16 @@ function storage(): Storage | null {
   }
 }
 
-export function loadSavedCombos(): ComboVaultItem[] {
+export function loadSavedCombos(uid?: string): ComboVaultItem[] {
   const s = storage();
   if (!s) return [];
-  return safeParse(s.getItem(KEY));
+  return safeParse(s.getItem(keyFor(uid)));
 }
 
-export function saveCombo(input: ComboVaultInput): ComboVaultItem[] {
+export function saveCombo(input: ComboVaultInput, uid?: string): ComboVaultItem[] {
   const s = storage();
   if (!s) return [];
-  const current = loadSavedCombos();
+  const current = loadSavedCombos(uid);
   const withoutDuplicate = current.filter((item) => item.title !== input.title);
   const next: ComboVaultItem[] = [
     {
@@ -62,22 +62,22 @@ export function saveCombo(input: ComboVaultInput): ComboVaultItem[] {
     },
     ...withoutDuplicate,
   ].slice(0, MAX_ITEMS);
-  s.setItem(KEY, JSON.stringify(next));
+  s.setItem(keyFor(uid), JSON.stringify(next));
   return next;
 }
 
-export function deleteCombo(id: string): ComboVaultItem[] {
+export function deleteCombo(id: string, uid?: string): ComboVaultItem[] {
   const s = storage();
   if (!s) return [];
-  const next = loadSavedCombos().filter((item) => item.id !== id);
-  s.setItem(KEY, JSON.stringify(next));
+  const next = loadSavedCombos(uid).filter((item) => item.id !== id);
+  s.setItem(keyFor(uid), JSON.stringify(next));
   return next;
 }
 
-export function clearCombos(): ComboVaultItem[] {
+export function clearCombos(uid?: string): ComboVaultItem[] {
   const s = storage();
   if (!s) return [];
-  s.removeItem(KEY);
+  s.removeItem(keyFor(uid));
   return [];
 }
 

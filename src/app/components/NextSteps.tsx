@@ -7,25 +7,25 @@ import { ACCENT, CARD, type MenuId } from "./Menu";
 type ML = Record<Lang, string>;
 const ml = (ko: string, en: string, ja: string, zh: string): ML => ({ ko, en, ja, zh });
 
-type StepKey = "toPharmacy" | "consult" | "toInteraction" | "toVitamin" | "toSymptom" | "privacy";
+type StepKey = "toPharmacy" | "toInteraction" | "toVitamin" | "toSymptom" | "toMeds" | "toHistory";
 type Step = [StepKey, MenuId];
 
 const LABEL: Record<StepKey, ML> = {
-  toPharmacy: ml("독립 약국 검색", "Independent pharmacy finder", "独立した薬局検索", "独立药房查找"),
-  consult: ml("전문가 상담 준비", "Prepare for consultation", "専門職への相談準備", "准备专业咨询"),
+  toPharmacy: ml("가까운 약국 상담처 찾기", "Find a nearby pharmacy", "近くの薬局を探す", "查找附近药房"),
   toInteraction: ml("복용 정보 정리", "Organize medication info", "服用情報を整理", "整理用药信息"),
-  toVitamin: ml("생활관리 정보 보기", "View self-care info", "セルフケア情報を見る", "查看自我护理信息"),
+  toVitamin: ml("꿀조합 보관함 채우기", "Build combo vault", "組み合わせ保管庫を作る", "建立搭配库"),
   toSymptom: ml("증상 정리하기", "Organize symptoms", "症状を整理", "整理症状"),
-  privacy: ml("개인정보 설정", "Privacy settings", "プライバシー設定", "隐私设置"),
+  toMeds: ml("약·비타민 목록 저장", "Save meds and vitamins", "薬・サプリを保存", "保存药品和维生素"),
+  toHistory: ml("기록 확인", "Review history", "履歴を確認", "查看记录"),
 };
 const TITLE = ml("이어서 하면 좋아요", "Helpful next steps", "次におすすめ", "建议的下一步");
 
 const FLOW: Record<MenuId, Step[]> = {
-  symptom: [["toInteraction", "interaction"], ["privacy", "privacy"]],
-  interaction: [["consult", "pharmacy"], ["privacy", "privacy"]],
-  vitamin: [["toInteraction", "interaction"], ["privacy", "privacy"]],
-  mymeds: [["toInteraction", "interaction"], ["privacy", "privacy"]],
-  pharmacy: [["toSymptom", "symptom"], ["toInteraction", "interaction"]],
+  symptom: [["toInteraction", "interaction"], ["toHistory", "history"]],
+  interaction: [["toPharmacy", "pharmacy"], ["toHistory", "history"]],
+  vitamin: [["toMeds", "mymeds"], ["toInteraction", "interaction"]],
+  mymeds: [["toInteraction", "interaction"], ["toVitamin", "vitamin"]],
+  pharmacy: [["toSymptom", "symptom"], ["toMeds", "mymeds"]],
   history: [["toSymptom", "symptom"], ["toVitamin", "vitamin"]],
   privacy: [],
 };

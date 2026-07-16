@@ -6,8 +6,10 @@
 | 수집 항목 | 사용처 (Process) | 컬렉션/저장소 | 법적 근거 | 동의 카테고리 | 보존기간 | DSR 지원 |
 |---|---|---|---|---|---|---|
 | 이메일·소셜 프로필 | 인증 | Firebase Auth (Google/Apple/Kakao OIDC) | PIPA §15 ① 동의 | 필수 | 탈퇴 시 즉시 | 열람·삭제 |
+| 닉네임·로그인 이메일·답변 이메일 | 회원 식별·로그인 방식 연결·안내 발송 | Firestore `users/{uid}/profile/main`, `memberProfilesByEmail/{emailKey}` + 개인 디바이스 localStorage fallback | PIPA §15 ① 동의 | 필수 | 탈퇴/앱 데이터 삭제 시 즉시 | 열람·정정·삭제 |
 | 증상 텍스트 | LLM Curate | 메모리(캐시 5분) → 서버 프록시 | PIPA §23 ① 별도 동의 | 민감/필수 | 캐시 만료 즉시 | -- |
 | 증상 텍스트 (이력) | PersistHistory | 개인 디바이스 localStorage `medi-curator:searchHistory:{uid}` | PIPA §23 ① 별도 동의 | 민감/선택 | 사용자 직접 삭제까지 | 로컬 열람·삭제·이동 |
+| 자가 입력 질병·알레르기·상담 메모 | ConsultationPrep | 개인 디바이스 localStorage `medi-curator:health-profile:{uid}` | PIPA §23 ① 별도 동의 | 민감/선택 | 사용자 직접 삭제까지 | 로컬 열람·정정·삭제 |
 | 복용 약물 | LLM Curate | 동상 | PIPA §23 ① 별도 동의 | 민감/필수 | 동상 | 동상 |
 | 위치(GPS) | LocatePharmacy | 메모리 (저장 안 함) | 위치정보법 §15 별도 동의 | 위치/필수 | 세션 종료 즉시 | -- |
 | 검색 언어·테마 | UX | localStorage | PIPA §15 동의 | 선택 | 사용자 삭제까지 | 삭제 |

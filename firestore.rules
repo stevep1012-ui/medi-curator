@@ -41,6 +41,30 @@ service cloud.firestore {
       allow delete: if request.auth != null && request.auth.uid == uid;
     }
 
+    // === 이메일 기반 프로필 별칭 ===
+    // 같은 이메일을 쓰는 다른 OAuth 제공자로 로그인해도 닉네임을 복원하기 위한 최소 별칭.
+    // 로그인 이메일과 일치하는 사용자만 읽고 쓸 수 있으며, 건강정보는 저장하지 않는다.
+    match /memberProfilesByEmail/{emailKey} {
+      allow read: if request.auth != null
+        && request.auth.token.email is string
+        && resource.data.loginEmail == request.auth.token.email;
+      allow create, update: if request.auth != null
+        && request.auth.uid == request.resource.data.sourceUid
+        && request.auth.token.email is string
+        && request.resource.data.loginEmail == request.auth.token.email
+        && request.resource.data.nickname is string
+        && request.resource.data.nickname.size() > 0
+        && request.resource.data.nickname.size() <= 40
+        && request.resource.data.answerEmail is string
+        && request.resource.data.answerEmail.size() <= 254
+        && request.resource.data.answerEmailSource in ['login', 'custom']
+        && request.resource.data.answerEmailVerified is bool
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if request.auth != null
+        && request.auth.token.email is string
+        && resource.data.loginEmail == request.auth.token.email;
+    }
+
     // === 민감정보(증상·약물·검색이력) ===
     // 출시 1차에서는 서버 저장 금지. 검색 이력은 사용자 디바이스 로컬 저장소에만 보관.
     match /users/{uid}/symptomHistory/{docId} {

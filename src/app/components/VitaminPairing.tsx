@@ -4,7 +4,14 @@ import { useState } from "react";
 import { useI18n, type Lang } from "./i18n";
 import { VT } from "./vitamin-data";
 import { getPairingFromAI } from "../../services/aiToolsService";
-import { deleteCombo, exportCombosText, loadSavedCombos, saveCombo, type ComboVaultInput } from "../../services/comboVaultService";
+import {
+  deleteCombo,
+  exportCombosText,
+  loadSavedCombos,
+  saveCombo,
+  type ComboVaultInput,
+  type ComboVaultItem,
+} from "../../services/comboVaultService";
 import type { PairingAIResultT } from "../../schemas/aiTools";
 
 type ML = Record<Lang, string>;
@@ -22,6 +29,8 @@ const AI_T = {
   vaultBody: ml("마음에 드는 조합을 저장해 루틴·쇼핑리스트·상담 전 메모로 다시 씁니다.", "Save good combos and reuse them as routines, shopping lists, or pre-consult notes.", "気に入った組み合わせをルーティン・買い物リスト・相談前メモに再利用できます。", "保存喜欢的搭配，用作流程、购物清单或咨询前笔记。"),
   exportVault: ml("보관함 내보내기", "Export vault", "保管庫を書き出す", "导出搭配库"),
   deleteSaved: ml("삭제", "Delete", "削除", "删除"),
+  openSaved: ml("열기", "Open", "開く", "打开"),
+  savedBadge: ml("보관함", "Saved", "保管庫", "已保存"),
 } as const;
 
 const InfoIcon = ({ className }: { className?: string }) => (
@@ -233,14 +242,15 @@ function downloadText(filename: string, text: string) {
   URL.revokeObjectURL(url);
 }
 
-export default function VitaminPairing() {
+export default function VitaminPairing({ uid }: { uid?: string }) {
   const { lang } = useI18n();
   const v = VT[lang];
   const [categoryId, setCategoryId] = useState<CategoryId>("popular");
   const [goalId, setGoalId] = useState<string | null>("ice-bacchus");
   const [text, setText] = useState("");
   const [recommendedIds, setRecommendedIds] = useState<string[]>([]);
-  const [savedCombos, setSavedCombos] = useState(() => loadSavedCombos());
+  const [savedCombos, setSavedCombos] = useState(() => loadSavedCombos(uid));
+  const [viewingSaved, setViewingSaved] = useState<ComboVaultItem | null>(null);
 
   // Hybrid: predefined goal chips answer instantly; any free-text the chips can't
   // match is judged by the AI so every input gets a real answer.
@@ -283,6 +293,10 @@ export default function VitaminPairing() {
     setAiLoading(false);
   }
 
+  function clearSavedView() {
+    setViewingSaved(null);
+  }
+
   function selectGoal(id: string) {
     setGoalId(id);
     const goal = GOALS.find((g) => g.id === id);
@@ -290,14 +304,30 @@ export default function VitaminPairing() {
     setText("");
     setRecommendedIds([]);
     clearAi();
+    clearSavedView();
   }
 
   function selectCategory(id: CategoryId) {
     setCategoryId(id);
     setRecommendedIds([]);
     clearAi();
+    clearSavedView();
     const first = GOALS.find((g) => (id === "popular" ? ["ice-bacchus", "cal-mag-d", "omega-c-mag", "fatigue", "sleep"].includes(g.id) : g.category === id));
     if (first) setGoalId(first.id);
+  }
+
+  function openSavedCombo(combo: ComboVaultItem) {
+    setViewingSaved(combo);
+    clearAi();
+    setRecommendedIds([]);
+    setText("");
+    const matched = GOALS.find((g) => g.label[lang] === combo.title);
+    if (matched) {
+      setGoalId(matched.id);
+      setCategoryId(matched.category);
+    } else {
+      setGoalId(null);
+    }
   }
 
   async function runAi(goal: string) {
@@ -305,6 +335,7 @@ export default function VitaminPairing() {
     setAiError(null);
     setAi(null);
     setGoalId(null);
+    clearSavedView();
     try {
       setAi(await getPairingFromAI(goal, false, lang));
     } catch (e) {
@@ -323,6 +354,7 @@ export default function VitaminPairing() {
       setGoalId(picks[0].id);
       setCategoryId(picks[0].category);
       clearAi();
+      clearSavedView();
       return;
     }
     const m = matchGoal(q);
@@ -331,6 +363,16 @@ export default function VitaminPairing() {
   }
 
   function currentCombo(): ComboVaultInput | null {
+    if (viewingSaved) {
+      return {
+        title: viewingSaved.title,
+        category: viewingSaved.category,
+        summary: viewingSaved.summary,
+        items: viewingSaved.items,
+        tip: viewingSaved.tip,
+        disclaimer: viewingSaved.disclaimer,
+      };
+    }
     if (ai) {
       return {
         title: ai.goalLabel,
@@ -357,7 +399,12 @@ export default function VitaminPairing() {
   function saveCurrentCombo() {
     const combo = currentCombo();
     if (!combo) return;
-    setSavedCombos(saveCombo(combo));
+    const next = saveCombo(combo, uid);
+    setSavedCombos(next);
+    if (viewingSaved) {
+      const refreshed = next.find((item) => item.title === combo.title);
+      if (refreshed) setViewingSaved(refreshed);
+    }
   }
 
   function exportVault() {
@@ -366,7 +413,65 @@ export default function VitaminPairing() {
   }
 
   const sel = GOALS.find((g) => g.id === goalId) || null;
-  const currentSaved = Boolean(currentCombo() && savedCombos.some((item) => item.title === currentCombo()?.title));
+  const activeCombo = currentCombo();
+  const currentSaved = Boolean(activeCombo && savedCombos.some((item) => item.title === activeCombo.title));
+
+  function renderComboDetail(
+    title: string,
+    badge: string | null,
+    summary: string,
+    items: { name: string; why: string }[],
+    tip: string,
+    disclaimer: string,
+    tone: keyof typeof TONE = "brand",
+  ) {
+    return (
+      <div className="mt-6 space-y-4">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <span className={`flex h-9 w-9 items-center justify-center rounded-xl text-white shadow-sm ${TONE[tone]}`}>
+            <LeafIcon className="h-[18px] w-[18px]" />
+          </span>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink-3">{v.comboFor}</div>
+              {badge ? (
+                <span className="rounded-full bg-brand px-2 py-[1px] text-[10px] font-extrabold text-white">{badge}</span>
+              ) : null}
+            </div>
+            <h3 className="text-[17px] font-bold tracking-tight text-ink">{title}</h3>
+          </div>
+        </div>
+        <p className="text-[13.5px] leading-relaxed text-ink-2">{summary}</p>
+        <section className={CARD_CLS}>
+          <h3 className="mb-3.5 flex items-center gap-2.5 text-[14px] font-bold tracking-tight text-ink">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-tint text-brand">
+              <PillIcon className="h-[15px] w-[15px]" />
+            </span>
+            {v.items}
+          </h3>
+          <ul className="space-y-3 text-[13.5px] leading-snug text-ink-2">
+            {items.map((it, i) => (
+              <li key={i} className="flex gap-3">
+                <span className="mt-[6px] h-1.5 w-1.5 shrink-0 rounded-full bg-brand-bright" />
+                <span>
+                  <b className="font-bold text-ink">{it.name}</b> — {it.why}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+        {tip ? (
+          <div className="flex items-start gap-3 rounded-[16px] border border-brand-tint-2 bg-brand-tint px-4 py-3.5">
+            <InfoIcon className="h-[18px] w-[18px] shrink-0 text-brand" />
+            <p className="text-[13px] leading-relaxed text-ink-2">
+              <b className="font-bold text-brand">{v.tipLabel}</b> · {tip}
+            </p>
+          </div>
+        ) : null}
+        {disclaimer ? <p className="text-[11.5px] leading-relaxed text-ink-4">{disclaimer}</p> : null}
+      </div>
+    );
+  }
   const visibleGoals = categoryId === "popular"
     ? GOALS.filter((g) => ["ice-bacchus", "cal-mag-d", "omega-c-mag", "fatigue", "sleep"].includes(g.id))
     : GOALS.filter((g) => g.category === categoryId);
@@ -477,86 +582,27 @@ export default function VitaminPairing() {
             {AI_T.errorRetry[lang]}
           </button>
         </div>
+      ) : viewingSaved ? (
+        renderComboDetail(
+          viewingSaved.title,
+          AI_T.savedBadge[lang],
+          viewingSaved.summary,
+          viewingSaved.items,
+          viewingSaved.tip,
+          viewingSaved.disclaimer,
+        )
       ) : ai ? (
-        <div className="mt-6 space-y-4">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand text-white shadow-sm">
-              <LeafIcon className="h-[18px] w-[18px]" />
-            </span>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink-3">{v.comboFor}</div>
-                <span className="rounded-full bg-brand px-2 py-[1px] text-[10px] font-extrabold text-white">{AI_T.badge[lang]}</span>
-              </div>
-              <h3 className="text-[17px] font-bold tracking-tight text-ink">{ai.goalLabel}</h3>
-            </div>
-          </div>
-          <p className="text-[13.5px] leading-relaxed text-ink-2">{ai.summary}</p>
-          <section className={CARD_CLS}>
-            <h3 className="mb-3.5 flex items-center gap-2.5 text-[14px] font-bold tracking-tight text-ink">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-tint text-brand">
-                <PillIcon className="h-[15px] w-[15px]" />
-              </span>
-              {v.items}
-            </h3>
-            <ul className="space-y-3 text-[13.5px] leading-snug text-ink-2">
-              {ai.items.map((it, i) => (
-                <li key={i} className="flex gap-3">
-                  <span className="mt-[6px] h-1.5 w-1.5 shrink-0 rounded-full bg-brand-bright" />
-                  <span>
-                    <b className="font-bold text-ink">{it.name}</b> — {it.why}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </section>
-          {ai.tip && (
-            <div className="flex items-start gap-3 rounded-[16px] border border-brand-tint-2 bg-brand-tint px-4 py-3.5">
-              <InfoIcon className="h-[18px] w-[18px] shrink-0 text-brand" />
-              <p className="text-[13px] leading-relaxed text-ink-2">
-                <b className="font-bold text-brand">{v.tipLabel}</b> · {ai.tip}
-              </p>
-            </div>
-          )}
-          <p className="text-[11.5px] leading-relaxed text-ink-4">{ai.disclaimer}</p>
-        </div>
+        renderComboDetail(ai.goalLabel, AI_T.badge[lang], ai.summary, ai.items, ai.tip, ai.disclaimer)
       ) : sel ? (
-        <div className="mt-6 space-y-4">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <span className={`flex h-9 w-9 items-center justify-center rounded-xl text-white shadow-sm ${TONE[sel.tone]}`}>
-              <LeafIcon className="h-[18px] w-[18px]" />
-            </span>
-            <div className="min-w-0">
-              <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink-3">{v.comboFor}</div>
-              <h3 className="text-[17px] font-bold tracking-tight text-ink">{sel.label[lang]}</h3>
-            </div>
-          </div>
-          <p className="text-[13.5px] leading-relaxed text-ink-2">{sel.summary[lang]}</p>
-          <section className={CARD_CLS}>
-            <h3 className="mb-3.5 flex items-center gap-2.5 text-[14px] font-bold tracking-tight text-ink">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-tint text-brand">
-                <PillIcon className="h-[15px] w-[15px]" />
-              </span>
-              {v.items}
-            </h3>
-            <ul className="space-y-3 text-[13.5px] leading-snug text-ink-2">
-              {sel.items.map(([n, why], i) => (
-                <li key={i} className="flex gap-3">
-                  <span className="mt-[6px] h-1.5 w-1.5 shrink-0 rounded-full bg-brand-bright" />
-                  <span>
-                    <b className="font-bold text-ink">{n[lang]}</b> — {why[lang]}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </section>
-          <div className="flex items-start gap-3 rounded-[16px] border border-brand-tint-2 bg-brand-tint px-4 py-3.5">
-            <InfoIcon className="h-[18px] w-[18px] shrink-0 text-brand" />
-            <p className="text-[13px] leading-relaxed text-ink-2">
-              <b className="font-bold text-brand">{v.tipLabel}</b> · {sel.tip[lang]}
-            </p>
-          </div>
-        </div>
+        renderComboDetail(
+          sel.label[lang],
+          null,
+          sel.summary[lang],
+          sel.items.map(([n, why]) => ({ name: n[lang], why: why[lang] })),
+          sel.tip[lang],
+          v.disclaimer,
+          sel.tone,
+        )
       ) : (
         <div className="mt-6 flex items-center gap-3 rounded-[16px] border border-warn-tint bg-warn-tint px-4 py-3.5">
           <InfoIcon className="h-[18px] w-[18px] shrink-0 text-warn" />
@@ -600,27 +646,43 @@ export default function VitaminPairing() {
             <h3 className="text-[15px] font-black tracking-[-0.02em] text-ink">{AI_T.vaultTitle[lang]}</h3>
             <span className="rounded-full bg-surface-soft px-2.5 py-1 text-[11px] font-black text-ink-3">{savedCombos.length}/30</span>
           </div>
-          <div className="mt-3 grid gap-2.5">
+          <div className="mt-3 max-h-[min(420px,50vh)] space-y-2.5 overflow-y-auto pr-1">
             {savedCombos.length === 0 ? (
               <p className="rounded-2xl bg-surface-soft px-4 py-4 text-[12.5px] leading-relaxed text-ink-3">{AI_T.vaultBody[lang]}</p>
             ) : (
-              savedCombos.slice(0, 4).map((combo) => (
-                <div key={combo.id} className="rounded-2xl border border-line bg-surface-soft px-4 py-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="truncate text-[13.5px] font-black text-ink">{combo.title}</p>
-                      <p className="mt-1 line-clamp-2 text-[11.5px] leading-snug text-ink-3">{combo.summary}</p>
+              savedCombos.map((combo) => {
+                const active = viewingSaved?.id === combo.id;
+                return (
+                  <div
+                    key={combo.id}
+                    className={`rounded-2xl border px-4 py-3 transition ${active ? "border-brand bg-brand-tint/35" : "border-line bg-surface-soft"}`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <button
+                        type="button"
+                        onClick={() => openSavedCombo(combo)}
+                        className="min-w-0 flex-1 text-left"
+                      >
+                        <p className="truncate text-[13.5px] font-black text-ink">{combo.title}</p>
+                        <p className="mt-1 line-clamp-2 text-[11.5px] leading-snug text-ink-3">{combo.summary}</p>
+                        <span className="mt-2 inline-flex rounded-full bg-surface px-2 py-0.5 text-[10.5px] font-extrabold text-brand">
+                          {AI_T.openSaved[lang]}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSavedCombos(deleteCombo(combo.id, uid));
+                          if (viewingSaved?.id === combo.id) clearSavedView();
+                        }}
+                        className="shrink-0 rounded-lg border border-line bg-surface px-2.5 py-1 text-[11px] font-extrabold text-ink-4 transition hover:border-danger-line hover:text-danger"
+                      >
+                        {AI_T.deleteSaved[lang]}
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setSavedCombos(deleteCombo(combo.id))}
-                      className="shrink-0 rounded-lg border border-line bg-surface px-2.5 py-1 text-[11px] font-extrabold text-ink-4 transition hover:border-danger-line hover:text-danger"
-                    >
-                      {AI_T.deleteSaved[lang]}
-                    </button>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>

@@ -14,7 +14,11 @@ const combo = {
 };
 
 describe('comboVaultService', () => {
-  beforeEach(() => clearCombos());
+  beforeEach(() => {
+    clearCombos();
+    clearCombos('user-a');
+    clearCombos('user-b');
+  });
 
   it('saves and reloads combo vault items', () => {
     const saved = saveCombo(combo);
@@ -40,5 +44,13 @@ describe('comboVaultService', () => {
     expect(text).toContain('MediQ 꿀조합 보관함');
     expect(text).toContain('박카스 1병');
     expect(text).toContain('진단, 처방 또는 치료');
+  });
+
+  it('keeps combo vault items scoped per signed-in user on the device', () => {
+    saveCombo(combo, 'user-a');
+    saveCombo({ ...combo, title: '칼마디 · 칼슘+마그네슘+D' }, 'user-b');
+
+    expect(loadSavedCombos('user-a').map((item) => item.title)).toEqual(['얼박사 · 박카스+사이다']);
+    expect(loadSavedCombos('user-b').map((item) => item.title)).toEqual(['칼마디 · 칼슘+마그네슘+D']);
   });
 });

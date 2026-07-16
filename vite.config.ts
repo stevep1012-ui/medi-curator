@@ -37,6 +37,21 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           rewrite: () => '',
         },
+        '/api/interaction': {
+          target: `http://127.0.0.1:5001/${projectId}/${region}/interaction`,
+          changeOrigin: true,
+          rewrite: () => '',
+        },
+        '/api/pairing': {
+          target: `http://127.0.0.1:5001/${projectId}/${region}/pairing`,
+          changeOrigin: true,
+          rewrite: () => '',
+        },
+        '/api/recognize-med': {
+          target: `http://127.0.0.1:5001/${projectId}/${region}/recognizeMed`,
+          changeOrigin: true,
+          rewrite: () => '',
+        },
         '/api/pharmacies': {
           target: `http://127.0.0.1:5001/${projectId}/${region}/pharmacies`,
           changeOrigin: true,
