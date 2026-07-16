@@ -168,7 +168,9 @@ export function AccountMenu({
   const { lang } = useI18n();
   const ac = ACCT[lang];
   const pm = providerMeta(provider, ac.guest);
-  const initial = (displayName?.[0] || pm.name[0] || "·").toUpperCase();
+  const emailName = answerEmail?.split("@")[0]?.trim();
+  const visibleName = displayName?.trim() || (provider === "guest" ? ac.guest : emailName || "닉네임 설정");
+  const initial = (visibleName[0] || pm.name[0] || "·").toUpperCase();
   const [open, setOpen] = useState(false);
   const [legal, setLegal] = useState<LegalKey | null>(null);
   const ref = useRef<HTMLDivElement>(null);
@@ -192,7 +194,7 @@ export function AccountMenu({
         aria-haspopup="true"
       >
         {avatar("h-6 w-6 text-[11px]")}
-        <span className="hidden sm:inline">{displayName || ac.account}</span>
+        <span className="hidden sm:inline">{visibleName}</span>
         <svg viewBox="0 0 24 24" className="h-3 w-3 text-ink-4" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
           <path d="m6 9 6 6 6-6" />
         </svg>
@@ -201,7 +203,7 @@ export function AccountMenu({
         <div className="absolute right-0 z-50 mt-1.5 w-52 overflow-hidden rounded-xl border border-line bg-surface p-1 shadow-[0_18px_40px_-18px_rgba(0,0,0,0.4)]">
           <div className="px-3 py-2.5">
             <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink-4">{ac.account}</p>
-            <p className="mt-1.5 flex items-center gap-2 text-[13px] font-bold text-ink">{avatar("h-5 w-5 text-[10px]")}{displayName || pm.name}</p>
+            <p className="mt-1.5 flex items-center gap-2 text-[13px] font-bold text-ink">{avatar("h-5 w-5 text-[10px]")}{visibleName}</p>
             {answerEmail && <p className="mt-1 truncate text-[11.5px] font-semibold text-ink-4">{answerEmail}</p>}
           </div>
           <div className="my-1 h-px bg-line" />
