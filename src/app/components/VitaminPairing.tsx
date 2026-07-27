@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useI18n, type Lang } from "./i18n";
 import { VT } from "./vitamin-data";
 import { getPairingFromAI } from "../../services/aiToolsService";
+import { PRO_MODE_ENABLED } from "../../config/usageLimits";
 import {
   deleteCombo,
   exportCombosText,
@@ -337,7 +338,7 @@ export default function VitaminPairing({ uid }: { uid?: string }) {
     setGoalId(null);
     clearSavedView();
     try {
-      setAi(await getPairingFromAI(goal, false, lang));
+      setAi(await getPairingFromAI(goal, PRO_MODE_ENABLED, lang));
     } catch (e) {
       setAiError(e instanceof Error ? e.message : "요청에 실패했습니다.");
     } finally {

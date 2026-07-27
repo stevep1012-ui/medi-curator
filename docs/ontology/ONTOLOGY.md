@@ -128,7 +128,11 @@ TabNav                ← MenuTree 탭 전환
 > **주.** 이전 문서의 `SymptomInput` / `Header` / `DisclaimerBanner` 는 실재하지 않는 이름이었다.
 > `src/components/SymptomInput.tsx` 는 렌더되지 않는 사본이어서 2026-07-26 정리 시 삭제했고,
 > 출하 경로는 `src/app/components/SymptomAnalysis.tsx` 다.
-> `isProMode` 는 모든 호출부가 `false` 리터럴을 넘겨 실질적으로 죽은 배선이다.
+> `isProMode` 는 죽은 배선이 아니라 **아직 켜지 않은 스위치**다. 서버는 프로 모델 경로를
+> 갖고 있고(`functions/src/modelSelection.ts`), `ProductGrowthPanel` 이 "Plus 관심 등록"으로
+> 수요를 모으는 중이다. 호출부에 흩어져 있던 `false` 리터럴은
+> `src/config/usageLimits.ts` 의 `PRO_MODE_ENABLED` 하나로 모았다 — Plus 티어가 열리면
+> 이 상수를 구독 상태를 읽는 함수로 바꾸면 된다.
 
 ### 2.6 Commercialization & Monitoring
 
@@ -162,10 +166,10 @@ TabNav                ← MenuTree 탭 전환
 | **INV-2** | `SymptomQuery` 저장 시 `sensitiveHealth === true` | ✅ 강제됨(우회) | `src/services/symptomService.ts` 가 증상·결과를 **아예 저장하지 않음**(PIPA §23). 서버는 `requireAuthenticatedConsent()` 로 동의 확인 |
 | **INV-3** | `OTCMedication.name` 을 식약처 마스터와 교차검증 | ❌ **미구현** | `assets/mfds-otc.json` 파일이 존재하지 않고 참조 코드도 없음. 현재 OTC 는 서버가 항상 비워 노출 자체가 없으나, 노출 재개 시 **선행 구현 필수** |
 | **INV-4a** | 응급 시 위기 번호 노출 | ✅ 강제됨 | `src/lib/emergency.ts` `HOTLINES`. **번호는 109 + 1577-0199**(정신) / 119(신체). 옛 `1393` 은 2024년 109 로 통합되어 더 이상 쓰지 않는다 |
-| **INV-4b** | 응급 시 `pharmacy` 탭 hidden | ❌ **미구현** | `isCrisis` 는 `SymptomAnalysis.tsx` 내부에서만 쓰이며 `TabNav` 에 필터가 없어 위기 상태에서도 약국 탭 접근 가능 |
+| **INV-4b** | 응급 시 약국 경로에 안전장치 | ✅ 강제됨 (**방식 변경**) | `SymptomAnalysis`(`onCrisisChange`) → `page.tsx`(`crisisKind` 보관) → `PharmacyFinder` 배너. **탭을 숨기는 대신 응급 연락처를 약국 화면 최상단에 띄운다** — 사용 중 내비게이션이 사라지면 혼란스럽고 스스로 판단해 약국을 찾을 자유를 막는다. 원 취지(위기 상황에서 약 구매로 유도하지 않기)는 우선순위 역전으로 충족. `tests/unit/ontologySync.test.ts` 가 배선을 검사 |
 | **INV-5** | 비한국어 `disclaimer` 에 영문 면책 병기 | ⚠️ 미검증 | 강제 지점 확인 필요 |
 | **INV-6** | 모든 LLM 호출 서버 경유 | ✅ 강제됨 | 클라이언트는 `/api/curate`·`/api/ai/*` 프록시만 호출. 레드팀 RT-NL-007 이 검사 |
-| **INV-7** | `currentMedications` 있으면 약사 확인 문구 필수 | ❌ **미구현** | 클라이언트·서버 어디에도 강제 지점 없음 |
+| **INV-7** | `currentMedications` 있으면 약사 확인 문구 필수 | ✅ 강제됨 | `SymptomAnalysis.tsx` 가 `currentMedication` 이 비어있지 않으면 `s.interaction`("복용 중인 모든 제품 목록을 약사·의사에게 보여 주세요") 블록을 렌더. 모델 출력이 아니라 **미리 검토된 정적 문구**라 LLM 이 빠뜨릴 수 없다 |
 
 ---
 

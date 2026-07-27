@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   AlertIcon,
   InfoIcon,
@@ -11,7 +11,8 @@ import {
 } from "./icons";
 import { useI18n } from "./i18n";
 import { getCurationFromGemini } from "../../services/geminiService";
-import { detectEmergency, HOTLINES } from "../../lib/emergency";
+import { PRO_MODE_ENABLED } from "../../config/usageLimits";
+import { detectEmergency, HOTLINES, type EmergencyKind } from "../../lib/emergency";
 import { addMed, medNamesText } from "../../services/medStore";
 import MedCapture from "./MedCapture";
 import type { CurationResult } from "../../types";
@@ -28,7 +29,15 @@ const SCAN_T = {
   saved: { ko: "내 목록에 저장했어요. 다음에도 자동으로 불러옵니다.", en: "Saved to My meds. It will be loaded next time.", ja: "リストに保存しました。次回も自動で読み込みます。", zh: "已保存到我的药品。下次会自动载入。" },
 } as const;
 
-export default function SymptomAnalysis({ uid }: { uid?: string }) {
+export default function SymptomAnalysis({
+  uid,
+  onCrisisChange,
+}: {
+  uid?: string;
+  // INV-4b: 위기 신호를 상위로 올려, 사용자가 약국 탭으로 넘어가도 응급 안내가
+  // 따라가게 한다. 이 컴포넌트는 탭 전환 시 언마운트되므로 상태를 여기 둘 수 없다.
+  onCrisisChange?: (kind: EmergencyKind | null) => void;
+}) {
   const { t, lang } = useI18n();
   const s = t.symptom;
 
@@ -57,6 +66,12 @@ export default function SymptomAnalysis({ uid }: { uid?: string }) {
   // network/auth, so a person in crisis always sees the hotline immediately.
   const instantEmergency = detectEmergency(symptoms);
 
+  // INV-4b: 입력된 증상이 응급으로 판정되면 상위(page)에 알린다. 약국 탭으로
+  // 이동해도 응급 안내가 유지되도록, 상태는 언마운트되지 않는 부모가 보관한다.
+  useEffect(() => {
+    onCrisisChange?.(instantEmergency);
+  }, [instantEmergency, onCrisisChange]);
+
   // On a mental-health crisis, block general curation entirely (R-004): the user
   // should see crisis hotlines only, not a general AI health result alongside.
   const isAnalyzeDisabled = useMemo(
@@ -72,7 +87,7 @@ export default function SymptomAnalysis({ uid }: { uid?: string }) {
       const data = await getCurationFromGemini(
         symptoms.trim(),
         currentMedication.trim(),
-        false,
+        PRO_MODE_ENABLED,
         lang
       );
       setResult(data);
@@ -257,6 +272,65 @@ export default function SymptomAnalysis({ uid }: { uid?: string }) {
             영원히 거짓이었다. 사전심의 후 다시 노출하려면 서버가 채워 보내는 변경과
             함께 되살려야 한다 — 타입·스키마 계약(ONTOLOGY.md)은 그대로 남아 있다.
           */}
+
+          {/*
+            아래 블록들은 서버 출력이 아니라 미리 작성·번역된 정적 안전 문구다.
+            4개 언어로 다 쓰여 있었는데도 렌더 경로가 없어 한 번도 화면에 뜨지
+            않았다. 모델이 지어내는 내용이 아니므로 검토된 문구만 나가고 토큰도 들지 않는다.
+          */}
+
+          {/* INV-7: 복용 중인 약이 있으면 약사 확인 권고를 반드시 노출한다. */}
+          {!isCrisis && currentMedication.trim() !== "" && (
+            <ResultBlock title={s.interactionTitle} tone="brand" icon={<PillIcon className="h-[15px] w-[15px]" />}>
+              <p className="text-[13.5px] leading-relaxed text-ink-2">{s.interaction}</p>
+            </ResultBlock>
+          )}
+
+          {!isCrisis && (
+            <ResultBlock title={s.otcTitle} tone="brand" icon={<SearchIcon className="h-[15px] w-[15px]" />}>
+              <ul className="space-y-2.5 text-[13.5px] leading-snug text-ink-2">
+                {s.otc.map((tip) => (
+                  <li key={tip} className="flex gap-2.5">
+                    <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-brand" />
+                    {tip}
+                  </li>
+                ))}
+              </ul>
+            </ResultBlock>
+          )}
+
+          {!isCrisis && (
+            <ResultBlock title={s.exerciseTitle} tone="brand" icon={<InfoIcon className="h-[15px] w-[15px]" />}>
+              <p className="text-[13.5px] leading-relaxed text-ink-2">{s.exercise}</p>
+            </ResultBlock>
+          )}
+
+          {!isCrisis && (
+            <ResultBlock title={s.herbalTitle} tone="danger" icon={<AlertIcon className="h-[15px] w-[15px]" />}>
+              <ul className="space-y-2.5 text-[13.5px] leading-snug text-ink-2">
+                {s.herbal.map((item) => (
+                  <li key={item} className="flex gap-2.5">
+                    <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-danger" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </ResultBlock>
+          )}
+
+          {/* 서버가 위험 신호를 못 채웠을 때도 일반 위험 신호는 항상 보이게 한다. */}
+          {result.redFlags.length === 0 && (
+            <ResultBlock title={s.redFlagTitle} tone="danger" icon={<ShieldIcon className="h-[15px] w-[15px]" />}>
+              <ul className="space-y-2.5 text-[13.5px] leading-snug text-ink-2">
+                {s.redFlags.map((flag) => (
+                  <li key={flag} className="flex gap-2.5">
+                    <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-danger" />
+                    {flag}
+                  </li>
+                ))}
+              </ul>
+            </ResultBlock>
+          )}
 
           {result.redFlags.length > 0 && (
             <ResultBlock title={s.redFlagTitle} tone="danger" icon={<ShieldIcon className="h-[15px] w-[15px]" />}>
