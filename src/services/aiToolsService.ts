@@ -64,12 +64,28 @@ function writeCache(key: string, data: unknown): void {
   cache.set(key, { data, at: Date.now() });
 }
 
+// 함수 타임아웃(30~40초)보다 약간 길게 잡은 클라이언트 상한. 이게 없으면 서버가
+// 응답 없이 멈췄을 때 버튼이 브라우저 기본값까지 스피너 상태로 남는다.
+const REQUEST_TIMEOUT_MS = 45_000;
+
 async function postProxy(path: string, payload: unknown): Promise<unknown> {
   let res: Response;
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), REQUEST_TIMEOUT_MS);
   try {
-    res = await fetch(path, { method: 'POST', headers: await authHeaders(), body: JSON.stringify(payload) });
-  } catch {
+    res = await fetch(path, {
+      method: 'POST',
+      headers: await authHeaders(),
+      body: JSON.stringify(payload),
+      signal: ctl.signal,
+    });
+  } catch (e) {
+    if ((e as Error).name === 'AbortError') {
+      throw new Error('응답이 지연되고 있어요. 잠시 후 다시 시도해 주세요.');
+    }
     throw new Error('네트워크 연결을 확인해 주세요.');
+  } finally {
+    clearTimeout(timer);
   }
   let body: unknown = null;
   try {

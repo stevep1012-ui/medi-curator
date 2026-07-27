@@ -1,8 +1,13 @@
 "use client";
 
 import { createContext, useContext } from "react";
+import type { Language } from "../../types";
 
-export type Lang = "ko" | "en" | "ja" | "zh";
+// UI 가 실제 번역 문자열을 가진 언어. 서버·스키마 계약(types.ts 의 Language)은
+// 번역이 없는 'es' 까지 허용하므로, UI 는 그 부분집합만 다룬다. Extract 로 묶어
+// 두면 Language 에서 코드가 빠질 때 아래 LANGS 리터럴에서 컴파일 오류로 드러나
+// 두 정의가 조용히 갈라지지 않는다.
+export type Lang = Extract<Language, "ko" | "en" | "ja" | "zh">;
 
 export const LANGS: { code: Lang; native: string }[] = [
   { code: "ko", native: "한국어" },

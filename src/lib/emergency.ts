@@ -12,9 +12,13 @@ export const MENTAL_KEYWORDS = [
   'suicide', 'self-harm', 'kill myself',
 ];
 
+// MUST stay byte-identical to EMERGENCY_PHYSICAL in functions/src/index.ts —
+// a keyword present only on the server means the instant client banner stays
+// hidden until the round-trip completes. tests/unit/emergency.test.ts asserts
+// this parity by reading the server file.
 export const PHYSICAL_KEYWORDS = [
   '흉통', '가슴통증', '호흡곤란', '숨을 못 쉬', '의식잃', '의식불명',
-  '반신마비', '안면마비', '극심한 두통', '갑작스러운 두통', '토혈', '혈변', '대량출혈',
+  '마비', '반신마비', '안면마비', '극심한 두통', '갑작스러운 두통', '토혈', '혈변', '대량출혈',
   'chest pain', 'cannot breathe', 'unconscious', 'stroke', 'heart attack',
 ];
 
