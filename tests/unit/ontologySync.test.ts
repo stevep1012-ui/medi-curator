@@ -83,6 +83,50 @@ describe('CurationResult — 전달되는 필드와 비워지는 필드', () => 
   });
 });
 
+describe('INV-4b — 위기 상태에서 약국 경로 안전장치', () => {
+  const pharmacy = read('src/app/components/PharmacyFinder.tsx');
+  const page = read('src/app/page.tsx');
+  const symptom = read('src/app/components/SymptomAnalysis.tsx');
+
+  it('증상 화면이 위기 신호를 상위로 올린다', () => {
+    expect(symptom).toContain('onCrisisChange');
+  });
+
+  it('page 가 위기 상태를 보관해 탭을 옮겨도 유지된다', () => {
+    // SymptomAnalysis 는 탭 전환 시 언마운트되므로 상태가 부모에 있어야 한다.
+    expect(page).toContain('setCrisisKind');
+    expect(page).toContain('crisisKind={crisisKind}');
+  });
+
+  it('약국 화면이 위기 시 응급 연락처를 노출한다', () => {
+    expect(pharmacy).toContain('crisisKind');
+    expect(pharmacy).toContain('HOTLINES');
+    expect(pharmacy).toContain('role="alert"');
+  });
+});
+
+describe('INV-7 — 복용약 입력 시 약사 확인 권고', () => {
+  const symptom = read('src/app/components/SymptomAnalysis.tsx');
+
+  it('currentMedication 이 있으면 상호작용 안내 블록을 렌더한다', () => {
+    expect(symptom).toMatch(/currentMedication\.trim\(\)\s*!==\s*""[\s\S]{0,300}s\.interaction/);
+  });
+});
+
+describe('정적 안전 문구가 실제로 렌더된다 (번역만 쓰이고 안 보이던 문제)', () => {
+  const symptom = read('src/app/components/SymptomAnalysis.tsx');
+
+  it.each(['s.otc', 's.herbal', 's.exercise', 's.redFlags'])('%s 를 렌더한다', (key) => {
+    expect(symptom).toContain(key);
+  });
+
+  it('한국어 otcTitle 이 의약품 추천을 암시하지 않는다', () => {
+    // 내용은 상담 준비 목록이고 영/일/중 제목도 그렇다. 옛 제목("일반의약품 선택지")을
+    // 되살리면 하지도 않는 OTC 추천을 암시한다(약사법 §50).
+    expect(read('src/app/components/i18n.tsx')).not.toContain('otcTitle: "일반의약품 선택지"');
+  });
+});
+
 describe('미구현 불변식은 미구현이라고 적혀 있어야 한다', () => {
   // 구현이 생기면 이 테스트가 깨져 문서를 갱신하게 만든다 — 반대 방향 드리프트 방지.
   it('INV-3: 식약처 마스터가 없는 동안 문서는 미구현으로 표기한다', () => {

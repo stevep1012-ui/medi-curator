@@ -15,6 +15,7 @@ import MyMeds from "./components/MyMeds";
 import { MYMEDS_HEAD } from "./components/mymeds-data";
 import NextSteps from "./components/NextSteps";
 import PharmacyFinder from "./components/PharmacyFinder";
+import type { EmergencyKind } from "../lib/emergency";
 import SearchHistory from "./components/SearchHistory";
 import PrivacySettings from "./components/PrivacySettings";
 import MemberOnboarding from "./components/MemberOnboarding";
@@ -78,6 +79,9 @@ function HomeInner() {
   const { t, lang } = useI18n();
   const { provider, user, signIn, signOut } = useAuth();
   const [view, setView] = useState<ViewId>("home");
+  // INV-4b: 증상 화면에서 감지한 응급 신호. SymptomAnalysis 는 탭을 옮기면
+  // 언마운트되므로, 약국 탭에서도 응급 안내를 띄우려면 여기서 들고 있어야 한다.
+  const [crisisKind, setCrisisKind] = useState<EmergencyKind | null>(null);
   const isGuest = provider === "guest";
   const [memberProfile, setMemberProfile] = useState<MemberProfileT | null | undefined>(undefined);
   const [mode, setMode] = useState<ThemeMode>(() => {
@@ -268,11 +272,13 @@ function HomeInner() {
                   <LockedFeature onSignIn={onSignIn} />
                 ) : (
                   <>
-                    {view === "symptom" && <SymptomAnalysis uid={user?.uid} />}
+                    {view === "symptom" && (
+                      <SymptomAnalysis uid={user?.uid} onCrisisChange={setCrisisKind} />
+                    )}
                     {view === "interaction" && <InteractionCheck uid={user?.uid} />}
                     {view === "vitamin" && <VitaminPairing uid={user?.uid} />}
                     {view === "mymeds" && <MyMeds uid={user?.uid} />}
-                    {view === "pharmacy" && <PharmacyFinder />}
+                    {view === "pharmacy" && <PharmacyFinder crisisKind={crisisKind} />}
                     {view === "history" && <SearchHistory />}
                     {view === "privacy" && (
                       <PrivacySettings

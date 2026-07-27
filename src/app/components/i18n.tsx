@@ -182,7 +182,10 @@ export const TRANSLATIONS: Record<Lang, Dict> = {
       resultsOverview: "결과 요약",
       educationalSummary: "일반 건강정보",
       findPharmacy: "약국 찾기 열기",
-      otcTitle: "일반의약품 선택지",
+      // 내용은 "상담 전에 적어둘 것" 목록이며 의약품 추천이 아니다. 영/일/중 제목도
+      // 모두 그렇게 돼 있다. 옛 OTC 화면 시절의 한국어 제목만 남아 있어 바로잡는다 —
+      // 그대로 노출하면 하지도 않는 일반의약품 추천을 암시한다(약사법 §50).
+      otcTitle: "상담 전에 정리할 정보",
       interactionTitle: "복용 정보 확인",
       exerciseTitle: "생활관리",
       recoveryTitle: "예상 경과",

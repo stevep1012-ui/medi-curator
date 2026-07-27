@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { AlertIcon, NavIcon, PinIcon } from "./icons";
 import { useI18n } from "./i18n";
+import { HOTLINES, type EmergencyKind } from "../../lib/emergency";
 import {
   searchPharmacies,
   formatDistance,
@@ -10,9 +11,10 @@ import {
   type Pharmacy,
 } from "../../services/pharmacyService";
 
-export default function PharmacyFinder() {
+export default function PharmacyFinder({ crisisKind }: { crisisKind?: EmergencyKind | null }) {
   const { t } = useI18n();
   const p = t.pharmacy;
+  const s = t.symptom;
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,6 +49,35 @@ export default function PharmacyFinder() {
 
   return (
     <div>
+      {/*
+        INV-4b. 응급 신호를 입력한 사용자가 약국 탭으로 넘어오면, 약을 사러
+        가기 전에 응급 연락처를 먼저 보게 한다. 탭을 숨기지 않는 이유는 사용 중
+        내비게이션이 사라지면 오히려 혼란스럽고, 스스로 판단해 약국을 찾을
+        자유를 막기 때문이다 — 대신 우선순위를 눈에 띄게 뒤집는다.
+      */}
+      {crisisKind && (
+        <section
+          role="alert"
+          className="mb-4 rounded-[18px] border border-danger/40 bg-danger-tint p-4 shadow-sm"
+        >
+          <p className="text-[13.5px] font-extrabold leading-snug text-ink">
+            {crisisKind === "mental" ? s.crisisMental : s.crisisPhysical}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {HOTLINES[crisisKind].map((line) => (
+              <a
+                key={line.tel}
+                href={`tel:${line.tel}`}
+                aria-label={line.aria}
+                className="inline-flex h-10 items-center justify-center rounded-xl bg-danger px-4 text-[13px] font-extrabold text-white transition hover:opacity-90"
+              >
+                {line.label}
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
+
       <div className="flex flex-wrap gap-2.5">
         <button
           type="button"

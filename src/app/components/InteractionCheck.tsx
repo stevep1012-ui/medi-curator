@@ -5,6 +5,7 @@ import { InfoIcon, PillIcon, SearchIcon, ShieldCheckIcon } from "./icons";
 import { useI18n, type Lang } from "./i18n";
 import { runInteractionCheck, type CheckResult } from "./interactionRules";
 import { getInteractionFromAI } from "../../services/aiToolsService";
+import { PRO_MODE_ENABLED } from "../../config/usageLimits";
 import { addMed, medNamesText } from "../../services/medStore";
 import MedCapture from "./MedCapture";
 import type { InteractionAIResultT, RecognizedMedT } from "../../schemas/aiTools";
@@ -60,7 +61,7 @@ export default function InteractionCheck({ uid }: { uid?: string }) {
       return;
     }
     try {
-      setAi(await getInteractionFromAI(q, c, false, lang));
+      setAi(await getInteractionFromAI(q, c, PRO_MODE_ENABLED, lang));
     } catch (e) {
       setAiError(e instanceof Error ? e.message : "요청에 실패했습니다.");
     } finally {
