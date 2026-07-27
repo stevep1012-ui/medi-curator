@@ -53,24 +53,35 @@
 - **서버 저장 금지**: 출시 1차에서는 Firestore 저장 없이 개인 디바이스 로컬 이력에만 보관.
 
 #### `CurationResult` (LLM 출력)
-8개 필드. **모든 필드 Zod 스키마 강제 검증**:
-- `recommendedDepartment`: enum (내과·정형외과·소아과·... 식약처 표준 진료과 36종 화이트리스트)
-- `aiAdvice`: `string` (≤ 2000자, 진단·처방 어휘 금지 — `forbidden-phrases.txt`)
-- `otcMedications: OTCMedication[]` (각 항목 `name` 은 `assets/mfds-otc.json` 마스터와 교차검증)
-- `folkRemedies: string[]` (의학적 근거 없음 표기 의무)
-- `lifestyleTips: string[]`
-- `exercisePrescription: ExercisePlan`
-- `recoveryTimeline: RecoveryTimeline[]`
+타입은 9개 필드를 선언하지만 **사용자에게 실제로 전달되는 값은 4개뿐이다.**
+서버 `safeResult()`(`functions/src/index.ts`)가 응답 직전 나머지를 항상 비운다(법적 포지션).
+
+전달되는 필드:
+- `recommendedDepartment`: `string` (≤100자). ⚠️ 계획은 "식약처 표준 진료과 36종 화이트리스트"
+  였으나 **현재는 enum 이 아닌 자유 문자열**이다(`src/schemas/curation.ts`). 화이트리스트 미구현.
+- `aiAdvice`: `string` (≤2000자). 진단·처방 어휘는 `violatesForbidden()`(`functions/src/shared.ts`)
+  이 응답 전체를 대상으로 차단한다.
 - `redFlags: string[]`
-- `disclaimer: string` (필수, 비어있을 수 없음)
+- `disclaimer: string` (필수 — INV-1, `src/schemas/curation.ts` 의 `min(10)` 으로 강제)
+
+항상 비워져 전달되는 필드 (타입·스키마 계약은 유지, 프롬프트는 더 이상 요구하지 않음):
+- `otcMedications: OTCMedication[]`, `folkRemedies: string[]`, `lifestyleTips: string[]`,
+  `exercisePrescription: ExercisePlan`, `recoveryTimeline: RecoveryTimeline[]`
+
+> 의료광고 사전심의 후 노출을 재개하려면 ① 프롬프트에 필드 복원 ② `safeResult()` 통과
+> ③ 클라이언트 렌더 블록 복원 ④ INV-3 교차검증 구현이 함께 필요하다.
 
 #### `OTCMedication`
 - `name`, `purpose`, `dosage`, `warnings[]`, `interactions?[]`, `riskLevel: low|medium|high`
 - **불변식**: `interactions` 가 비어있어도 사용자의 `currentMedications` 가 비어있지 않으면 `aiAdvice` 에 "상호작용 가능성 약사 확인 필요" 문구 포함 필수.
 
 #### `PharmacyRecord`
-- Google Places 출처. `placeId` 만 신뢰 식별자.
-- **금지**: OTC 추천 결과와 동일 화면에 결합 시 *알선광고* 해석 위험. 별도 탭으로 분리 (현재 구조 OK).
+- **Kakao Local "카테고리로 장소 검색"(PM9=약국) 출처.** REST 키는 서버 시크릿으로만 두고
+  `functions/src/pharmacies.ts` 프록시를 경유한다(브라우저 미노출).
+  구현: `src/services/pharmacyService.ts`, `functions/src/pharmacies.ts`.
+  (이전 문서의 "Google Places / `placeId`" 서술은 실제 구현과 달라 정정함.)
+- **금지**: OTC 추천 결과와 동일 화면에 결합 시 *알선광고* 해석 위험. 별도 탭으로 분리 (현재 구조 OK
+  — 게다가 현재 OTC 는 서버에서 항상 비워져 결합 자체가 발생하지 않는다).
 
 #### `AuditLogEntry`
 - 동의 변경·DSR 요청 기록. **불변(append-only)**, 5년 보존 (PIPA 시행령 §16). 건강 이력 원문은 포함하지 않는다.
@@ -102,14 +113,22 @@
 
 ### 2.5 Surface (UI 컴포넌트와 Artifact 매핑)
 
+모두 `src/app/components/` 아래 실재하는 파일이어야 한다.
+
 ```
-Header                ← Actor.language, Actor.theme, isProMode
-DisclaimerBanner      ← Regulation 의 필수 고지 (모든 화면 상단)
-SymptomInput          ← SymptomQuery 입력 + EmergencyEscalation 트리거
-CurationResult        ← CurationResult 8개 필드 렌더
-PharmacyFinder        ← Pharmacy[] 렌더 (별도 탭, OTC와 시각적 분리)
+Chrome                ← Actor.language, Actor.theme  (isProMode 는 현재 배선 없음 — 아래 주 참고)
+Legal / LegalModal    ← Regulation 의 필수 고지 (약관·개인정보처리방침)
+SymptomAnalysis       ← SymptomQuery 입력 + EmergencyEscalation 트리거 + CurationResult 렌더
+                        (렌더 필드는 4개: recommendedDepartment, aiAdvice, redFlags, disclaimer)
+PharmacyFinder        ← PharmacyRecord[] 렌더 (별도 탭, OTC와 시각적 분리)
 SearchHistory         ← AuthenticatedUser 전용
+TabNav                ← MenuTree 탭 전환
 ```
+
+> **주.** 이전 문서의 `SymptomInput` / `Header` / `DisclaimerBanner` 는 실재하지 않는 이름이었다.
+> `src/components/SymptomInput.tsx` 는 렌더되지 않는 사본이어서 2026-07-26 정리 시 삭제했고,
+> 출하 경로는 `src/app/components/SymptomAnalysis.tsx` 다.
+> `isProMode` 는 모든 호출부가 `false` 리터럴을 넘겨 실질적으로 죽은 배선이다.
 
 ### 2.6 Commercialization & Monitoring
 
@@ -134,14 +153,19 @@ SearchHistory         ← AuthenticatedUser 전용
 ## 3. 불변식 (Invariants)
 
 코드·테스트가 강제해야 하는 시스템 전역 규칙.
+**강제 지점이 없는 규칙은 "미구현"으로 표기한다** — 강제되지 않는 규칙을 강제되는 것처럼
+적어 두면 잘못된 안심을 준다. 상태는 `tests/unit/ontologySync.test.ts` 가 함께 검사한다.
 
-- **INV-1**: `CurationResult.disclaimer` 비어 있으면 `<CurationResult/>` 렌더 금지.
-- **INV-2**: `SymptomQuery` 가 Firestore에 저장될 때 `ConsentRecord.items.sensitiveHealth === true` 여야 함.
-- **INV-3**: `OTCMedication.name` 이 식약처 OTC 마스터에 없으면 렌더 차단 + medical-reviewer 알림.
-- **INV-4**: 응급 키워드 매칭 시 1393/119 양쪽 노출 + `pharmacy` 탭은 hidden.
-- **INV-5**: `language !== 'ko'` 일 때 `disclaimer` 는 해당 언어 + 한국 법적 면책 영문 병기.
-- **INV-6**: 모든 LLM 호출은 서버사이드 경유 (브라우저 fetch 직접 호출 금지).
-- **INV-7**: `interactions` 가 비어 있어도 `currentMedications` 비어있지 않으면 약사 확인 권고 문구 포함.
+| ID | 규칙 | 상태 | 강제 지점 |
+|---|---|---|---|
+| **INV-1** | `disclaimer` 비어 있으면 렌더 금지 | ✅ 강제됨 | `src/schemas/curation.ts` `disclaimer: z.string().min(10)` |
+| **INV-2** | `SymptomQuery` 저장 시 `sensitiveHealth === true` | ✅ 강제됨(우회) | `src/services/symptomService.ts` 가 증상·결과를 **아예 저장하지 않음**(PIPA §23). 서버는 `requireAuthenticatedConsent()` 로 동의 확인 |
+| **INV-3** | `OTCMedication.name` 을 식약처 마스터와 교차검증 | ❌ **미구현** | `assets/mfds-otc.json` 파일이 존재하지 않고 참조 코드도 없음. 현재 OTC 는 서버가 항상 비워 노출 자체가 없으나, 노출 재개 시 **선행 구현 필수** |
+| **INV-4a** | 응급 시 위기 번호 노출 | ✅ 강제됨 | `src/lib/emergency.ts` `HOTLINES`. **번호는 109 + 1577-0199**(정신) / 119(신체). 옛 `1393` 은 2024년 109 로 통합되어 더 이상 쓰지 않는다 |
+| **INV-4b** | 응급 시 `pharmacy` 탭 hidden | ❌ **미구현** | `isCrisis` 는 `SymptomAnalysis.tsx` 내부에서만 쓰이며 `TabNav` 에 필터가 없어 위기 상태에서도 약국 탭 접근 가능 |
+| **INV-5** | 비한국어 `disclaimer` 에 영문 면책 병기 | ⚠️ 미검증 | 강제 지점 확인 필요 |
+| **INV-6** | 모든 LLM 호출 서버 경유 | ✅ 강제됨 | 클라이언트는 `/api/curate`·`/api/ai/*` 프록시만 호출. 레드팀 RT-NL-007 이 검사 |
+| **INV-7** | `currentMedications` 있으면 약사 확인 문구 필수 | ❌ **미구현** | 클라이언트·서버 어디에도 강제 지점 없음 |
 
 ---
 
