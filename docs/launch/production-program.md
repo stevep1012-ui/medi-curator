@@ -50,6 +50,15 @@ Workflow 에이전트는 `.claude/agents/workflow-manager.md`다.
 | P0-004 | 자살/자해 플로우에서 1393 우선 노출 | medical-reviewer |
 | P0-005 | Firestore Rules 배포 검증 | security-auditor |
 | P0-006 | LLM 출력 Zod 런타임 검증 강제 | api-engineer |
+| P0-007 | 출하되는 개인정보처리방침(`src/app/components/Legal.tsx`)을 `config/release-profile.json` 에 연결 | privacy-officer |
+
+> **P0-007 배경 (2026-07-26 코드 정리 중 발견).** `gate:release-readiness` 는
+> `config/release-profile.json` 의 사업자명·대표자·주소·개인정보책임자가
+> `[출시 전 확정 필요]` 로 남아 있으면 출시를 막는다. 그런데 이 규율을 반영한
+> 유일한 컴포넌트는 렌더되지 않는 죽은 코드였고(정리 시 삭제됨), 실제 사용자에게
+> 보이는 `Legal.tsx` 는 연락처를 하드코딩한 채 release-profile 을 참조하지 않는다.
+> 즉 게이트는 아무도 읽지 않는 JSON 을 지키고 있다. 상업적 출시 전에 반드시
+> `Legal.tsx` 를 release-profile 기반으로 바꿔야 게이트가 실효를 갖는다.
 
 ## 법무 확인 체계
 `legal-launch-lead`가 출시 법무 확인을 총괄한다.

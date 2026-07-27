@@ -12,12 +12,23 @@ import { z } from 'zod';
 import { modelCandidates } from './modelSelection';
 import { enforceCentralRateLimit } from './rateLimit';
 import { USAGE_LIMIT_MESSAGES } from './usageLimits';
+// 보안·정책 불변식(App Check, 인증+동의, 금지어, 언어명)은 shared.ts 한 곳에만 둔다.
+// 여기서 사본을 다시 정의하면 한쪽만 강화되는 사고가 난다(R-001/R-008).
+import {
+  LANGUAGE_NAMES,
+  newTraceId,
+  requireAppCheck,
+  requireAuthenticatedConsent,
+  violatesForbidden,
+  worthRetrying,
+} from './shared';
 export { adminUsageSettings } from './adminApi';
 
 // === 글로벌 옵션 (한국 사용자 지연 최소화) ===
 setGlobalOptions({ region: 'asia-northeast3', maxInstances: 10 });
 if (!admin.apps.length) admin.initializeApp();
-const auth = admin.auth();
+// auth 는 shared.ts 의 requireAuthenticatedConsent 가 자체적으로 잡는다.
+// 여기서는 레이트리밋에 넘길 firestore 핸들만 필요하다.
 const db = admin.firestore();
 
 const GEMINI_API_KEY = defineSecret('GEMINI_API_KEY');
@@ -47,14 +58,19 @@ const RecoveryTimeline = z.object({
   notes: z.string().max(500),
 });
 
+// 아래 5개 필드는 safeResult() 가 응답 직전 항상 비운다(법적 포지션). 그래서
+// buildSystemPrompt() 는 이들을 요구하지 않으며 — 폐기될 내용에 토큰을 쓰지 않는다 —
+// 모델이 생략해도 검증이 깨지지 않도록 default 를 둔다. 모델이 굳이 채워 보내도
+// safeResult() 에서 버려진다. 클라이언트 계약(src/schemas/curation.ts)은 필수 그대로:
+// safeResult() 가 빈 값을 채워 보내므로 클라이언트가 받는 모양은 바뀌지 않는다.
 const CurationResult = z.object({
   recommendedDepartment: z.string().min(1).max(100),
   aiAdvice: z.string().min(1).max(2000),
-  otcMedications: z.array(OTCMedication).max(10),
-  folkRemedies: z.array(z.string().max(300)).max(10),
-  lifestyleTips: z.array(z.string().max(300)).max(15),
-  exercisePrescription: ExercisePlan,
-  recoveryTimeline: z.array(RecoveryTimeline).max(6),
+  otcMedications: z.array(OTCMedication).max(10).default([]),
+  folkRemedies: z.array(z.string().max(300)).max(10).default([]),
+  lifestyleTips: z.array(z.string().max(300)).max(15).default([]),
+  exercisePrescription: ExercisePlan.default({ recommended: [], avoid: [], duration: '' }),
+  recoveryTimeline: z.array(RecoveryTimeline).max(6).default([]),
   redFlags: z.array(z.string().max(300)).max(15),
   disclaimer: z.string().min(10).max(1000),
 });
@@ -66,22 +82,6 @@ const CurateRequest = z.object({
   isProMode: z.boolean().default(false),
   age: z.string().max(20).optional(),
 });
-
-// === 금지어 가드 (forbidden-phrases.txt 의 핵심 부분집합) ===
-const FORBIDDEN: RegExp[] = [
-  /진단(됩니다|입니다|이[다라])/,
-  /처방(해드립니다|입니다|이[다라])/,
-  /완치(됩니다|보장)/,
-  /부작용 없[음이다는]/,
-  /100% 효과/,
-];
-function violatesForbidden(text: string): string | null {
-  for (const re of FORBIDDEN) {
-    const m = text.match(re);
-    if (m) return m[0];
-  }
-  return null;
-}
 
 const EMERGENCY_MENTAL = ['자살', '자해', '죽고 싶', '살고 싶지 않', '극단적 선택', 'suicide', 'self-harm', 'kill myself'];
 const EMERGENCY_PHYSICAL = ['흉통', '가슴통증', '호흡곤란', '숨을 못 쉬', '의식잃', '의식불명', '마비', '반신마비', '안면마비', '극심한 두통', '갑작스러운 두통', '토혈', '혈변', '대량출혈', 'chest pain', 'cannot breathe', 'unconscious', 'stroke', 'heart attack'];
@@ -124,61 +124,15 @@ function emergencyResult(kind: 'mental' | 'physical') {
   );
 }
 
-// MUST stay in sync with src/schemas/consent.ts CONSENT_VERSION. The client and
-// functions packages cannot share an import, so a policy-version bump requires
-// editing this constant, the client schema, and the firestore.rules path together.
-const CONSENT_VERSION = '2026-06-01';
-
-async function requireAuthenticatedConsent(req: { headers: Record<string, unknown> }) {
-  const authz = String(req.headers.authorization ?? '');
-  const m = /^Bearer (.+)$/.exec(authz);
-  if (!m) return { ok: false as const, status: 401, code: 'NO_TOKEN', message: '인증이 필요합니다' };
-  try {
-    const decoded = await auth.verifyIdToken(m[1]);
-    const snap = await db.collection('users').doc(decoded.uid).collection('consents').doc(CONSENT_VERSION).get();
-    const data = snap.data();
-    if (!snap.exists || !data?.items?.sensitiveHealth || data?.isAdult !== true) {
-      return { ok: false as const, status: 403, code: 'CONSENT_REQUIRED', message: '동의가 필요합니다' };
-    }
-    return { ok: true as const, uid: decoded.uid };
-  } catch {
-    return { ok: false as const, status: 401, code: 'BAD_TOKEN', message: '인증 확인에 실패했습니다' };
-  }
-}
-
-async function requireAppCheck(req: { headers: Record<string, unknown> }) {
-  const token = String(req.headers['x-firebase-appcheck'] ?? '');
-  const strict = process.env.APP_CHECK_MODE === 'strict';
-  if (!token && strict) {
-    return { ok: false as const, status: 401, code: 'APP_CHECK_REQUIRED', message: '앱 무결성 확인이 필요합니다' };
-  }
-  if (token) {
-    try {
-      await admin.appCheck().verifyToken(token);
-    } catch {
-      if (strict) {
-        return { ok: false as const, status: 401, code: 'APP_CHECK_REQUIRED', message: '앱 무결성 확인에 실패했습니다' };
-      }
-      logger.info('curate.appcheck_soft_fail');
-    }
-  }
-  return { ok: true as const };
-}
-
-const LANGUAGE_NAMES: Record<string, string> = {
-  ko: '한국어', en: 'English', zh: '中文(简体)', ja: '日本語', es: 'Español',
-};
-
 function buildSystemPrompt(isProMode: boolean, language: string): string {
   return `당신은 '메디-큐레이터' AI 건강 정보 도우미입니다. 한국 식약처(MFDS) 공개 정보 기반.
 [출력 원칙]
 1. Google 검색의 건강 정보 카드처럼 일반 건강정보를 명확하고 실용적으로 제공합니다.
 2. 진단·처방처럼 단정하지 말고, "가능성", "일반적으로", "확인해 볼 수 있는 선택지" 톤을 사용합니다.
-3. 처방의약품은 추천하지 않습니다. 다만 증상 완화에 흔히 쓰이는 일반의약품/성분 카테고리와 예시는 제공할 수 있습니다.
-4. 일반의약품 항목에는 특정 용량 지시 대신 "제품 라벨을 따르기", "기저질환/임신/소아/복용약이 있으면 약사 확인" 같은 사용 전 확인 정보를 넣습니다.
-5. 민간요법, 생활관리, 운동/휴식, 예상 경과는 일반 정보 수준으로 출력합니다.
-6. 응급/자살 의심 시 109, 1577-0199, 119, 112 안내.
-7. disclaimer는 짧고 자연스럽게 포함합니다.
+3. 의약품은 추천하지 않습니다. 처방의약품은 물론 일반의약품(OTC)도 마찬가지이며, 특정 약품명이나 용량 지시를 aiAdvice 에 넣지 마세요. 약 선택은 "약사와 상담"으로 안내합니다.
+4. 생활관리·휴식·예상 경과 같은 일반 정보는 별도 항목이 아니라 aiAdvice 안에 자연스럽게 녹여 씁니다.
+5. 응급/자살 의심 시 109, 1577-0199, 119, 112 안내.
+6. disclaimer는 짧고 자연스럽게 포함합니다.
 
 [모드] ${isProMode ? '프로(EBM 심층)' : '일반(평이한 언어)'}
 [언어] ${LANGUAGE_NAMES[language] ?? '한국어'}
@@ -187,11 +141,6 @@ function buildSystemPrompt(isProMode: boolean, language: string): string {
 {
   "recommendedDepartment": "string",
   "aiAdvice": "string",
-  "otcMedications": [{"name":"string","purpose":"string","dosage":"string","warnings":["string"],"interactions":["string"],"riskLevel":"low|medium|high"}],
-  "folkRemedies": ["string"],
-  "lifestyleTips": ["string"],
-  "exercisePrescription": {"recommended":["string"],"avoid":["string"],"duration":"string"},
-  "recoveryTimeline": [{"ageGroup":"string","expectedDays":"string","notes":"string"}],
   "redFlags": [],
   "disclaimer": "일반 건강정보입니다. 증상이 심하거나 오래가면 의사·약사와 상담하세요."
 }`;
@@ -265,7 +214,7 @@ export const curate = onRequest(
     const user = `[증상] ${q.symptoms}\n[복용약] ${q.currentMedications || '없음'}${
       q.age ? `\n[연령] ${q.age}` : ''
     }\n위 정보를 JSON 으로 제공.`;
-    const traceId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    const traceId = newTraceId();
     logger.info('curate.start', { traceId, uid: caller.uid, lang: q.language, pro: q.isProMode });
 
     try {
@@ -294,7 +243,7 @@ export const curate = onRequest(
           clearTimeout(to);
         }
 
-        if (llm.status !== 429 || index === models.length - 1) break;
+        if (!worthRetrying(llm.status) || index === models.length - 1) break;
         logger.warn('curate.model_fallback', { traceId, from: modelName, to: models[index + 1] });
       }
 

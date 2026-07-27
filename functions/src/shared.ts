@@ -59,6 +59,7 @@ export async function requireAppCheck(req: HeaderBag): Promise<GuardResult> {
         return { ok: false, status: 401, code: 'APP_CHECK_REQUIRED', message: '앱 무결성 확인에 실패했습니다' };
       }
       /* soft-fail: 사이트키 미설정 환경에서도 동작하도록 통과 */
+      logger.info('appcheck.soft_fail');
     }
   }
   return { ok: true as const };
@@ -81,6 +82,14 @@ export async function requireAuthenticatedConsent(req: HeaderBag) {
   } catch {
     return { ok: false as const, status: 401, code: 'BAD_TOKEN', message: '인증 확인에 실패했습니다' };
   }
+}
+
+// 다음 후보 모델로 넘어갈 가치가 있는 상태코드만 재시도한다. 400/401/403 처럼
+// 요청 자체가 잘못된 응답은 어느 모델에서도 동일하므로, 후보 수만큼 20초씩 태우지
+// 않고 즉시 봉투로 돌려준다. curate(index.ts) 도 같은 술어를 써야 두 경로의
+// 재시도 정책이 갈라지지 않는다.
+export function worthRetrying(status: number): boolean {
+  return status === 429 || status === 404 || status >= 500;
 }
 
 export type GeminiOutcome =
@@ -108,6 +117,10 @@ export async function callGemini(opts: {
   const parts: Array<Record<string, unknown>> = [{ text: `${sys}\n\n${user}` }];
   if (image) parts.push({ inlineData: { mimeType: image.mimeType, data: image.dataBase64 } });
 
+  // 마지막 후보까지 전송 자체가 실패한 사유(타임아웃/네트워크). 호출부가 항상
+  // {ok:false} 봉투를 받도록, 예외를 밖으로 던지지 않고 여기에 담아 반환한다.
+  let transportError: string | null = null;
+
   for (const [index, modelName] of models.entries()) {
     const ctl = new AbortController();
     const to = setTimeout(() => ctl.abort(), 20_000);
@@ -122,14 +135,34 @@ export async function callGemini(opts: {
         }),
         signal: ctl.signal,
       });
+      transportError = null;
+    } catch (e) {
+      // AbortError(20초 초과) 또는 네트워크 오류 — 다음 후보 모델로 계속 시도한다.
+      llm = null;
+      transportError = (e as Error).message;
+      logger.warn('llm.transport_error', { traceId, model: modelName, err: transportError });
     } finally {
       clearTimeout(to);
     }
-    if (llm.ok || index === models.length - 1) break;
-    logger.warn('llm.model_fallback', { traceId, from: modelName, to: models[index + 1], status: llm.status });
+    if (llm?.ok || index === models.length - 1) break;
+    // llm === null 은 전송 실패 → 다음 모델로 재시도. 응답이 왔다면 상태코드로 판단.
+    if (llm && !worthRetrying(llm.status)) break;
+    logger.warn('llm.model_fallback', {
+      traceId,
+      from: modelName,
+      to: models[index + 1],
+      status: llm?.status ?? 'transport_error',
+    });
   }
 
-  if (!llm) return { ok: false, status: 502, code: 'LLM_ERROR', message: 'Gemini request was not attempted' };
+  if (!llm) {
+    return {
+      ok: false,
+      status: 502,
+      code: 'LLM_ERROR',
+      message: transportError ?? 'Gemini request was not attempted',
+    };
+  }
 
   if (!llm.ok) {
     const txt = await llm.text().catch(() => '');
@@ -137,7 +170,14 @@ export async function callGemini(opts: {
     return { ok: false, status: 502, code: 'LLM_ERROR', message: `upstream ${llm.status}` };
   }
 
-  const body = (await llm.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
+  // 200 이어도 본문이 JSON 이 아닐 수 있다(프록시/차단 페이지). 던지지 않고 봉투로 변환.
+  let body: { candidates?: { content?: { parts?: { text?: string }[] } }[] };
+  try {
+    body = (await llm.json()) as typeof body;
+  } catch (e) {
+    logger.warn('llm.bad_upstream_json', { traceId, err: (e as Error).message });
+    return { ok: false, status: 502, code: 'LLM_ERROR', message: 'LLM 응답 형식 오류' };
+  }
   const text = body?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
   const match = text.match(/\{[\s\S]*\}/);
   if (!match) return { ok: false, status: 502, code: 'NO_JSON', message: 'LLM 응답 형식 오류' };

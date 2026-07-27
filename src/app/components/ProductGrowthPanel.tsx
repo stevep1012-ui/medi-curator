@@ -9,7 +9,7 @@ import { loadSavedCombos } from "../../services/comboVaultService";
 import { buildConsultationBrief } from "../../services/consultationBriefService";
 import { loadPlusInterest, savePlusInterest } from "../../services/plusInterestService";
 import { loadRoutineProgress, saveRoutineProgress, type RoutineProgressByDate, type RoutineProgressKey } from "../../services/routineProgressService";
-import { loadRoutineReminder, reminderSummary, saveRoutineReminder, type RoutineReminderFrequency } from "../../services/routineReminderService";
+import { loadRoutineReminder, reminderSummary, saveRoutineReminder, type RoutineReminder, type RoutineReminderFrequency } from "../../services/routineReminderService";
 
 type ML = Record<Lang, string>;
 const ml = (ko: string, en: string, ja: string, zh: string): ML => ({ ko, en, ja, zh });
@@ -202,6 +202,14 @@ export default function ProductGrowthPanel({ uid, onGo }: { uid?: string; onGo: 
     setPlusInterest(savePlusInterest(uid).interested);
   }
 
+  // 리마인더를 수정하는 순간 "저장됨" 표시는 사실이 아니게 된다. 편집과 플래그
+  // 해제를 한 곳에 묶어, 입력 항목이 늘어나도 표시가 실제 저장 상태와 갈라지지
+  // 않도록 한다(각 onChange 에 리셋을 흩뿌리면 새 입력에서 다시 어긋난다).
+  function updateReminder(patch: Partial<RoutineReminder>) {
+    setReminder((prev) => ({ ...prev, ...patch }));
+    setReminderSaved(false);
+  }
+
   function saveReminder() {
     setReminder(saveRoutineReminder(uid, reminder));
     setReminderSaved(true);
@@ -310,7 +318,7 @@ export default function ProductGrowthPanel({ uid, onGo }: { uid?: string; onGo: 
               <input
                 type="checkbox"
                 checked={reminder.enabled}
-                onChange={(event) => setReminder((prev) => ({ ...prev, enabled: event.target.checked }))}
+                onChange={(event) => updateReminder({ enabled: event.target.checked })}
                 className="peer sr-only"
               />
               <span className="h-6 w-11 rounded-full bg-ink-2 transition peer-checked:bg-brand" />
@@ -320,7 +328,7 @@ export default function ProductGrowthPanel({ uid, onGo }: { uid?: string; onGo: 
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
             <select
               value={reminder.frequency}
-              onChange={(event) => setReminder((prev) => ({ ...prev, frequency: event.target.value as RoutineReminderFrequency }))}
+              onChange={(event) => updateReminder({ frequency: event.target.value as RoutineReminderFrequency })}
               className="h-10 rounded-xl border border-line bg-surface-soft px-3 text-[12.5px] font-bold text-ink outline-none focus:border-brand"
             >
               <option value="daily">{COPY.reminderDaily[lang]}</option>
@@ -329,7 +337,7 @@ export default function ProductGrowthPanel({ uid, onGo }: { uid?: string; onGo: 
             <input
               type="time"
               value={reminder.time}
-              onChange={(event) => setReminder((prev) => ({ ...prev, time: event.target.value }))}
+              onChange={(event) => updateReminder({ time: event.target.value })}
               className="h-10 rounded-xl border border-line bg-surface-soft px-3 text-[12.5px] font-bold text-ink outline-none focus:border-brand"
             />
           </div>

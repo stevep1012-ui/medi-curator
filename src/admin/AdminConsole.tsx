@@ -10,6 +10,14 @@ function krw(value: number) {
   return new Intl.NumberFormat("ko-KR", { style: "currency", currency: "KRW", maximumFractionDigits: 0 }).format(value);
 }
 
+// 숫자 입력을 비우면 Number("") 가 0 이 되어 min={1} 을 우회한 채 PATCH 로 나간다.
+// 서버 검증에만 기대지 않고 여기서 먼저 범위 안으로 되돌린다.
+function clampLimit(raw: string, max: number): number {
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed)) return 1;
+  return Math.min(max, Math.max(1, Math.floor(parsed)));
+}
+
 function StatCard({ label, value, note }: { label: string; value: string; note: string }) {
   return (
     <section className="rounded-[20px] border border-line bg-white p-5 shadow-sm">
@@ -231,7 +239,7 @@ function AdminDashboard({ email, canAttemptAdminApi, onSignOut }: { email: strin
                 min={1}
                 max={10000}
                 value={limits.hourlyAiRequests}
-                onChange={(event) => setLimits((prev) => ({ ...prev, hourlyAiRequests: Number(event.target.value) }))}
+                onChange={(event) => setLimits((prev) => ({ ...prev, hourlyAiRequests: clampLimit(event.target.value, 10000) }))}
                 className="mt-2 h-12 w-full rounded-xl border border-line bg-surface px-3 text-[15px] font-bold text-ink outline-none focus:border-brand"
               />
             </label>
@@ -242,7 +250,7 @@ function AdminDashboard({ email, canAttemptAdminApi, onSignOut }: { email: strin
                 min={1}
                 max={1000000}
                 value={limits.monthlyAiRequests}
-                onChange={(event) => setLimits((prev) => ({ ...prev, monthlyAiRequests: Number(event.target.value) }))}
+                onChange={(event) => setLimits((prev) => ({ ...prev, monthlyAiRequests: clampLimit(event.target.value, 1000000) }))}
                 className="mt-2 h-12 w-full rounded-xl border border-line bg-surface px-3 text-[15px] font-bold text-ink outline-none focus:border-brand"
               />
             </label>
