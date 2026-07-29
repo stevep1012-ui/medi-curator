@@ -52,13 +52,24 @@ Workflow 에이전트는 `.claude/agents/workflow-manager.md`다.
 | P0-006 | LLM 출력 Zod 런타임 검증 강제 | api-engineer |
 | P0-007 | 출하되는 개인정보처리방침(`src/app/components/Legal.tsx`)을 `config/release-profile.json` 에 연결 | privacy-officer |
 
-> **P0-007 배경 (2026-07-26 코드 정리 중 발견).** `gate:release-readiness` 는
-> `config/release-profile.json` 의 사업자명·대표자·주소·개인정보책임자가
-> `[출시 전 확정 필요]` 로 남아 있으면 출시를 막는다. 그런데 이 규율을 반영한
-> 유일한 컴포넌트는 렌더되지 않는 죽은 코드였고(정리 시 삭제됨), 실제 사용자에게
-> 보이는 `Legal.tsx` 는 연락처를 하드코딩한 채 release-profile 을 참조하지 않는다.
-> 즉 게이트는 아무도 읽지 않는 JSON 을 지키고 있다. 상업적 출시 전에 반드시
-> `Legal.tsx` 를 release-profile 기반으로 바꿔야 게이트가 실효를 갖는다.
+> **P0-007 — 해소됨 (2026-07-29).**
+>
+> 배경: `gate:release-readiness` 는 `config/release-profile.json` 의 사업자 정보가
+> `[출시 전 확정 필요]` 로 남아 있으면 출시를 막는다. 그런데 이 규율을 반영한 유일한
+> 컴포넌트는 렌더되지 않는 죽은 코드였고, 실제 사용자에게 보이는 `Legal.tsx` 와
+> `Chrome.tsx` 푸터는 연락처를 하드코딩한 채 release-profile 을 참조하지 않았다 —
+> 게이트가 아무도 읽지 않는 JSON 을 지키고 있었다.
+> (`docs/reviews/IMPROVE-2026-06-14.md` 가 같은 문제를 P1 "승인필요" 로 이미 기록.)
+>
+> 조치: `Legal.tsx`·`Chrome.tsx` 가 `config/release-profile.json` 을 직접 읽도록 바꾸고,
+> 화면에 실제로 뜨는 고객센터 연락처(`supportEmail`, `supportPhone`)를 프로필과 게이트
+> 필수 항목에 추가했다. PIPA 가 요구하는 개인정보처리자(상호·대표자·주소) 항목도 4개
+> 언어 방침에 넣었다. 미설정 값은 감추지 않고 그대로 노출한다 — 가짜 연락처보다
+> 정직하고, 눈에 띄어야 출시 전에 채워진다.
+> `tests/unit/ontologySync.test.ts` 가 하드코딩 재발을 막는다.
+>
+> **남은 일:** 실제 사업자 정보 확정 후 `config/release-profile.json` 7개 항목 기입.
+> 그때까지 `gate:release-readiness` 는 의도대로 BLOCK 한다.
 
 ## 법무 확인 체계
 `legal-launch-lead`가 출시 법무 확인을 총괄한다.

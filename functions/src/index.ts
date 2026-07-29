@@ -93,6 +93,19 @@ function detectEmergency(symptoms: string): 'mental' | 'physical' | null {
   return null;
 }
 
+// INV-5. 서비스는 한국 법제 아래에서 운영되므로, 한국어를 읽지 않는 사용자에게도
+// 그 사실과 면책 범위가 닿아야 한다. 모델에게 시키면 언어·상황에 따라 빠지므로
+// 서버에서 결정적으로 덧붙인다(INV-7 과 같은 이유).
+const KR_LEGAL_NOTICE_EN =
+  'This service is operated under the laws of the Republic of Korea and provides general health information only — not a medical diagnosis, prescription, or treatment. For emergencies in Korea call 119; for mental-health crises call 109 or 1577-0199.';
+
+function withKoreanLegalNotice(disclaimer: string, language: string): string {
+  if (language === 'ko') return disclaimer;
+  // 모델이 이미 같은 취지를 넣었다면 중복해서 붙이지 않는다.
+  if (disclaimer.includes('Republic of Korea')) return disclaimer;
+  return `${disclaimer}\n\n${KR_LEGAL_NOTICE_EN}`;
+}
+
 function safeResult(recommendedDepartment: string, aiAdvice: string, redFlags: string[], disclaimer: string) {
   return {
     recommendedDepartment,
@@ -107,20 +120,28 @@ function safeResult(recommendedDepartment: string, aiAdvice: string, redFlags: s
   };
 }
 
-function emergencyResult(kind: 'mental' | 'physical') {
+// 응급 응답은 모델을 거치지 않는 고정 문구다. 본문이 한국어이므로, 한국어를 읽지
+// 않는 사용자에게는 disclaimer 의 영문 고지가 유일하게 읽히는 안내가 된다(INV-5).
+function emergencyResult(kind: 'mental' | 'physical', language: string) {
   if (kind === 'mental') {
     return safeResult(
       '정신건강의학과',
       '자해·자살 위험이 의심됩니다. 지금은 온라인 분석보다 즉시 도움을 받는 것이 우선입니다. 한국에서는 109 자살예방상담전화와 1577-0199 정신건강위기상담전화에 바로 연락하세요. 즉각적인 위험이 있으면 119 또는 112에 연락하거나 응급실로 이동하세요.',
       ['자해·자살 위험이 의심됨'],
-      '본 정보는 의료 진단 또는 처방을 대체하지 않습니다. 긴급 상황에서는 즉시 109, 119, 112 또는 응급실을 이용하세요.',
+      withKoreanLegalNotice(
+        '본 정보는 의료 진단 또는 처방을 대체하지 않습니다. 긴급 상황에서는 즉시 109, 119, 112 또는 응급실을 이용하세요.',
+        language,
+      ),
     );
   }
   return safeResult(
     '응급의학과',
     '흉통, 호흡곤란, 의식저하, 대량출혈 등 응급 징후가 의심됩니다. 지금은 119 또는 112 연락과 응급실 방문이 우선입니다.',
     ['응급 증상이 의심됨'],
-    '본 정보는 의료 진단 또는 처방을 대체하지 않습니다. 응급 상황에서는 즉시 119, 112 또는 응급실을 이용하세요.',
+    withKoreanLegalNotice(
+      '본 정보는 의료 진단 또는 처방을 대체하지 않습니다. 응급 상황에서는 즉시 119, 112 또는 응급실을 이용하세요.',
+      language,
+    ),
   );
 }
 
@@ -205,7 +226,7 @@ export const curate = onRequest(
 
     const emergencyKind = detectEmergency(q.symptoms);
     if (emergencyKind) {
-      res.status(200).json({ ok: true, data: emergencyResult(emergencyKind), cached: false });
+      res.status(200).json({ ok: true, data: emergencyResult(emergencyKind, q.language), cached: false });
       return;
     }
 
@@ -296,7 +317,7 @@ export const curate = onRequest(
           validated.data.recommendedDepartment,
           validated.data.aiAdvice,
           validated.data.redFlags,
-          validated.data.disclaimer,
+          withKoreanLegalNotice(validated.data.disclaimer, q.language),
         ),
       });
     } catch (e) {

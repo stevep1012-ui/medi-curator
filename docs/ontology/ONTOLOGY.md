@@ -167,7 +167,7 @@ TabNav                ← MenuTree 탭 전환
 | **INV-3** | `OTCMedication.name` 을 식약처 마스터와 교차검증 | ❌ **미구현** | `assets/mfds-otc.json` 파일이 존재하지 않고 참조 코드도 없음. 현재 OTC 는 서버가 항상 비워 노출 자체가 없으나, 노출 재개 시 **선행 구현 필수** |
 | **INV-4a** | 응급 시 위기 번호 노출 | ✅ 강제됨 | `src/lib/emergency.ts` `HOTLINES`. **번호는 109 + 1577-0199**(정신) / 119(신체). 옛 `1393` 은 2024년 109 로 통합되어 더 이상 쓰지 않는다 |
 | **INV-4b** | 응급 시 약국 경로에 안전장치 | ✅ 강제됨 (**방식 변경**) | `SymptomAnalysis`(`onCrisisChange`) → `page.tsx`(`crisisKind` 보관) → `PharmacyFinder` 배너. **탭을 숨기는 대신 응급 연락처를 약국 화면 최상단에 띄운다** — 사용 중 내비게이션이 사라지면 혼란스럽고 스스로 판단해 약국을 찾을 자유를 막는다. 원 취지(위기 상황에서 약 구매로 유도하지 않기)는 우선순위 역전으로 충족. `tests/unit/ontologySync.test.ts` 가 배선을 검사 |
-| **INV-5** | 비한국어 `disclaimer` 에 영문 면책 병기 | ⚠️ 미검증 | 강제 지점 확인 필요 |
+| **INV-5** | 비한국어 `disclaimer` 에 영문 면책 병기 | ✅ 강제됨 | `functions/src/index.ts` 의 `withKoreanLegalNotice()` 가 `language !== 'ko'` 일 때 `KR_LEGAL_NOTICE_EN` 을 덧붙인다. 모델에게 맡기면 언어·상황에 따라 빠지므로 서버에서 결정적으로 붙인다. 본문이 한국어로 고정된 응급 응답에도 적용. 클라이언트 스키마의 `disclaimer` 상한을 1400 으로 넓혀 덧붙은 길이가 검증에 걸리지 않게 했다 |
 | **INV-6** | 모든 LLM 호출 서버 경유 | ✅ 강제됨 | 클라이언트는 `/api/curate`·`/api/ai/*` 프록시만 호출. 레드팀 RT-NL-007 이 검사 |
 | **INV-7** | `currentMedications` 있으면 약사 확인 문구 필수 | ✅ 강제됨 | `SymptomAnalysis.tsx` 가 `currentMedication` 이 비어있지 않으면 `s.interaction`("복용 중인 모든 제품 목록을 약사·의사에게 보여 주세요") 블록을 렌더. 모델 출력이 아니라 **미리 검토된 정적 문구**라 LLM 이 빠뜨릴 수 없다 |
 

@@ -37,7 +37,11 @@ export const CurationResult = z.object({
   exercisePrescription: ExercisePlan,
   recoveryTimeline: z.array(RecoveryTimeline).max(6),
   redFlags: z.array(z.string().max(300)).max(15),
-  disclaimer: z.string().min(10).max(1000), // INV-1: disclaimer always required
+  // INV-1: disclaimer always required.
+  // 상한이 서버 스키마(1000)보다 큰 이유 — 서버는 모델 출력을 1000자로 검증한 뒤
+  // 비한국어 응답에 한국 법제 영문 고지를 덧붙여 보낸다(INV-5). 여기서도 1000 이면
+  // 긴 응답이 검증에 걸려 사용자에게 "결과를 표시할 수 없습니다" 가 뜬다.
+  disclaimer: z.string().min(10).max(1400),
 });
 
 export const SymptomQuery = z.object({

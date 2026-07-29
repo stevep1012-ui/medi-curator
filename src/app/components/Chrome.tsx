@@ -5,6 +5,7 @@ import { useI18n, type Lang } from "./i18n";
 import { FREE_USAGE_COPY } from "../../config/usageLimits";
 import { LegalModal } from "./LegalModal";
 import { type LegalKey } from "./Legal";
+import BIZ from "../../../config/release-profile.json";
 import { type ToastDetail } from "./chrome-helpers";
 
 /* ---------------- toast (emitter + copy + useAuth live in chrome-helpers.ts) ---------------- */
@@ -64,29 +65,32 @@ export function TrustStrip() {
 }
 
 /* ---------------- product footer ---------------- */
+// P0-007. 푸터 사업자 표기도 Legal.tsx 와 같은 출처(config/release-profile.json)에서
+// 읽는다. 하드코딩된 고객센터 번호·이메일은 게이트 검사를 비껴가고 있었다.
+// 미설정이면 감추지 않고 그대로 보여 출시 전에 눈에 띄게 한다.
 const FOOTER: Record<Lang, { tagline: string; links: string[]; biz: string; copy: string }> = {
   ko: {
     tagline: "증상 분석부터 약국 찾기까지, 일상 건강을 돕는 AI 가이드입니다.",
     links: ["서비스 소개", "이용약관", "개인정보처리방침", "자주 묻는 질문", "고객센터", "공지사항"],
-    biz: "메디큐레이터 · 고객센터 1577-0000 · help@mediq.health",
+    biz: `${BIZ.businessName} · 고객센터 ${BIZ.supportPhone} · ${BIZ.supportEmail}`,
     copy: "© 2026 MediQ. All rights reserved.",
   },
   en: {
     tagline: "From symptom analysis to finding a pharmacy — an AI guide for everyday health.",
     links: ["About", "Terms of Service", "Privacy Policy", "FAQ", "Support", "Notices"],
-    biz: "MediQ · Support 1577-0000 · help@mediq.health",
+    biz: `${BIZ.businessName} · Support ${BIZ.supportPhone} · ${BIZ.supportEmail}`,
     copy: "© 2026 MediQ. All rights reserved.",
   },
   ja: {
     tagline: "症状分析から薬局探しまで、毎日の健康を支えるAIガイド。",
     links: ["サービス紹介", "利用規約", "プライバシー", "よくある質問", "サポート", "お知らせ"],
-    biz: "MediQ · サポート 1577-0000 · help@mediq.health",
+    biz: `${BIZ.businessName} · サポート ${BIZ.supportPhone} · ${BIZ.supportEmail}`,
     copy: "© 2026 MediQ. All rights reserved.",
   },
   zh: {
     tagline: "从症状分析到查找药房——助力日常健康的AI向导。",
     links: ["关于服务", "使用条款", "隐私政策", "常见问题", "客户支持", "公告"],
-    biz: "MediQ · 客服 1577-0000 · help@mediq.health",
+    biz: `${BIZ.businessName} · 客服 ${BIZ.supportPhone} · ${BIZ.supportEmail}`,
     copy: "© 2026 MediQ 版权所有。",
   },
 };
