@@ -1,6 +1,13 @@
 "use client";
 
 import { type Lang } from "./i18n";
+import BIZ from "../../../config/release-profile.json";
+
+// P0-007. 사업자 정보와 연락처는 gate:release-readiness 가 검사하는 바로 그 파일에서
+// 읽는다. 여기 하드코딩해 두면 게이트가 PASS 여도 화면에는 위약 연락처가 그대로 나갈
+// 수 있고, 실제로 그렇게 나가고 있었다.
+// 미설정 상태를 감추지 않고 그대로 노출한다: 가짜 연락처보다 정직하고, 눈에 띄어야
+// 출시 전에 채워진다.
 
 export type LegalKey = "about" | "terms" | "privacy" | "faq" | "support" | "notices";
 type Doc = { title: string; sections: [string, string][] };
@@ -33,7 +40,8 @@ export const LEGAL: Record<Lang, LangLegal> = {
         ["5. 보유 및 이용 기간", "개인정보는 수집·이용 목적이 달성되면 지체 없이 파기합니다. 다만 관계 법령에 따라 보존할 필요가 있는 경우 해당 기간 동안 보관합니다."],
         ["6. 제3자 제공", "회사는 이용자의 개인정보를 본 방침에서 고지한 범위를 초과하여 이용하거나 제3자에게 제공하지 않습니다. 다만 법령에 근거가 있거나 수사기관의 적법한 요청이 있는 경우는 예외로 합니다."],
         ["7. 이용자의 권리", "이용자는 언제든지 자신의 개인정보에 대한 열람·정정·삭제·처리정지를 요청할 수 있으며, 기기에 저장된 검색 기록은 서비스 내에서 직접 삭제할 수 있습니다."],
-        ["8. 개인정보 보호책임자", "성명: 개인정보 보호책임자 · 연락처: privacy@mediq.health · 고객센터 1577-0000. 개인정보와 관련한 문의·불만·피해구제는 위 연락처로 접수하실 수 있습니다."],
+        ["8. 개인정보 보호책임자", `성명: ${BIZ.privacyOfficer} · 연락처: ${BIZ.privacyEmail} · 고객센터 ${BIZ.supportPhone}. 개인정보와 관련한 문의·불만·피해구제는 위 연락처로 접수하실 수 있습니다.`],
+        ["9. 개인정보처리자", `상호: ${BIZ.businessName} · 대표자: ${BIZ.representative} · 주소: ${BIZ.businessAddress}`],
       ],
     },
     about: {
@@ -57,7 +65,7 @@ export const LEGAL: Record<Lang, LangLegal> = {
     support: {
       title: "고객센터",
       sections: [
-        ["문의 방법", "이메일 help@mediq.health 또는 고객센터 1577-0000(평일 09:00–18:00, 공휴일 휴무)으로 문의해 주세요."],
+        ["문의 방법", `이메일 ${BIZ.supportEmail} 또는 고객센터 ${BIZ.supportPhone}(평일 09:00–18:00, 공휴일 휴무)으로 문의해 주세요.`],
         ["자주 묻는 질문 먼저 확인", "문의 전 자주 묻는 질문(FAQ)을 확인하시면 더 빠르게 답을 찾으실 수 있습니다."],
         ["응급 상황", "메디큐레이터는 응급 의료를 제공하지 않습니다. 응급 상황에서는 즉시 119 또는 가까운 응급실로 연락하세요."],
       ],
@@ -96,7 +104,8 @@ export const LEGAL: Record<Lang, LangLegal> = {
         ["5. Retention", "Personal information is destroyed without delay once its purpose is achieved, except where retention is required by law for the relevant period."],
         ["6. Third-Party Disclosure", "We do not use or disclose your personal information beyond the scope stated here, except where required by law or upon a lawful request by an investigative authority."],
         ["7. Your Rights", "You may request access, correction, deletion or suspension of processing of your personal information at any time, and you can delete locally stored search history directly within the Service."],
-        ["8. Privacy Officer", "Privacy Officer · privacy@mediq.health · Support 1577-0000. Please direct privacy inquiries, complaints and remedies to the contact above."],
+        ["8. Privacy Officer", `${BIZ.privacyOfficer} · ${BIZ.privacyEmail} · Support ${BIZ.supportPhone}. Please direct privacy inquiries, complaints and remedies to the contact above.`],
+        ["9. Data Controller", `${BIZ.businessName} · Representative: ${BIZ.representative} · Address: ${BIZ.businessAddress}`],
       ],
     },
     about: {
@@ -120,7 +129,7 @@ export const LEGAL: Record<Lang, LangLegal> = {
     support: {
       title: "Support",
       sections: [
-        ["How to reach us", "Email help@mediq.health or call 1577-0000 (weekdays 09:00–18:00, closed on public holidays)."],
+        ["How to reach us", `Email ${BIZ.supportEmail} or call ${BIZ.supportPhone} (weekdays 09:00–18:00, closed on public holidays).`],
         ["Check the FAQ first", "Checking the FAQ before contacting us is often the fastest way to find an answer."],
         ["Emergencies", "MediQ does not provide emergency care. In an emergency, contact local emergency services or the nearest ER immediately."],
       ],
@@ -159,7 +168,8 @@ export const LEGAL: Record<Lang, LangLegal> = {
         ["5. 保有期間", "個人情報は目的達成後、遅滞なく破棄します。ただし法令により保存が必要な場合は当該期間保管します。"],
         ["6. 第三者提供", "本方針で告知した範囲を超えて利用・提供しません。ただし法令に根拠がある場合や捜査機関の適法な要請がある場合を除きます。"],
         ["7. 利用者の権利", "利用者はいつでも個人情報の閲覧・訂正・削除・処理停止を請求でき、端末に保存された検索履歴はサービス内で直接削除できます。"],
-        ["8. 個人情報保護責任者", "個人情報保護責任者 · privacy@mediq.health · サポート 1577-0000。個人情報に関するお問い合わせは上記までご連絡ください。"],
+        ["8. 個人情報保護責任者", `${BIZ.privacyOfficer} · ${BIZ.privacyEmail} · サポート ${BIZ.supportPhone}。個人情報に関するお問い合わせは上記までご連絡ください。`],
+        ["9. 個人情報取扱事業者", `商号: ${BIZ.businessName} · 代表者: ${BIZ.representative} · 所在地: ${BIZ.businessAddress}`],
       ],
     },
     about: {
@@ -183,7 +193,7 @@ export const LEGAL: Record<Lang, LangLegal> = {
     support: {
       title: "サポート",
       sections: [
-        ["お問い合わせ方法", "メール help@mediq.health またはサポート 1577-0000（平日 09:00–18:00、祝日休み）までご連絡ください。"],
+        ["お問い合わせ方法", `メール ${BIZ.supportEmail} またはサポート ${BIZ.supportPhone}（平日 09:00–18:00、祝日休み）までご連絡ください。`],
         ["まずFAQをご確認ください", "お問い合わせの前によくある質問をご確認いただくと、より早く解決できます。"],
         ["緊急時", "メディキュレーターは救急医療を提供しません。緊急時は直ちに救急機関または最寄りの救急外来へご連絡ください。"],
       ],
@@ -222,7 +232,8 @@ export const LEGAL: Record<Lang, LangLegal> = {
         ["5. 保存期限", "个人信息在达成目的后将立即销毁。但依法律需保存的，按相应期限保管。"],
         ["6. 第三方提供", "公司不会超出本政策告知范围使用或向第三方提供您的个人信息，但法律有依据或侦查机关合法要求的情形除外。"],
         ["7. 用户权利", "用户可随时要求查阅、更正、删除或停止处理其个人信息，并可在服务内直接删除设备上保存的搜索记录。"],
-        ["8. 个人信息保护负责人", "个人信息保护负责人 · privacy@mediq.health · 客服 1577-0000。与个人信息相关的咨询与投诉可通过上述方式提交。"],
+        ["8. 个人信息保护负责人", `${BIZ.privacyOfficer} · ${BIZ.privacyEmail} · 客服 ${BIZ.supportPhone}。与个人信息相关的咨询与投诉可通过上述方式提交。`],
+        ["9. 个人信息处理者", `名称: ${BIZ.businessName} · 代表人: ${BIZ.representative} · 地址: ${BIZ.businessAddress}`],
       ],
     },
     about: {
@@ -246,7 +257,7 @@ export const LEGAL: Record<Lang, LangLegal> = {
     support: {
       title: "客户支持",
       sections: [
-        ["联系方式", "请发送邮件至 help@mediq.health 或致电客服 1577-0000（工作日 09:00–18:00，节假日休息）。"],
+        ["联系方式", `请发送邮件至 ${BIZ.supportEmail} 或致电客服 ${BIZ.supportPhone}（工作日 09:00–18:00，节假日休息）。`],
         ["请先查看常见问题", "联系我们之前查看常见问题，往往能更快找到答案。"],
         ["紧急情况", "MediQ不提供急救医疗。紧急情况下请立即联系急救机构或就近急诊。"],
       ],

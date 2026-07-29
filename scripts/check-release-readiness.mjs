@@ -7,6 +7,11 @@ const REQUIRED_BUSINESS_FIELDS = [
   'businessAddress',
   'privacyOfficer',
   'privacyEmail',
+  // 약관·개인정보처리방침·FAQ 화면이 이 값들을 그대로 렌더한다(P0-007). 예전에는
+  // Legal.tsx 에 연락처가 하드코딩돼 있어, 게이트가 PASS 여도 화면에는 위약 연락처가
+  // 그대로 나갈 수 있었다.
+  'supportEmail',
+  'supportPhone',
 ];
 
 function unresolved(value) {

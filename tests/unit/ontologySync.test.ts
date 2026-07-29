@@ -127,6 +127,50 @@ describe('정적 안전 문구가 실제로 렌더된다 (번역만 쓰이고 �
   });
 });
 
+describe('INV-5 — 비한국어 응답에 한국 법제 영문 고지', () => {
+  it('서버가 결정적으로 덧붙인다 (모델에게 맡기지 않는다)', () => {
+    expect(serverIndex).toContain('KR_LEGAL_NOTICE_EN');
+    expect(serverIndex).toMatch(/withKoreanLegalNotice\([\s\S]{0,140}q\.language\)/);
+  });
+
+  it('응급 경로에도 적용된다 (본문이 한국어 고정이라 더 필요하다)', () => {
+    const emergency = /function emergencyResult\([\s\S]*?\n}/.exec(serverIndex)?.[0] ?? '';
+    expect(emergency, 'emergencyResult 본문을 찾지 못했다').toContain('safeResult');
+    expect(emergency).toContain('withKoreanLegalNotice');
+  });
+
+  it('클라이언트 스키마가 덧붙은 길이를 수용한다', () => {
+    // 서버는 모델 출력을 1000자로 검증한 뒤 고지를 덧붙인다. 클라이언트 상한이
+    // 1000 이면 긴 응답이 검증에 걸려 사용자에게 결과가 아예 안 보인다.
+    const max = /disclaimer:\s*z\.string\(\)\.min\(\d+\)\.max\((\d+)\)/.exec(curationSchema)?.[1];
+    expect(max, 'disclaimer 의 max 를 찾지 못했다').toBeDefined();
+    expect(Number(max)).toBeGreaterThan(1000);
+  });
+});
+
+describe('P0-007 — 출하 화면의 사업자 정보는 release-profile 에서 온다', () => {
+  const shipped: [string, string][] = [
+    ['Legal.tsx', read('src/app/components/Legal.tsx')],
+    ['Chrome.tsx', read('src/app/components/Chrome.tsx')],
+  ];
+
+  it.each(shipped)('%s 가 release-profile.json 을 읽는다', (_name, source) => {
+    expect(source).toContain('release-profile.json');
+  });
+
+  it.each(shipped)('%s 에 연락처가 하드코딩돼 있지 않다', (_name, source) => {
+    // 하드코딩하면 gate:release-readiness 가 PASS 여도 화면에는 위약 연락처가 나간다.
+    expect(source).not.toContain('mediq.health');
+    expect(source).not.toContain('1577-0000');
+  });
+
+  it('게이트가 고객센터 연락처까지 검사한다', () => {
+    const gate = read('scripts/check-release-readiness.mjs');
+    expect(gate).toContain('supportEmail');
+    expect(gate).toContain('supportPhone');
+  });
+});
+
 describe('미구현 불변식은 미구현이라고 적혀 있어야 한다', () => {
   // 구현이 생기면 이 테스트가 깨져 문서를 갱신하게 만든다 — 반대 방향 드리프트 방지.
   it('INV-3: 식약처 마스터가 없는 동안 문서는 미구현으로 표기한다', () => {
