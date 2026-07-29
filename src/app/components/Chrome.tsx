@@ -5,7 +5,7 @@ import { useI18n, type Lang } from "./i18n";
 import { FREE_USAGE_COPY } from "../../config/usageLimits";
 import { LegalModal } from "./LegalModal";
 import { type LegalKey } from "./Legal";
-import BIZ from "../../../config/release-profile.json";
+import { RELEASE_PROFILE as BIZ, biz } from "../../config/releaseProfile";
 import { type ToastDetail } from "./chrome-helpers";
 
 /* ---------------- toast (emitter + copy + useAuth live in chrome-helpers.ts) ---------------- */
@@ -72,25 +72,25 @@ const FOOTER: Record<Lang, { tagline: string; links: string[]; biz: string; copy
   ko: {
     tagline: "증상 분석부터 약국 찾기까지, 일상 건강을 돕는 AI 가이드입니다.",
     links: ["서비스 소개", "이용약관", "개인정보처리방침", "자주 묻는 질문", "고객센터", "공지사항"],
-    biz: `${BIZ.businessName} · 고객센터 ${BIZ.supportPhone} · ${BIZ.supportEmail}`,
+    biz: `${biz(BIZ.businessName, "ko")} · 고객센터 ${biz(BIZ.supportPhone, "ko")} · ${biz(BIZ.supportEmail, "ko")}`,
     copy: "© 2026 MediQ. All rights reserved.",
   },
   en: {
     tagline: "From symptom analysis to finding a pharmacy — an AI guide for everyday health.",
     links: ["About", "Terms of Service", "Privacy Policy", "FAQ", "Support", "Notices"],
-    biz: `${BIZ.businessName} · Support ${BIZ.supportPhone} · ${BIZ.supportEmail}`,
+    biz: `${biz(BIZ.businessName, "en")} · Support ${biz(BIZ.supportPhone, "en")} · ${biz(BIZ.supportEmail, "en")}`,
     copy: "© 2026 MediQ. All rights reserved.",
   },
   ja: {
     tagline: "症状分析から薬局探しまで、毎日の健康を支えるAIガイド。",
     links: ["サービス紹介", "利用規約", "プライバシー", "よくある質問", "サポート", "お知らせ"],
-    biz: `${BIZ.businessName} · サポート ${BIZ.supportPhone} · ${BIZ.supportEmail}`,
+    biz: `${biz(BIZ.businessName, "ja")} · サポート ${biz(BIZ.supportPhone, "ja")} · ${biz(BIZ.supportEmail, "ja")}`,
     copy: "© 2026 MediQ. All rights reserved.",
   },
   zh: {
     tagline: "从症状分析到查找药房——助力日常健康的AI向导。",
     links: ["关于服务", "使用条款", "隐私政策", "常见问题", "客户支持", "公告"],
-    biz: `${BIZ.businessName} · 客服 ${BIZ.supportPhone} · ${BIZ.supportEmail}`,
+    biz: `${biz(BIZ.businessName, "zh")} · 客服 ${biz(BIZ.supportPhone, "zh")} · ${biz(BIZ.supportEmail, "zh")}`,
     copy: "© 2026 MediQ 版权所有。",
   },
 };

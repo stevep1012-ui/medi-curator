@@ -154,8 +154,15 @@ describe('P0-007 — 출하 화면의 사업자 정보는 release-profile 에서
     ['Chrome.tsx', read('src/app/components/Chrome.tsx')],
   ];
 
-  it.each(shipped)('%s 가 release-profile.json 을 읽는다', (_name, source) => {
-    expect(source).toContain('release-profile.json');
+  it.each(shipped)('%s 가 사업자 정보를 releaseProfile 모듈에서 가져온다', (_name, source) => {
+    // 주석에 경로만 적혀 있어도 통과하지 않도록 import 문 자체를 확인한다.
+    expect(source).toMatch(
+      /import\s*\{[^}]*RELEASE_PROFILE[^}]*\}\s*from\s*["'][^"']*config\/releaseProfile["']/,
+    );
+  });
+
+  it('releaseProfile 모듈이 게이트가 검사하는 바로 그 JSON 을 읽는다', () => {
+    expect(read('src/config/releaseProfile.ts')).toContain('release-profile.json');
   });
 
   it.each(shipped)('%s 에 연락처가 하드코딩돼 있지 않다', (_name, source) => {
