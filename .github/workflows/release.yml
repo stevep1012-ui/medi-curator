@@ -12,13 +12,18 @@ on:
   push:
     branches: [main]
 
-# 액션 버전 주의: checkout/setup-node v4 와 github-script v7 은 액션 자체가 Node 20
-# 런타임에서 돌아, 실행마다 Node 20 지원 종료 경고가 붙었다. 이건 아래 node-version
-# 과는 다른 축이다 — node-version 을 올려도 그 경고는 사라지지 않는다.
-# v7/v7/v9 는 모두 node24 런타임이다(action.yml 의 runs.using 확인).
+# 액션 버전 주의 — 여기엔 Node 축이 둘 있고 서로 다르다.
 #
-# node-version 은 22 를 유지한다. functions 배포 런타임이 nodejs22 이고 Node 22 는
-# 아직 LTS 다. nodejs24 는 firebase-tools #9500(배포 시 GA 아님) 때문에 보류.
+# (1) 액션 자체의 실행 런타임. checkout/setup-node v4, github-script v7,
+#     gitleaks-action v2 는 모두 Node 20 에서 돌아 실행마다 지원 종료 경고가 붙었다.
+#     아래 node-version 을 올려도 이 경고는 사라지지 않는다 — 다른 축이기 때문이다.
+#     현재 핀(v7/v7/v9/v3)은 모두 node24 다(각 action.yml 의 runs.using 으로 확인).
+#     2026-09-16 부터 러너에서 Node 20 이 제거되므로 이 핀들은 유지 필수다.
+#
+# (2) 워크플로가 설치하는 Node(node-version). 22 를 유지한다. functions 배포 런타임이
+#     nodejs22 이고 Node 22 는 아직 LTS 다. nodejs24 는 firebase-tools #9500
+#     (배포 시 GA 아님) 때문에 보류하며, 올릴 때는 functions 의 engines.node 와
+#     @types/node 를 함께 옮겨야 한다.
 permissions:
   contents: read
   pull-requests: write
@@ -38,7 +43,10 @@ jobs:
       - run: npx tsc -b --noEmit
       - run: node scripts/scan-secrets.mjs
       - name: gitleaks
-        uses: gitleaks/gitleaks-action@v2
+        # v3 는 런타임만 node20 → node24 로 옮긴 릴리스다(입력·출력·동작 변경 없음).
+        # 2026-09-16 부터 러너에서 Node 20 이 제거되어 v2 는 우회 플래그로도 동작하지
+        # 않으므로 선택이 아니라 기한이 있는 변경이다.
+        uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
