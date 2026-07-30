@@ -2,6 +2,7 @@
   "name": "functions",
   "private": true,
   "version": "1.0.0",
+  "_note_node": "engines.node 가 Cloud Functions 배포 런타임을 결정한다. devDependencies 의 @types/node 는 반드시 같은 메이저여야 한다 — 타입이 더 높으면 그 버전에서만 존재하는 API 가 타입체크를 통과하고 배포 후 런타임에서 터진다. nodejs24 로 올리려면 firebase-tools #9500(배포 시 GA 아님) 해소 확인 후 둘을 함께 올릴 것.",
   "engines": { "node": "22" },
   "main": "lib/index.js",
   "type": "commonjs",
@@ -18,6 +19,6 @@
   },
   "devDependencies": {
     "typescript": "~6.0.2",
-    "@types/node": "^24.12.2"
+    "@types/node": "^22.20.1"
   }
 }

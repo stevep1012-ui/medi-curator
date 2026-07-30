@@ -12,6 +12,13 @@ on:
   push:
     branches: [main]
 
+# 액션 버전 주의: checkout/setup-node v4 와 github-script v7 은 액션 자체가 Node 20
+# 런타임에서 돌아, 실행마다 Node 20 지원 종료 경고가 붙었다. 이건 아래 node-version
+# 과는 다른 축이다 — node-version 을 올려도 그 경고는 사라지지 않는다.
+# v7/v7/v9 는 모두 node24 런타임이다(action.yml 의 runs.using 확인).
+#
+# node-version 은 22 를 유지한다. functions 배포 런타임이 nodejs22 이고 Node 22 는
+# 아직 LTS 다. nodejs24 는 firebase-tools #9500(배포 시 GA 아님) 때문에 보류.
 permissions:
   contents: read
   pull-requests: write
@@ -21,10 +28,10 @@ jobs:
     name: Gate 1 — STATIC
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0  # full history so gitleaks can resolve the commit range
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with: { node-version: '22', cache: 'npm' }
       - run: npm ci
       - run: npm run lint
@@ -40,8 +47,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: gate-static
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with: { node-version: '22', cache: 'npm' }
       - run: npm ci
       - run: npm run build
@@ -54,8 +61,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: gate-static
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with: { node-version: '22', cache: 'npm' }
       - run: npm ci
       - run: npm test -- --coverage || echo "테스트 미구현 — qa-engineer 호출 필요"
@@ -65,9 +72,9 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Require legal/medical approval labels for prompt/i18n changes
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const { data: files } = await github.rest.pulls.listFiles({
